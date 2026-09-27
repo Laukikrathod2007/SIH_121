@@ -1,0 +1,236 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e3]:
+    - complementary [ref=f2e4]:
+      - generic [ref=f2e9]:
+        - generic [ref=f2e10]:
+          - text: eRTMAC-NWIS
+          - generic [ref=f2e11]: v1.0
+        - generic [ref=f2e12]: OIL INDIA LIMITED
+      - navigation [ref=f2e13]:
+        - generic [ref=f2e14]: OPERATIONAL MODULES
+        - link "Dashboard" [ref=f2e15] [cursor=pointer]:
+          - /url: /
+        - link "Live Drilling" [ref=f2e23] [cursor=pointer]:
+          - /url: /drilling
+        - link "Nearby Wells" [ref=f2e29] [cursor=pointer]:
+          - /url: /wells
+        - link "Geological Correlation" [ref=f2e35] [cursor=pointer]:
+          - /url: /correlation
+        - link "Risk & Prediction" [ref=f2e42] [cursor=pointer]:
+          - /url: /risk
+        - link "Alerts & Advisory" [ref=f2e47] [cursor=pointer]:
+          - /url: /alerts
+        - link "Historical Search" [ref=f2e55] [cursor=pointer]:
+          - /url: /knowledge
+        - link "Document Ingestion" [ref=f2e60] [cursor=pointer]:
+          - /url: /documents
+        - link "Scenario Simulator" [ref=f2e67] [cursor=pointer]:
+          - /url: /simulator
+        - link "Reports & Analytics" [ref=f2e73] [cursor=pointer]:
+          - /url: /reports
+        - link "System Architecture" [ref=f2e79] [cursor=pointer]:
+          - /url: /status
+      - generic [ref=f2e84]:
+        - generic [ref=f2e85]:
+          - generic [ref=f2e86]: TELEMETRY BUS
+          - generic [ref=f2e93]: POLLING
+        - generic [ref=f2e94]:
+          - generic [ref=f2e95]: SIMULATOR
+          - generic [ref=f2e96]: PAUSED
+    - generic [ref=f2e97]:
+      - banner [ref=f2e98]:
+        - generic [ref=f2e99]:
+          - combobox [ref=f2e101] [cursor=pointer]:
+            - option "NHK-001 (Nahorkatiya) - Active" [selected]
+          - generic [ref=f2e102]:
+            - generic [ref=f2e103]:
+              - generic [ref=f2e104]: "MD:"
+              - generic [ref=f2e105]: 2450.0 m
+            - generic [ref=f2e106]:
+              - generic [ref=f2e107]: "TVDSS:"
+              - generic [ref=f2e108]: 2315.6 m
+            - generic [ref=f2e109]:
+              - generic [ref=f2e114]: "FORMATION:"
+              - generic [ref=f2e115]: Porous Sandstone
+              - generic [ref=f2e116]: "ξ: 0.250"
+        - generic [ref=f2e117]:
+          - generic [ref=f2e118]: "RISK: LOW"
+          - combobox [ref=f2e123] [cursor=pointer]:
+            - option "⚡ Inject Scenario..." [disabled] [selected]
+            - option "NORMAL DRILLING"
+            - option "⚠️ LOST CIRCULATION"
+            - option "🚨 KICK / OVERPRESSURE"
+            - option "🛑 STUCK PIPE"
+            - option "🌀 STICK-SLIP VIBRATION"
+            - option "💧 BIT WASHOUT"
+            - option "📡 SENSOR FAULT"
+          - generic [ref=f2e124]:
+            - button "Start Simulation" [ref=f2e125] [cursor=pointer]
+            - button "Reset Simulator" [ref=f2e128] [cursor=pointer]
+          - generic [ref=f2e132]:
+            - generic "FastAPI Core" [ref=f2e133]: API
+            - generic "WebSocket Telemetry" [ref=f2e136]: WS
+            - generic "ML Risk Fusion" [ref=f2e139]: ML
+      - main [ref=f2e142]:
+        - generic [ref=f2e143]:
+          - generic [ref=f2e144]:
+            - generic [ref=f2e150]:
+              - generic [ref=f2e151]:
+                - text: REAL-TIME DRILLING COCKPIT & SENSOR GAUGES
+                - generic [ref=f2e152]: 1 Hz TELEMETRY BUS
+              - generic [ref=f2e153]: "Provenance: SYNTHETIC (NWIS Coupled Physics ODE Twin) | Latency: 29.35 ms"
+            - generic [ref=f2e154]:
+              - generic [ref=f2e155]: "SIM ENGINE:"
+              - button "RUN" [ref=f2e156] [cursor=pointer]
+              - button "Step 1 Second" [ref=f2e159] [cursor=pointer]
+              - button "Reset Simulator to 2500m" [ref=f2e162] [cursor=pointer]
+              - generic [ref=f2e166]:
+                - button "1x" [ref=f2e167] [cursor=pointer]
+                - button "2x" [ref=f2e168] [cursor=pointer]
+                - button "5x" [ref=f2e169] [cursor=pointer]
+          - generic [ref=f2e170]:
+            - generic [ref=f2e171]:
+              - generic [ref=f2e172]: ROP
+              - generic [ref=f2e173]: "12.4"
+              - generic [ref=f2e174]: m/hr
+            - generic [ref=f2e175]:
+              - generic [ref=f2e176]: WOB
+              - generic [ref=f2e177]: "120"
+              - generic [ref=f2e178]: kN
+            - generic [ref=f2e179]:
+              - generic [ref=f2e180]: SURFACE RPM
+              - generic [ref=f2e181]: "110"
+              - generic [ref=f2e182]: RPM
+            - generic [ref=f2e183]:
+              - generic [ref=f2e184]: TORQUE
+              - generic [ref=f2e185]: "14.5"
+              - generic [ref=f2e186]: kN·m
+            - generic [ref=f2e187]:
+              - generic [ref=f2e188]: FLOW IN
+              - generic [ref=f2e189]: "2200"
+              - generic [ref=f2e190]: LPM
+            - generic [ref=f2e191]:
+              - generic [ref=f2e192]: FLOW OUT
+              - generic [ref=f2e193]: "2195"
+              - generic [ref=f2e194]: LPM
+            - generic [ref=f2e195]:
+              - generic [ref=f2e196]: STANDPIPE PRESS.
+              - generic [ref=f2e197]: "185.0"
+              - generic [ref=f2e198]: bar
+            - generic [ref=f2e199]:
+              - generic [ref=f2e200]: PIT VOLUME
+              - generic [ref=f2e201]: "45.20"
+              - generic [ref=f2e202]: m³
+            - generic [ref=f2e203]:
+              - generic [ref=f2e204]: BHP DYNAMIC
+              - generic [ref=f2e205]: "242.0"
+              - generic [ref=f2e206]: bar
+            - generic [ref=f2e207]:
+              - generic [ref=f2e208]: ECD
+              - generic [ref=f2e209]: "1.29"
+              - generic [ref=f2e210]: g/cc
+            - generic [ref=f2e211]:
+              - generic [ref=f2e212]: DELTA FLOW ΔQ
+              - generic [ref=f2e213]: "-5.0"
+              - generic [ref=f2e214]: LPM
+            - generic [ref=f2e215]:
+              - generic [ref=f2e216]: MSE (TEALE)
+              - generic [ref=f2e217]: "118"
+              - generic [ref=f2e218]: MPa
+            - generic [ref=f2e219]:
+              - generic [ref=f2e220]: STICK-SLIP SSI
+              - generic [ref=f2e221]: "0.12"
+              - generic [ref=f2e222]: Index
+            - generic [ref=f2e223]:
+              - generic [ref=f2e224]: OVERPULL
+              - generic [ref=f2e225]: "0.0"
+              - generic [ref=f2e226]: kN
+            - generic [ref=f2e227]:
+              - generic [ref=f2e228]: PORE PRESS. MARGIN
+              - generic [ref=f2e229]: "17.0"
+              - generic [ref=f2e230]: bar
+            - generic [ref=f2e231]:
+              - generic [ref=f2e232]: FRAC MARGIN
+              - generic [ref=f2e233]: "18.0"
+              - generic [ref=f2e234]: bar
+          - generic [ref=f2e235]:
+            - generic [ref=f2e236]:
+              - generic [ref=f2e237]:
+                - generic [ref=f2e238]: HYDRAULIC FLOW BALANCE & ACTIVE PIT VOLUME
+                - generic [ref=f2e240]: ΔQ = -5.0 LPM
+              - generic [ref=f2e243]:
+                - img [ref=f2e244]:
+                  - generic [ref=f2e248]: 22:14:19
+                  - generic [ref=f2e253]:
+                    - generic [ref=f2e254]: "1500"
+                    - generic [ref=f2e256]: "1800"
+                    - generic [ref=f2e258]: "2100"
+                    - generic [ref=f2e260]: "2600"
+                  - generic [ref=f2e263]:
+                    - generic [ref=f2e264]: "30"
+                    - generic [ref=f2e266]: "38"
+                    - generic [ref=f2e268]: "46"
+                    - generic [ref=f2e270]: "60"
+                - list [ref=f2e282]:
+                  - listitem [ref=f2e283]: Flow In (LPM)
+                  - listitem [ref=f2e286]: Flow Out (LPM)
+                  - listitem [ref=f2e289]: Pit Vol (m³)
+            - generic [ref=f2e292]:
+              - generic [ref=f2e293]:
+                - generic [ref=f2e294]: PRESSURE OPERATING WINDOW (EATON PP / HUBBERT-WILLIS FG)
+                - generic [ref=f2e296]: "BHP: 242.0 bar"
+              - generic [ref=f2e299]:
+                - img [ref=f2e300]:
+                  - generic [ref=f2e304]: 22:14:19
+                  - generic [ref=f2e309]:
+                    - generic [ref=f2e310]: "150"
+                    - generic [ref=f2e312]: "190"
+                    - generic [ref=f2e314]: "230"
+                    - generic [ref=f2e316]: "300"
+                - list [ref=f2e331]:
+                  - listitem [ref=f2e332]: SPP (bar)
+                  - listitem [ref=f2e335]: BHP (bar)
+                  - listitem [ref=f2e338]: Pore Press (bar)
+                  - listitem [ref=f2e341]: Frac Press (bar)
+            - generic [ref=f2e344]:
+              - generic [ref=f2e345]:
+                - generic [ref=f2e346]: 2-DOF STRIBECK TORSIONAL OSCILLATIONS (STICK-SLIP DYNAMICS)
+                - generic [ref=f2e348]: "SSI: 0.12"
+              - generic [ref=f2e351]:
+                - img [ref=f2e352]:
+                  - generic [ref=f2e356]: 22:14:19
+                  - generic [ref=f2e361]:
+                    - generic [ref=f2e362]: "5"
+                    - generic [ref=f2e364]: "13"
+                    - generic [ref=f2e366]: "21"
+                    - generic [ref=f2e368]: "35"
+                  - generic [ref=f2e371]:
+                    - generic [ref=f2e372]: "0"
+                    - generic [ref=f2e374]: "65"
+                    - generic [ref=f2e376]: "130"
+                    - generic [ref=f2e378]: "250"
+                - list [ref=f2e387]:
+                  - listitem [ref=f2e388]: Torque (kN·m)
+                  - listitem [ref=f2e391]: Bit RPM
+            - generic [ref=f2e394]:
+              - generic [ref=f2e395]:
+                - generic [ref=f2e396]: PENETRATION MECHANICS (BOURGOYNE-YOUNG ROP & WOB)
+                - generic [ref=f2e398]: "ROP: 12.4 m/hr"
+              - generic [ref=f2e401]:
+                - img [ref=f2e402]:
+                  - generic [ref=f2e406]: 22:14:19
+                  - generic [ref=f2e411]:
+                    - generic [ref=f2e412]: "0"
+                    - generic [ref=f2e414]: "8"
+                    - generic [ref=f2e416]: "16"
+                    - generic [ref=f2e418]: "30"
+                  - generic [ref=f2e421]:
+                    - generic [ref=f2e422]: "0"
+                    - generic [ref=f2e424]: "50"
+                    - generic [ref=f2e426]: "100"
+                    - generic [ref=f2e428]: "150"
+                    - generic [ref=f2e430]: "200"
+                - list [ref=f2e439]:
+                  - listitem [ref=f2e440]: ROP (m/hr)
+                  - listitem [ref=f2e443]: WOB (kN)
+  - generic [aria-hidden] [ref=f2e446]: "50"

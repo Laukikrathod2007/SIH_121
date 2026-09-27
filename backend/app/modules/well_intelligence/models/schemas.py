@@ -114,6 +114,24 @@ class Well(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Provenance & Structural Enums
+# ---------------------------------------------------------------------------
+
+class ProvenanceTier(str, Enum):
+    OBSERVED = "OBSERVED"
+    INFERRED = "INFERRED"
+    IMPUTED = "IMPUTED"
+    EXTRAPOLATED = "EXTRAPOLATED"
+    SYNTHETIC = "SYNTHETIC"
+
+
+class StructuralFaultStatus(str, Enum):
+    SAME_FAULT_BLOCK = "SAME_FAULT_BLOCK"
+    POSSIBLE_FAULT_BOUNDARY = "POSSIBLE_FAULT_BOUNDARY"
+    CONFIRMED_FAULT = "CONFIRMED_FAULT"
+
+
+# ---------------------------------------------------------------------------
 # Formation Top
 # ---------------------------------------------------------------------------
 
@@ -125,9 +143,16 @@ class FormationTop(BaseModel):
     top_tvd_m: float
     base_md_m: float
     thickness_m: float
+    top_tvdss_m: Optional[float] = None
+    base_tvdss_m: Optional[float] = None
+    uncertainty_m: float = 5.0
+    provenance_tier: str = "OBSERVED"
+    method: str = "WELL_LOG"
     pore_pressure_gradient_ppg: float = 9.0
     lithology: Optional[str] = None
     confidence: float = Field(ge=0.0, le=1.0, default=0.90)
+    source_document: Optional[str] = None
+    source_page: Optional[int] = None
 
 
 # ---------------------------------------------------------------------------
@@ -141,6 +166,7 @@ class DrillingEvent(BaseModel):
     severity: str = "MEDIUM"
     depth_start_md_m: float
     depth_end_md_m: Optional[float] = None
+    depth_tvdss_m: Optional[float] = None
     formation: Optional[str] = None
     raw_narrative: str = ""
     npt_hours: float = 0.0
@@ -149,8 +175,10 @@ class DrillingEvent(BaseModel):
     mitigation_description: Optional[str] = None
     outcome: Optional[str] = None
     confidence: float = Field(ge=0.0, le=1.0, default=0.90)
+    provenance_tier: str = "OBSERVED"
     source_document: Optional[str] = None
     source_page: Optional[int] = None
+    bbox: Optional[List[float]] = None  # [x0, y0, x1, y1] normalized coords
 
 
 # ---------------------------------------------------------------------------
@@ -174,7 +202,7 @@ class TelemetryRecord(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# DORS Engine Outputs
+# DORS / Omega Engine Outputs
 # ---------------------------------------------------------------------------
 
 class DORSComponentScores(BaseModel):
@@ -187,6 +215,16 @@ class DORSComponentScores(BaseModel):
     distance_km: float
 
 
+class OmegaComponentScores(BaseModel):
+    distance: float = Field(ge=0.0, le=1.0)
+    geological: float = Field(ge=0.0, le=1.0)
+    trajectory: float = Field(ge=0.0, le=1.0)
+    completion: float = Field(ge=0.0, le=1.0)
+    total_omega: float = Field(ge=0.0, le=1.0)
+    distance_km: float
+    structural_status: str = "SAME_FAULT_BLOCK"
+
+
 class OffsetWellRanking(BaseModel):
     rank: int
     well_id: str
@@ -195,14 +233,43 @@ class OffsetWellRanking(BaseModel):
     well_type: str
     dors_score: float
     component_scores: DORSComponentScores
+    omega_score: Optional[float] = None
+    omega_components: Optional[OmegaComponentScores] = None
+    structural_status: str = "SAME_FAULT_BLOCK"
     formation_match: str
     events_in_lookahead: int
     distance_km: float
 
 
 # ---------------------------------------------------------------------------
-# Risk Corridor
+# Risk Corridor & Ahead-of-Bit Projections
 # ---------------------------------------------------------------------------
+
+class AheadOfBitCorridorPoint(BaseModel):
+    depth_ahead_m: float
+    md_m: float
+    tvdss_m: float
+    formation: Optional[str] = None
+    xi: Optional[float] = None
+    in_bounds: bool = True
+    window_tier: str = "PROACTIVE_50_200M"
+    lost_circulation_risk: float = 0.0
+    stuck_pipe_risk: float = 0.0
+    kick_risk: float = 0.0
+    wellbore_instability_risk: float = 0.0
+    torque_spike_risk: float = 0.0
+    evidence_count: int = 0
+    evidence_events: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class AheadOfBitCorridor(BaseModel):
+    active_well_id: str
+    current_md_m: float
+    current_tvdss_m: float
+    current_formation: Optional[str] = None
+    current_xi: Optional[float] = None
+    points: List[AheadOfBitCorridorPoint] = Field(default_factory=list)
+
 
 class RiskCorridor(BaseModel):
     corridor_id: str = Field(default_factory=lambda: f"COR-{uuid.uuid4().hex[:6].upper()}")
@@ -263,6 +330,8 @@ class NWISAnalysisResponse(BaseModel):
     offset_rankings: List[OffsetWellRanking]
     hazard_assessments: List[HazardRiskAssessment]
     active_risk_corridors: List[RiskCorridor]
+    ahead_of_bit_corridor: Optional[AheadOfBitCorridor] = None
     formation_at_bit: Optional[str] = None
     overall_risk_level: RiskLevel = RiskLevel.LOW
     alert_message: Optional[str] = None
+

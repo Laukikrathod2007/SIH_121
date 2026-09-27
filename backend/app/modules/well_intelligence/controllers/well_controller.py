@@ -22,8 +22,20 @@ from app.modules.well_intelligence.models.schemas import (
 from app.modules.well_intelligence.services.data_store import NWISDataStore
 from app.modules.well_intelligence.services.dors_engine import rank_offset_wells
 from app.modules.well_intelligence.services.stratigraphic_correlator import formation_at_depth
-from app.modules.well_intelligence.services.risk_corridor_engine import identify_risk_corridors
+from app.modules.well_intelligence.services.risk_corridor_engine import (
+    identify_risk_corridors,
+    compute_ahead_of_bit_corridor,
+)
+from app.modules.well_intelligence.services.trajectory_engine import (
+    RawSurveyStation,
+    calculate_minimum_curvature_trajectory,
+)
 from app.modules.well_intelligence.services.orchestrator import NWISOrchestrator
+from app.modules.well_intelligence.services.xi_correlator import (
+    correlate_across_offsets,
+    correlate_offset_well,
+    DEFAULT_SEARCH_WINDOW_M,
+)
 
 
 class WellController:
@@ -249,6 +261,133 @@ class WellController:
             "total_corridors": len(all_corridors),
             "corridors": [c.model_dump() for c in all_corridors],
         }
+
+    def correlate_xi(
+        self,
+        well_id: str,
+        depth: float,
+        offset_well_id: Optional[str] = None,
+        window_m: float = DEFAULT_SEARCH_WINDOW_M,
+    ) -> dict:
+        """
+        Module 4 xi (xi) stratigraphic correlation.
+
+        MD -> TVDSS -> formation -> xi -> offset-well equivalent TVDSS ->
+        historical event search, per SIH26121_Module_4_Research_and_Implementation_Plan.md
+        section 10.
+
+        If `offset_well_id` is given, correlates against that single offset
+        well only. Otherwise correlates against every other well in the
+        store (excluding the active well).
+        """
+        self._require_store()
+        active_well = self.store.wells_by_id.get(well_id)
+        if not active_well:
+            raise HTTPException(404, f"Well '{well_id}' not found")
+
+        active_traj = self.store.all_trajectories.get(well_id)
+        active_tops = self.store.formation_tops_by_well.get(well_id, [])
+
+        if offset_well_id:
+            offset_well = self.store.wells_by_id.get(offset_well_id)
+            if not offset_well:
+                raise HTTPException(404, f"Offset well '{offset_well_id}' not found")
+
+            result = correlate_offset_well(
+                active_well=active_well,
+                active_trajectory=active_traj,
+                active_tops=active_tops,
+                active_md=depth,
+                offset_well=offset_well,
+                offset_trajectory=self.store.all_trajectories.get(offset_well_id),
+                offset_tops=self.store.formation_tops_by_well.get(offset_well_id, []),
+                offset_events=self.store.events_by_well.get(offset_well_id, []),
+                window_m=window_m,
+            )
+            return result
+
+        result = correlate_across_offsets(
+            active_well=active_well,
+            active_trajectory=active_traj,
+            active_tops=active_tops,
+            active_md=depth,
+            offset_wells=self.store.all_wells,
+            offset_trajectories=self.store.all_trajectories,
+            offset_tops_map=self.store.formation_tops_by_well,
+            offset_events_map=self.store.events_by_well,
+            window_m=window_m,
+        )
+        return result
+
+    def get_ahead_corridor(
+        self,
+        well_id: str,
+        depth: float,
+        max_lookahead_m: float = 200.0,
+        step_m: float = 10.0,
+        window_m: float = 50.0,
+    ) -> dict:
+        self._require_store()
+        active_well = self.store.wells_by_id.get(well_id)
+        if not active_well:
+            raise HTTPException(404, f"Well '{well_id}' not found")
+
+        active_traj = self.store.all_trajectories.get(well_id)
+        active_tops = self.store.formation_tops_by_well.get(well_id, [])
+
+        active_fm = formation_at_depth(active_tops, depth)
+        rankings = rank_offset_wells(
+            active_well=active_well,
+            active_depth_m=depth,
+            active_formation=active_fm.formation_name if active_fm else None,
+            all_wells=self.store.all_wells,
+            all_trajectories=self.store.all_trajectories,
+            all_formation_tops=self.store.formation_tops_by_well,
+            all_events=self.store.events_by_well,
+            r_max_km=25.0,
+            top_n=10,
+        )
+        top_offset_wells = [
+            self.store.wells_by_id[r.well_id]
+            for r in rankings
+            if r.well_id in self.store.wells_by_id
+        ]
+
+        corridor = compute_ahead_of_bit_corridor(
+            active_well=active_well,
+            active_traj=active_traj,
+            active_tops=active_tops,
+            top_offset_wells=top_offset_wells,
+            offset_trajectories=self.store.all_trajectories,
+            offset_tops_map=self.store.formation_tops_by_well,
+            offset_events_map=self.store.events_by_well,
+            current_md_m=depth,
+            max_lookahead_m=max_lookahead_m,
+            step_m=step_m,
+            window_m=window_m,
+        )
+        return corridor.model_dump()
+
+    def calculate_survey(
+        self,
+        stations: List[dict],
+        wellhead_elevation_m: float = 0.0,
+        well_id: str = "CUSTOM_WELL",
+    ) -> dict:
+        raw_stations = [
+            RawSurveyStation(
+                md_m=float(s["md_m"]),
+                inclination_deg=float(s["inclination_deg"]),
+                azimuth_deg=float(s["azimuth_deg"]),
+            )
+            for s in stations
+        ]
+        result = calculate_minimum_curvature_trajectory(
+            raw_stations=raw_stations,
+            wellhead_elevation_m=wellhead_elevation_m,
+            well_id=well_id,
+        )
+        return result.to_dict()
 
     def get_map_wells(self) -> dict:
         self._require_store()

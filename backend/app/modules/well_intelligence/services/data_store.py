@@ -1,4 +1,4 @@
-﻿"""
+"""
 NWIS Module 02 â€” Master Data Store
 In-memory singleton that loads and indexes all synthetic testbed data.
 Provides fast lookup dicts for all engines.
@@ -112,6 +112,7 @@ class NWISDataStore:
                     severity=ev.get("severity", "MEDIUM"),
                     depth_start_md_m=ev["depth_start_md_m"],
                     depth_end_md_m=ev.get("depth_end_md_m"),
+                    depth_tvdss_m=ev.get("depth_tvdss_m"),
                     formation=ev.get("formation"),
                     raw_narrative=ev.get("raw_narrative", ""),
                     npt_hours=ev.get("npt_hours", 0.0),
@@ -120,8 +121,10 @@ class NWISDataStore:
                     mitigation_description=ev.get("mitigation_description"),
                     outcome=ev.get("outcome"),
                     confidence=ev.get("confidence", 0.90),
+                    provenance_tier=ev.get("provenance_tier", "OBSERVED"),
                     source_document=ev.get("source_document"),
                     source_page=ev.get("source_page"),
+                    bbox=ev.get("bbox"),
                 )
                 self.events_by_well.setdefault(event.well_id, []).append(event)
                 self.all_events.append(event)

@@ -1,4 +1,4 @@
-﻿"""
+"""
 NWIS Module 02 â€” Master Analysis Orchestrator
 Single entry point for the entire backend intelligence pipeline.
 
@@ -24,7 +24,11 @@ from app.modules.well_intelligence.models.schemas import (
 )
 from app.modules.well_intelligence.services.dors_engine import rank_offset_wells
 from app.modules.well_intelligence.services.stratigraphic_correlator import formation_at_depth
-from app.modules.well_intelligence.services.risk_corridor_engine import assess_hazard, identify_risk_corridors
+from app.modules.well_intelligence.services.risk_corridor_engine import (
+    assess_hazard,
+    identify_risk_corridors,
+    compute_ahead_of_bit_corridor,
+)
 
 import datetime
 
@@ -129,13 +133,35 @@ class NWISOrchestrator:
                 unique_corridors.append(c)
 
         # ---------------------------------------------------------------
-        # 4. Overall risk level (worst hazard family)
+        # 4. Ahead-of-Bit Projection Corridor (0-20m, 20-50m, 50-200m)
+        # ---------------------------------------------------------------
+        top_offset_well_objs = [
+            store.wells_by_id[r.well_id]
+            for r in rankings
+            if r.well_id in store.wells_by_id
+        ]
+        ahead_corridor = compute_ahead_of_bit_corridor(
+            active_well=active_well,
+            active_traj=active_traj,
+            active_tops=active_tops,
+            top_offset_wells=top_offset_well_objs,
+            offset_trajectories=store.all_trajectories,
+            offset_tops_map=store.formation_tops_by_well,
+            offset_events_map=store.events_by_well,
+            current_md_m=current_depth_m,
+            max_lookahead_m=200.0,
+            step_m=10.0,
+            window_m=50.0,
+        )
+
+        # ---------------------------------------------------------------
+        # 5. Overall risk level (worst hazard family)
         # ---------------------------------------------------------------
         risk_order = {RiskLevel.LOW: 0, RiskLevel.MODERATE: 1, RiskLevel.HIGH: 2, RiskLevel.CRITICAL: 3}
         overall_risk = max(hazard_assessments, key=lambda h: risk_order[h.risk_level]).risk_level
 
         # ---------------------------------------------------------------
-        # 5. Alert message (for lead-time corridor)
+        # 6. Alert message (for lead-time corridor)
         # ---------------------------------------------------------------
         alert_msg = None
         critical_assessment = next(
@@ -159,6 +185,7 @@ class NWISOrchestrator:
             offset_rankings=rankings,
             hazard_assessments=hazard_assessments,
             active_risk_corridors=unique_corridors,
+            ahead_of_bit_corridor=ahead_corridor,
             formation_at_bit=active_fm_name,
             overall_risk_level=overall_risk,
             alert_message=alert_msg,

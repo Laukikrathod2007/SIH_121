@@ -1,4 +1,4 @@
-﻿"""
+"""
 NWIS Engine 03 â€” Historical Risk Corridor Engine + 4-Pillar Confidence
 Implements lookahead risk corridor clustering and the hybrid risk aggregation:
 
@@ -416,4 +416,157 @@ def assess_hazard(
         recommended_action=recommended_actions.get(hazard_type, "Monitor closely"),
         evidence_events=evidence_event_ids,
     )
+
+
+# ---------------------------------------------------------------------------
+# Ahead-of-Bit Lookahead Corridor Projection (Module 4 Sec 36-37)
+# ---------------------------------------------------------------------------
+
+def compute_ahead_of_bit_corridor(
+    active_well: Well,
+    current_md_m: float,
+    active_traj: Optional[WellTrajectory],
+    active_tops: List[FormationTop],
+    top_offset_wells: List[Well],
+    offset_trajectories: Dict[str, WellTrajectory],
+    offset_tops_map: Dict[str, List[FormationTop]],
+    offset_events_map: Dict[str, List[DrillingEvent]],
+    max_lookahead_m: float = 200.0,
+    step_m: float = 10.0,
+    window_m: float = 50.0,
+) -> AheadOfBitCorridor:
+    """
+    Projects ahead of the active bit position (+0 to +200m) along the 3D trajectory.
+    At every projected depth step:
+      1. Computes projected MD -> TVDSS via Minimum Curvature
+      2. Identifies projected formation and computes future xi
+      3. Maps future xi to equivalent TVDSS in top offset wells
+      4. Retrieves historical events within ±window_m
+      5. Computes historical hazard density scores
+    """
+    from app.modules.well_intelligence.models.schemas import AheadOfBitCorridor, AheadOfBitCorridorPoint
+    from app.modules.well_intelligence.services.stratigraphic_correlator import tvdss_at_md, formation_at_tvdss
+    from app.modules.well_intelligence.services.xi_correlator import (
+        compute_xi,
+        formation_top_tvdss,
+        formation_base_tvdss,
+        map_xi_to_offset,
+        search_historical_events,
+    )
+
+    current_tvdss = tvdss_at_md(active_traj, active_well, current_md_m)
+    current_fm = formation_at_tvdss(active_tops, active_well, current_tvdss)
+    current_xi = None
+    if current_fm:
+        c_top = formation_top_tvdss(current_fm, active_well)
+        c_base = formation_base_tvdss(current_fm, active_well)
+        current_xi = compute_xi(current_tvdss, c_top, c_base)
+
+    points: List[AheadOfBitCorridorPoint] = []
+    
+    # Steps from 0m to max_lookahead_m
+    steps = int(max_lookahead_m / step_m)
+    for i in range(steps + 1):
+        d_ahead = i * step_m
+        proj_md = current_md_m + d_ahead
+        proj_tvdss = tvdss_at_md(active_traj, active_well, proj_md)
+
+        # Window tier
+        if d_ahead <= 20.0:
+            tier = "IMMEDIATE_0_20M"
+        elif d_ahead <= 50.0:
+            tier = "SHORT_TERM_20_50M"
+        else:
+            tier = "LOOKAHEAD_50_200M"
+
+        # Projected formation & xi
+        proj_fm = formation_at_tvdss(active_tops, active_well, proj_tvdss)
+        proj_fm_name = proj_fm.formation_name if proj_fm else None
+        proj_xi = None
+        in_bounds = True
+
+        collected_events: List[Dict[str, Any]] = []
+
+        if proj_fm:
+            top_z = formation_top_tvdss(proj_fm, active_well)
+            base_z = formation_base_tvdss(proj_fm, active_well)
+            proj_xi = compute_xi(proj_tvdss, top_z, base_z)
+            in_bounds = (0.0 <= proj_xi <= 1.0)
+
+            # Map into offset wells
+            for offset in top_offset_wells:
+                if offset.well_id == active_well.well_id:
+                    continue
+                o_tops = offset_tops_map.get(offset.well_id, [])
+                o_events = offset_events_map.get(offset.well_id, [])
+                o_traj = offset_trajectories.get(offset.well_id)
+
+                o_mapping = map_xi_to_offset(
+                    xi_active=proj_xi,
+                    formation_name=proj_fm_name,
+                    offset_well=offset,
+                    offset_tops=o_tops,
+                )
+                if o_mapping:
+                    matched = search_historical_events(
+                        events=o_events,
+                        offset_well=offset,
+                        offset_trajectory=o_traj,
+                        equivalent_tvdss=o_mapping["equivalent_tvdss_m"],
+                        window_m=window_m,
+                    )
+                    collected_events.extend(matched)
+
+        # Calculate hazard-specific risk density
+        loss_risk = 0.0
+        stuck_risk = 0.0
+        kick_risk = 0.0
+        instab_risk = 0.0
+        torque_risk = 0.0
+
+        for ev in collected_events:
+            sev_weight = {"CRITICAL": 1.0, "HIGH": 0.7, "MEDIUM": 0.4, "LOW": 0.2}.get(ev.get("severity", "MEDIUM"), 0.3)
+            dist_factor = math.exp(-((ev.get("delta_to_horizon_m", 0.0)) ** 2) / (2.0 * (30.0 ** 2)))
+            contrib = sev_weight * dist_factor
+
+            ev_type = ev.get("event_type")
+            if ev_type == HazardType.MUD_LOSS.value or ev_type == "MUD_LOSS":
+                loss_risk += contrib
+            elif ev_type == HazardType.STUCK_PIPE.value or ev_type == "STUCK_PIPE":
+                stuck_risk += contrib
+            elif ev_type == HazardType.KICK.value or ev_type == "KICK":
+                kick_risk += contrib
+            elif ev_type == HazardType.WELLBORE_INSTABILITY.value or ev_type == "WELLBORE_INSTABILITY":
+                instab_risk += contrib
+            elif ev_type == HazardType.TORQUE_SPIKE.value or ev_type == "TORQUE_SPIKE":
+                torque_risk += contrib
+
+        points.append(
+            AheadOfBitCorridorPoint(
+                depth_ahead_m=round(d_ahead, 1),
+                md_m=round(proj_md, 2),
+                tvdss_m=round(proj_tvdss, 2),
+                formation=proj_fm_name,
+                xi=round(proj_xi, 4) if proj_xi is not None else None,
+                in_bounds=in_bounds,
+                window_tier=tier,
+                lost_circulation_risk=round(min(1.0, loss_risk), 4),
+                stuck_pipe_risk=round(min(1.0, stuck_risk), 4),
+                kick_risk=round(min(1.0, kick_risk), 4),
+                wellbore_instability_risk=round(min(1.0, instab_risk), 4),
+                torque_spike_risk=round(min(1.0, torque_risk), 4),
+                evidence_count=len(collected_events),
+                evidence_events=collected_events[:10],
+            )
+        )
+
+    return AheadOfBitCorridor(
+        active_well_id=active_well.well_id,
+        current_md_m=round(current_md_m, 2),
+        current_tvdss_m=round(current_tvdss, 2),
+        current_formation=current_fm.formation_name if current_fm else None,
+        current_xi=round(current_xi, 4) if current_xi is not None else None,
+        points=points,
+    )
+
 
