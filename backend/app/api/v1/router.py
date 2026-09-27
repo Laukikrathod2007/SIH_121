@@ -1,0 +1,40 @@
+"""
+Master API v1 Router.
+Combines Document Intelligence, Well Intelligence, Risk Analytics, and System Health routes.
+"""
+
+from fastapi import APIRouter
+from app.modules.document_intelligence.routes import document_router
+from app.modules.well_intelligence.routes import (
+    well_router,
+    intelligence_router,
+    telemetry_router,
+)
+from app.modules.well_intelligence.services.data_store import NWISDataStore
+
+api_router = APIRouter()
+
+# Mount Domain Sub-Routers
+api_router.include_router(document_router)
+api_router.include_router(well_router)
+api_router.include_router(intelligence_router)
+api_router.include_router(telemetry_router)
+
+
+@api_router.get("/health", tags=["System"])
+async def health():
+    """System health check and engine readiness report."""
+    store = NWISDataStore()
+    return {
+        "service": "NWIS Backend Intelligence Core API",
+        "version": "1.0.0",
+        "status": "healthy" if store.is_loaded() else "degraded",
+        "data_store": store.status(),
+        "engines": [
+            "DocumentIntelligencePipeline",
+            "DORSEngine",
+            "StratigraphicCorrelator",
+            "RiskCorridorEngine",
+            "FourPillarConfidenceEvaluator",
+        ],
+    }
