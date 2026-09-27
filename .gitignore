@@ -93,3 +93,7 @@ yarn-error.log*
 *.pyo
 dist/
 build/
+
+# Competitor Research & Cloned Repositories
+research/competitors/
+research/PS121_COMPETITOR_REPOSITORY_STUDY/
