@@ -1,0 +1,95 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+env/
+ENV/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Environment variables
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Data files (keep structure, ignore large files)
+data/raw/volve/**/*.pdf
+data/raw/volve/**/*.csv
+data/raw/volve/**/*.las
+data/raw/volve/**/*.xml
+data/raw/forge/**/*.pdf
+data/processed/**/*.json
+data/processed/**/*.csv
+data/synthetic/**/*.json
+
+# Keep only README files in data folders
+!data/**/README.md
+!data/**/.gitkeep
+
+# Model files
+*.h5
+*.pkl
+*.joblib
+*.pt
+*.pth
+data/models/**/*
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Azure Storage Explorer
+.azure/
+
+# Node modules (if frontend uses npm)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+*.pyc
+*.pyo
+dist/
+build/
