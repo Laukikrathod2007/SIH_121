@@ -1,0 +1,17 @@
+{
+  "pdf_name": "Drilling Summary Well 16A(78)-32.pdf",
+  "total_pages": 74,
+  "pages_processed": 74,
+  "scanned_pages": 0,
+  "events_extracted": 17,
+  "formation_tops": 0,
+  "npt_records": 0,
+  "overall_confidence": 0.99,
+  "physics_validation_accuracy": 100.0,
+  "physics_violations_caught": 0,
+  "processing_time_ms": 2294.31,
+  "ms_per_page": 31.0,
+  "template_used": "UTAH_FORGE_UNKNOWN_57C4060E",
+  "document_id": "DOC-09E58DDC101F",
+  "timestamp": "2026-09-27T18:33:59.352593"
+}
