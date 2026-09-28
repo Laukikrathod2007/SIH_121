@@ -390,6 +390,37 @@ def process_document(
     if result.pages_processed > 0:
         result.overall_confidence = round(total_confidence_sum / result.pages_processed, 4)
 
+    # Escalate to human review when either (a) confidence is too low, or
+    # (b) a scanned page came back with almost no extracted text despite
+    # being "processed" — checked BOTH ways deliberately, not confidence
+    # alone. Verified by testing (not assumed): a completely blank scanned
+    # page, where RapidOCR itself logged "text detection result is empty"
+    # and raw_text_preview was 0 characters long, still self-reported 86%
+    # confidence via Docling's quality score — the same confidence-does-not-
+    # mean-correct-content gap documented in pipeline/tier2_ocr_engine.py's
+    # create_tier2_page_result. A confidence-only threshold would have left
+    # that exact document silently marked PASS. This is what actually
+    # populates ValidationStatus.MANUAL_REVIEW: the enum value existed
+    # before this, but nothing ever set it — see api/routes/review.py for
+    # the workflow that acts on it.
+    MANUAL_REVIEW_CONFIDENCE_THRESHOLD = 0.5
+    MANUAL_REVIEW_MIN_SCANNED_TEXT_CHARS = 20
+
+    low_confidence = result.overall_confidence < MANUAL_REVIEW_CONFIDENCE_THRESHOLD
+    empty_scanned_pages = [
+        p.page_number for p in result.pages
+        if p.is_scanned and len(p.raw_text_preview.strip()) < MANUAL_REVIEW_MIN_SCANNED_TEXT_CHARS
+    ]
+
+    if low_confidence or empty_scanned_pages:
+        result.validation_status = VS.MANUAL_REVIEW
+        reasons = []
+        if low_confidence:
+            reasons.append(f"overall confidence {result.overall_confidence:.1%} < {MANUAL_REVIEW_CONFIDENCE_THRESHOLD:.0%}")
+        if empty_scanned_pages:
+            reasons.append(f"{len(empty_scanned_pages)} scanned page(s) with near-empty text (pages {empty_scanned_pages})")
+        logger.warning(f"[{job_id}] Escalated to MANUAL_REVIEW — {'; '.join(reasons)}")
+
     # Finalize timing
     total_elapsed = time.time() * 1000 - total_start
     result.total_processing_time_ms = round(total_elapsed, 2)

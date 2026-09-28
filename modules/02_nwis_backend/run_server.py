@@ -27,6 +27,14 @@ if "--gen" in sys.argv:
     sys.exit(0)
 
 # ---------------------------------------------------------------------------
+# Train hazard prediction models (see ml/train_hazard_models.py)
+# ---------------------------------------------------------------------------
+if "--train-ml" in sys.argv:
+    from ml.train_hazard_models import main as train_ml_main
+    train_ml_main()
+    sys.exit(0)
+
+# ---------------------------------------------------------------------------
 # Validation suite
 # ---------------------------------------------------------------------------
 if "--validate" in sys.argv:
@@ -105,6 +113,42 @@ if "--validate" in sys.argv:
 # ---------------------------------------------------------------------------
 import uvicorn
 
+
+def _ensure_api_key() -> str:
+    """Secure-by-default, matching modules/01_document_intelligence/run_server.py:
+    generate an API key on first run if none exists and persist it to .env,
+    so this API doesn't run wide open with zero setup burden."""
+    from dotenv import load_dotenv, set_key
+    env_path = MODULE_ROOT / ".env"
+    load_dotenv(env_path, override=False)
+
+    existing = os.environ.get("NWIS_API_KEY", "").strip()
+    if existing:
+        return existing
+
+    # IMPORTANT: generate the key with stdlib `secrets` directly rather than
+    # importing auth.generate_api_key(). Importing the auth module executes
+    # its module-level `API_KEY = os.environ.get("NWIS_API_KEY", ...)` — if
+    # that happens here, BEFORE os.environ is populated below, the auth
+    # module's API_KEY constant freezes empty for this process's entire
+    # lifetime (Python caches modules; a later os.environ assignment doesn't
+    # retroactively re-run it). That bug was real and reproduced: the very
+    # first run after generating a fresh key started the server with auth
+    # silently disabled, working correctly only after a second restart.
+    import secrets
+    new_key = secrets.token_urlsafe(32)
+    env_path.touch(exist_ok=True)
+    set_key(str(env_path), "NWIS_API_KEY", new_key)
+    os.environ["NWIS_API_KEY"] = new_key
+    print("=" * 60)
+    print("  No NWIS_API_KEY found — generated one and saved it to .env")
+    print(f"  API key: {new_key}")
+    print("  Send it as header: X-API-Key: <key above>")
+    print("  (Delete NWIS_API_KEY from .env to disable auth entirely.)")
+    print("=" * 60)
+    return new_key
+
+
 if __name__ == "__main__":
     # Auto-generate data if missing
     data_check = MODULE_ROOT / "data" / "synthetic" / "wells.json"
@@ -114,21 +158,36 @@ if __name__ == "__main__":
         from generate_testbed import generate_all
         generate_all()
 
+    _ensure_api_key()
+
+    # NWIS_ENV controls dev vs. production behavior, matching Module 01 —
+    # auto-reload (the previous unconditional default) drops any benefit of
+    # keeping a long-lived server around and isn't appropriate outside active
+    # development.
+    env = os.environ.get("NWIS_ENV", "dev").lower()
+    is_prod = env == "production"
+    host = os.environ.get("NWIS_HOST", "0.0.0.0")
+    port = int(os.environ.get("NWIS_PORT", "8002"))
+
     print("\n" + "=" * 60)
     print("  NWIS Backend Intelligence API — Module 02")
     print("  Engines: DORS | Stratigraphy | Risk Corridors | 4-Pillar")
     print("=" * 60)
-    print("  Server:    http://localhost:8002")
-    print("  Docs:      http://localhost:8002/docs")
-    print("  Health:    http://localhost:8002/api/v2/health")
-    print("  Map Data:  http://localhost:8002/api/v2/map/wells")
+    print(f"  Mode:      {'production' if is_prod else 'dev'} (set NWIS_ENV=production to deploy)")
+    print(f"  Server:    http://{host}:{port}")
+    print(f"  Docs:      http://{host}:{port}/docs")
+    print(f"  Health:    http://{host}:{port}/api/v2/health")
+    print(f"  Map Data:  http://{host}:{port}/api/v2/map/wells")
     print("=" * 60 + "\n")
 
-    uvicorn.run(
-        "server:app",
-        host="0.0.0.0",
-        port=8002,
-        reload=True,
-        reload_dirs=[str(MODULE_ROOT)],
-        log_level="info",
-    )
+    if is_prod:
+        uvicorn.run("server:app", host=host, port=port, reload=False, log_level="info")
+    else:
+        uvicorn.run(
+            "server:app",
+            host=host,
+            port=port,
+            reload=True,
+            reload_dirs=[str(MODULE_ROOT)],
+            log_level="info",
+        )

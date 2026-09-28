@@ -132,11 +132,17 @@ class NWISDataStore:
         self.active_well_id: str = telemetry_raw.get("active_well_id", "")
         telemetry_records = telemetry_raw.get("records", [])
         self.telemetry_records: List[TelemetryRecord] = []
+        skipped_telemetry = 0
         for rec in telemetry_records:
             try:
                 self.telemetry_records.append(TelemetryRecord(**rec))
             except Exception as e:
-                pass  # silently skip malformed records
+                skipped_telemetry += 1
+                logger.debug(f"Skipping malformed telemetry record: {e}")
+        if skipped_telemetry:
+            # Was a bare `pass` — a bad telemetry file could silently lose
+            # most/all of its records with zero visible signal at load time.
+            logger.warning(f"Skipped {skipped_telemetry} malformed telemetry record(s) out of {len(telemetry_records)}")
 
         self.telemetry_by_depth: Dict[int, TelemetryRecord] = {
             int(r.depth_m): r for r in self.telemetry_records

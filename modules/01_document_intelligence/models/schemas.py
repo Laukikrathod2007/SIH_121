@@ -403,6 +403,27 @@ class DocumentExtractionResult(BaseModel):
     # WITSML export ready flag
     witsml_compliant: bool = True
 
+    # -------------------------------------------------------------------
+    # Human curation / review workflow (inspired by GDR/OpenEI's curator
+    # review before publication — see logger/04_STEP_BY_STEP_IMPLEMENTATION_LOG.md).
+    # validation_status can already carry MANUAL_REVIEW (models/schemas.py's
+    # ValidationStatus enum), but until this, nothing ever set it and there
+    # was no way for a human to act on it — see api/routes/review.py.
+    # -------------------------------------------------------------------
+    reviewed: bool = False
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[str] = None
+    review_decision: Optional[str] = None  # "approved" | "rejected"
+    review_notes: Optional[str] = None
+    # Lightweight, non-destructive field-level annotations — deliberately
+    # NOT an automatic patch-in-place of extracted values. A generic
+    # deep-path JSON patcher is exactly the kind of thing that silently
+    # corrupts data when the path is slightly wrong; a human-readable note
+    # attached to the document is safer and still closes the audit-trail
+    # gap ("a person looked at this specific field and here's what's
+    # actually true") without that risk.
+    field_annotations: List[dict] = Field(default_factory=list)
+
     @property
     def formation_tops(self) -> List[FormationTop]:
         return self.all_formation_tops

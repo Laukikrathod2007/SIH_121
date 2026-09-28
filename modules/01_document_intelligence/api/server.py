@@ -6,6 +6,9 @@ Endpoints:
   POST /api/v1/ingest          → Upload DDR/WCR PDF → Returns job_id
   GET  /api/v1/jobs/{job_id}   → Poll job status + progress
   GET  /api/v1/results/{doc_id} → Get full extraction result (WITSML JSON)
+  GET  /api/v1/review/queue     → Documents awaiting human curation review
+  POST /api/v1/review/{doc_id}/decision → Approve/reject a flagged document
+  POST /api/v1/review/{doc_id}/annotate → Attach a field-level correction note
   GET  /api/v1/templates        → List all learned document templates
   GET  /api/v1/health           → Health check
 
@@ -23,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
 
-from api.routes import ingest, status, results
+from api.routes import ingest, status, results, review
 from api.job_store import SQLiteJobStore
 from api.auth import require_api_key, rate_limit_ingest, auth_enabled
 
@@ -143,6 +146,7 @@ ingest.JOB_STORE = JOB_STORE
 ingest.UPLOAD_DIR = UPLOAD_DIR
 status.JOB_STORE = JOB_STORE
 results.OUTPUT_DIR = Path(__file__).parent.parent / "data" / "output"
+review.OUTPUT_DIR = results.OUTPUT_DIR
 
 # ---------------------------------------------------------------------------
 # Include Routers
@@ -163,6 +167,10 @@ app.include_router(
 )
 app.include_router(
     results.router, prefix="/api/v1", tags=["Extraction Results"],
+    dependencies=[Depends(require_api_key)],
+)
+app.include_router(
+    review.router, prefix="/api/v1", tags=["Human Review"],
     dependencies=[Depends(require_api_key)],
 )
 

@@ -2,3 +2,12 @@ fastapi>=0.110.0
 uvicorn[standard]>=0.29.0
 pydantic>=2.0.0
 loguru>=0.7.0
+python-dotenv>=1.0.0    # auth.py: reads .env for NWIS_API_KEY (see auth.py, run_server.py)
+
+# --- Hazard Prediction Models (ml/) ---
+numpy>=1.24.0
+scikit-learn>=1.3.0     # ml/train_hazard_models.py, ml/hazard_predictor.py
+joblib>=1.3.0           # model serialization
+
+# --- Searchable Knowledge Repository (search/) ---
+sentence-transformers>=2.2.0  # search/knowledge_search.py — falls back to keyword search if unavailable

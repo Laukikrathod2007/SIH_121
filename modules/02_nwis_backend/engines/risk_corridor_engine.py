@@ -18,6 +18,7 @@ from models.schemas import (
     HazardRiskAssessment, FourPillarConfidence, EvidenceStrength,
     TelemetryRecord, OffsetWellRanking,
 )
+from ml.hazard_predictor import MLScoreResult
 
 # ---------------------------------------------------------------------------
 # Risk Aggregation Weights
@@ -125,13 +126,15 @@ def _build_corridor(
 
     lead_dist = start - current_depth_m
 
-    # Risk level: CRITICAL if active bit inside corridor
+    # Proximity risk level: CRITICAL if active bit inside corridor. This is
+    # deliberately separate from HazardRiskAssessment.risk_level (the full
+    # R_H(t) composite) — see RiskCorridor.proximity_risk_level's docstring.
     if current_depth_m >= start:
-        risk_level = RiskLevel.CRITICAL if max_sev == "CRITICAL" else RiskLevel.HIGH
+        proximity_risk_level = RiskLevel.CRITICAL if max_sev == "CRITICAL" else RiskLevel.HIGH
     elif lead_dist <= EARLY_WARNING_M:
-        risk_level = RiskLevel.HIGH if max_sev in ["CRITICAL", "HIGH"] else RiskLevel.MODERATE
+        proximity_risk_level = RiskLevel.HIGH if max_sev in ["CRITICAL", "HIGH"] else RiskLevel.MODERATE
     else:
-        risk_level = risk_level_from_score(freq * severity_to_numeric(max_sev))
+        proximity_risk_level = risk_level_from_score(freq * severity_to_numeric(max_sev))
 
     # Recommended action
     actions = {
@@ -156,7 +159,7 @@ def _build_corridor(
         max_severity=max_sev,
         historical_frequency=round(freq, 3),
         lead_distance_m=round(lead_dist, 1) if lead_dist > 0 else 0.0,
-        risk_level=risk_level,
+        proximity_risk_level=proximity_risk_level,
         recommended_action=actions.get(hazard_type, "Monitor closely"),
         formation=formation,
     )
@@ -226,7 +229,10 @@ def compute_sensor_anomaly(
 
 
 # ---------------------------------------------------------------------------
-# Deterministic ML Score (physics-based fallback)
+# ML Score — real trained model where enough historical data exists to train
+# one, physics heuristic elsewhere. See ml/hazard_predictor.py for the full
+# design rationale (why this is a hybrid, not either extreme) and
+# ml/train_hazard_models.py to (re)train as more historical events accumulate.
 # ---------------------------------------------------------------------------
 
 def compute_ml_score(
@@ -235,39 +241,31 @@ def compute_ml_score(
     formation: Optional[str],
     mud_weight_ppg: float = 9.5,
     pore_pressure_ppg: float = 9.2,
-) -> float:
+    formation_tops: Optional[List] = None,
+    trajectory=None,
+    well_type: str = "Vertical",
+) -> "MLScoreResult":
     """
-    Deterministic ML proxy score based on physics relationships.
-    Replaces a true trained model for demonstration without training data.
-    M_ML ∈ [0, 1]
+    M_ML ∈ [0, 1]. Returns an ml.hazard_predictor.MLScoreResult (score +
+    which path produced it: "trained_model" or "heuristic_fallback") rather
+    than a bare float, so callers can surface which one was actually used —
+    consistent with the 4-Pillar Confidence Evaluator's whole point of never
+    presenting a hand-coded heuristic and a real model as the same kind of
+    number. formation_tops/trajectory/well_type are optional purely so any
+    existing direct caller that doesn't have them yet still gets a score (via
+    the heuristic path) instead of a hard error.
     """
-    score = 0.0
-
-    # Overbalance window: if mud weight is close to pore pressure → higher risk
-    overbalance = mud_weight_ppg - pore_pressure_ppg
-    if overbalance < 0.3:
-        score += 0.5
-    elif overbalance < 0.7:
-        score += 0.25
-
-    # Formation-specific risk
-    high_risk_formations = {
-        HazardType.MUD_LOSS: {"Tipam Sandstone", "Sylhet Limestone", "Kopili"},
-        HazardType.STUCK_PIPE: {"Girujan Clay", "Barail Coal-Shale"},
-        HazardType.KICK: {"Barail Sandstone", "Sylhet Limestone"},
-        HazardType.WELLBORE_INSTABILITY: {"Girujan Clay", "Barail Coal-Shale"},
-    }
-    if formation and hazard_type in high_risk_formations:
-        if formation in high_risk_formations[hazard_type]:
-            score += 0.35
-
-    # Depth-based trend (deeper = higher risk in Assam basin)
-    if current_depth_m > 2500:
-        score += 0.15
-    elif current_depth_m > 2000:
-        score += 0.08
-
-    return round(min(1.0, score), 4)
+    from ml.hazard_predictor import predict_ml_score
+    return predict_ml_score(
+        hazard_type=hazard_type,
+        current_depth_m=current_depth_m,
+        formation=formation,
+        formation_tops=formation_tops or [],
+        trajectory=trajectory,
+        well_type=well_type,
+        mud_weight_ppg=mud_weight_ppg,
+        pore_pressure_ppg=pore_pressure_ppg,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -337,6 +335,9 @@ def assess_hazard(
     recent_telemetry: List[TelemetryRecord],
     mud_weight_ppg: float = 9.5,
     pore_pressure_ppg: float = 9.2,
+    formation_tops: Optional[List] = None,
+    trajectory=None,
+    well_type: str = "Vertical",
 ) -> HazardRiskAssessment:
     """
     Full R_H(t) = α·P_history + β·A_sensor + γ·M_ML for one hazard family.
@@ -373,8 +374,14 @@ def assess_hazard(
     # A_sensor
     a_sensor = compute_sensor_anomaly(hazard_type, recent_telemetry)
 
-    # M_ML
-    m_ml = compute_ml_score(hazard_type, current_depth_m, formation, mud_weight_ppg, pore_pressure_ppg)
+    # M_ML — real trained model where one exists for this hazard type,
+    # physics heuristic otherwise (see ml/hazard_predictor.py)
+    ml_result = compute_ml_score(
+        hazard_type, current_depth_m, formation, mud_weight_ppg, pore_pressure_ppg,
+        formation_tops=formation_tops, trajectory=trajectory, well_type=well_type,
+    )
+    m_ml = ml_result.score
+    m_ml_source = ml_result.source
 
     # Composite score
     composite = ALPHA * p_history + BETA * a_sensor + GAMMA * m_ml
@@ -415,4 +422,5 @@ def assess_hazard(
         lead_time_meters=lead_time,
         recommended_action=recommended_actions.get(hazard_type, "Monitor closely"),
         evidence_events=evidence_event_ids,
+        m_ml_source=m_ml_source,
     )

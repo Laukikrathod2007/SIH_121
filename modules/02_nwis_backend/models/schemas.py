@@ -217,7 +217,18 @@ class RiskCorridor(BaseModel):
     max_severity: str
     historical_frequency: float     # P_history [0,1]
     lead_distance_m: Optional[float] = None  # Δ from current bit depth
-    risk_level: RiskLevel = RiskLevel.LOW
+    # NOTE: this is deliberately a DIFFERENT measure from
+    # HazardRiskAssessment.risk_level (which is derived from the full
+    # R_H(t) composite score). This one reflects purely how close/inside the
+    # bit is to this specific corridor (see logger/02_MATHEMATICAL_AND_
+    # ALGORITHMIC_FORMULATIONS.md §3's Safe/Early-Warning/Critical states) —
+    # it does not factor in sensor anomaly or the ML term. It is named
+    # differently from HazardRiskAssessment.risk_level (rather than reusing
+    # "risk_level") specifically so the two are never mistaken for the same
+    # number: a corridor can legitimately show CRITICAL proximity while its
+    # parent hazard assessment shows LOW overall risk, if the historical
+    # frequency here is low and sensor/ML signals are quiet.
+    proximity_risk_level: RiskLevel = RiskLevel.LOW
     recommended_action: str = ""
     formation: Optional[str] = None
 
@@ -246,6 +257,13 @@ class HazardRiskAssessment(BaseModel):
     p_history: float                 # Historical frequency weight (α=0.45)
     a_sensor: float                  # Sensor anomaly score (β=0.35)
     m_ml: float                      # ML prediction (γ=0.20)
+    # "trained_model" (a real classifier trained on historical events — see
+    # ml/train_hazard_models.py) or "heuristic_fallback" (too few historical
+    # examples exist yet for this hazard type to train one — see
+    # ml/feature_engineering.py's MIN_POSITIVE_SAMPLES). Exposed so the API
+    # never presents a hand-coded heuristic and a real model as the same
+    # kind of number — consistent with 4-Pillar Confidence's whole point.
+    m_ml_source: str = "heuristic_fallback"
     confidence: FourPillarConfidence
     active_corridor: Optional[RiskCorridor] = None
     lead_time_meters: Optional[float] = None

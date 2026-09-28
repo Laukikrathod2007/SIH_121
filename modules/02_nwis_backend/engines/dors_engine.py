@@ -17,6 +17,7 @@ from models.schemas import (
     Well, WellTrajectory, FormationTop, DrillingEvent,
     DORSComponentScores, OffsetWellRanking, HazardType
 )
+from engines.stratigraphic_correlator import inclination_at_md, azimuth_at_md
 
 # Default DORS weights (sum = 1.0)
 WEIGHTS = {
@@ -156,22 +157,63 @@ def score_depth(
 
 TRAJECTORY_TYPE_ORDER = {"Vertical": 0, "J-Type": 1, "S-Type": 2, "Horizontal": 3}
 
+TRAJECTORY_PROFILE_SAMPLES = 10
+
+
+def _angular_diff(a: float, b: float) -> float:
+    """Smallest difference between two compass headings, handling 0/360 wraparound."""
+    d = abs(a - b) % 360
+    return min(d, 360 - d)
+
 
 def score_trajectory(
     offset_traj: WellTrajectory,
+    active_traj: Optional[WellTrajectory],
     active_well_type: str,
-    active_avg_incl: float,
 ) -> float:
     """
-    S_trajectory = 1.0 - |θ_active - θ_offset| / 90° × 0.5 - 0.5 × I(type mismatch)
+    Trajectory similarity via a modified-Hausdorff-style comparison of the
+    full inclination/azimuth PROFILE across the two wells' overlapping
+    measured-depth range — not a single average-inclination scalar.
+
+    This replaces the original |avg_incl_active - avg_incl_offset| approach,
+    which could score two very differently-SHAPED wells as identical (one
+    building angle early and holding it, one building late) as long as their
+    averages happened to match. Follows the approach in Schlumberger's
+    "Offset Well Analysis Using Well Trajectory Similarity" patent
+    (WO2021029996A1): compare vertical (inclination) and angular (azimuth)
+    components at matched points along the trajectory, then aggregate with a
+    blend of mean and max distance (the patent aggregates via "average,
+    minimum, maximum, or weighted average" across segment comparisons — mean
+    captures typical similarity, max penalizes any single point where the
+    trajectories diverge sharply even if they're close everywhere else).
     """
     offset_type = offset_traj.well_type.value
-    offset_avg_incl = offset_traj.avg_inclination
-
     type_penalty = 0.0 if active_well_type == offset_type else 0.5
-    incl_penalty = abs(active_avg_incl - offset_avg_incl) / 90.0 * 0.5
 
-    score = max(0.0, 1.0 - type_penalty - incl_penalty)
+    if active_traj is None or not active_traj.stations or not offset_traj.stations:
+        # No trajectory to compare against — fall back to type match only
+        return round(max(0.0, 1.0 - type_penalty), 4)
+
+    md_lo = max(active_traj.stations[0].md_m, offset_traj.stations[0].md_m)
+    md_hi = min(active_traj.stations[-1].md_m, offset_traj.stations[-1].md_m)
+    if md_hi <= md_lo:
+        # No overlapping measured-depth interval to compare — type match only
+        return round(max(0.0, 1.0 - type_penalty), 4)
+
+    incl_diffs, azi_diffs = [], []
+    for i in range(TRAJECTORY_PROFILE_SAMPLES):
+        md = md_lo + (md_hi - md_lo) * i / (TRAJECTORY_PROFILE_SAMPLES - 1)
+        incl_diffs.append(abs(inclination_at_md(active_traj, md) - inclination_at_md(offset_traj, md)))
+        azi_diffs.append(_angular_diff(azimuth_at_md(active_traj, md), azimuth_at_md(offset_traj, md)))
+
+    incl_distance = 0.6 * (sum(incl_diffs) / len(incl_diffs)) + 0.4 * max(incl_diffs)
+    azi_distance = 0.6 * (sum(azi_diffs) / len(azi_diffs)) + 0.4 * max(azi_diffs)
+
+    incl_penalty = min(0.5, incl_distance / 90.0 * 0.5)
+    azi_penalty = min(0.3, azi_distance / 180.0 * 0.3)
+
+    score = max(0.0, 1.0 - type_penalty - incl_penalty - azi_penalty)
     return round(score, 4)
 
 
@@ -209,7 +251,7 @@ def compute_dors(
     active_depth_m: float,
     active_formation: Optional[str],
     active_well_type: str,
-    active_avg_incl: float,
+    active_traj: Optional[WellTrajectory],
     offset_well: Well,
     offset_traj: WellTrajectory,
     offset_tops: List[FormationTop],
@@ -226,7 +268,7 @@ def compute_dors(
     s_spatial, dist_km = score_spatial(offset_well, active_well, r_max_km)
     s_formation = score_formation(offset_tops, active_formation, active_depth_m)
     s_depth = score_depth(offset_traj, active_depth_m)
-    s_trajectory = score_trajectory(offset_traj, active_well_type, active_avg_incl)
+    s_trajectory = score_trajectory(offset_traj, active_traj, active_well_type)
     s_hazard = score_hazard(offset_events, active_depth_m)
 
     total = (
@@ -268,7 +310,6 @@ def rank_offset_wells(
     Returns top_n ranked wells.
     """
     active_traj = all_trajectories.get(active_well.well_id)
-    active_avg_incl = active_traj.avg_inclination if active_traj else 0.0
 
     rankings = []
     for offset in all_wells:
@@ -287,7 +328,7 @@ def rank_offset_wells(
             active_depth_m=active_depth_m,
             active_formation=active_formation,
             active_well_type=active_well.well_type.value,
-            active_avg_incl=active_avg_incl,
+            active_traj=active_traj,
             offset_well=offset,
             offset_traj=offset_traj,
             offset_tops=offset_tops,
