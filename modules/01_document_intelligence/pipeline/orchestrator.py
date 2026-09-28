@@ -56,6 +56,10 @@ from pipeline.layer4_template_learner import (
 from models.domain_rules import validate_field
 from models.schemas import ValidationStatus as VS
 from pipeline.layer5_physics_validator import run_physics_validation
+from pipeline.cloud_fallback import (
+    should_use_cloud_fallback,
+    get_cloud_parse_for_document,
+)
 
 # ---------------------------------------------------------------------------
 # Output Directory
@@ -202,6 +206,14 @@ def process_document(
     flagged_count = 0
     physics_violations = 0
 
+    # Cloud fallback (Reducto / Extend.ai) is invoked at most ONCE per
+    # document — the whole PDF is uploaded+parsed a single time and cached
+    # here, then individual low-confidence pages are sliced out of it below.
+    # See pipeline/cloud_fallback.py: this stays fully inert (no network
+    # calls at all) unless NWIS_REDUCTO_API_KEY or NWIS_EXTEND_API_KEY is set.
+    cloud_fallback_result = None
+    cloud_fallback_attempted = False
+
     pages_to_process = min(total_pages, max_pages) if max_pages else total_pages
     for page_num in range(pages_to_process):
         page_start = time.time() * 1000
@@ -214,7 +226,10 @@ def process_document(
         # -------------------------------------------------------------------
         # LAYER 1: Native extraction attempt
         # -------------------------------------------------------------------
-        page_result = extract_page_native(page, page_num)
+        # Reuse the scan-check already computed in the pre-pass above instead
+        # of letting extract_page_native recompute it — is_page_scanned()
+        # MD5-hashes every image on the page and is expensive to run twice.
+        page_result = extract_page_native(page, page_num, is_scanned=page_num in scanned_page_numbers)
 
         if page_result is None:
             logger.warning(f"[{job_id}] Page {page_num}: Tier 1 returned None — skipping")
@@ -234,6 +249,36 @@ def process_document(
         else:
             # Get raw text from Tier 1 result for entity extraction
             page_text = page_result.raw_text_preview
+
+        # -------------------------------------------------------------------
+        # CLOUD FALLBACK: this page's local confidence is below threshold
+        # (or it's scanned with no local OCR result at all) and a provider
+        # is configured — replace this page's text with the cloud result
+        # before entity extraction runs. Fully inert (should_use_cloud_fallback
+        # returns False immediately, no network calls) if no API key is set.
+        # -------------------------------------------------------------------
+        if should_use_cloud_fallback(page_result.page_confidence):
+            if not cloud_fallback_attempted:
+                cloud_fallback_attempted = True
+                logger.info(
+                    f"[{job_id}] Page {page_num} confidence {page_result.page_confidence:.0%} "
+                    f"below threshold — invoking cloud fallback for {pdf_path.name}"
+                )
+                if progress_cb:
+                    progress_cb(page_num, total_pages, "Low confidence — trying cloud fallback (Reducto/Extend.ai)...")
+                cloud_fallback_result = get_cloud_parse_for_document(pdf_path)
+
+            if cloud_fallback_result:
+                cloud_text = cloud_fallback_result["pages"].get(page_num)
+                if cloud_text:
+                    page_text = cloud_text
+                    page_result.raw_text_preview = cloud_text[:1000]
+                    page_result.page_confidence = cloud_fallback_result["page_confidence"]
+                    page_result.extraction_source = cloud_fallback_result["provider"]
+                    logger.info(
+                        f"[{job_id}] Page {page_num}: replaced with "
+                        f"{cloud_fallback_result['provider']} fallback text"
+                    )
 
         # -------------------------------------------------------------------
         # LAYER 3: Entity extraction on this page's text
@@ -319,6 +364,19 @@ def process_document(
     result.all_npt_records = all_npt
     result.all_casing_records = all_casing
     result.scanned_pages = scanned_count
+
+    # Cloud fallback audit trail — non-zero only if a provider was actually
+    # configured AND used. See pipeline/cloud_fallback.py for the sovereignty
+    # tradeoff note this exists to make visible, not just log-buried.
+    cloud_pages = [p for p in result.pages if p.extraction_source != "local"]
+    result.cloud_fallback_pages_count = len(cloud_pages)
+    result.cloud_fallback_providers_used = sorted({p.extraction_source for p in cloud_pages})
+    if cloud_pages:
+        logger.warning(
+            f"[{job_id}] {len(cloud_pages)} page(s) of {pdf_path.name} were sent to an "
+            f"external cloud provider ({', '.join(result.cloud_fallback_providers_used)}) "
+            f"— this document left the air-gapped boundary."
+        )
     # -----------------------------------------------------------------------
     # LAYER 5: Execute domain physics validation & audit
     # -----------------------------------------------------------------------

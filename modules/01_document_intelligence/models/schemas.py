@@ -329,6 +329,12 @@ class PageExtractionResult(BaseModel):
     drilling_events: List[DrillingEvent] = Field(default_factory=list)
     casing_records: List[CasingRecord] = Field(default_factory=list)
     page_confidence: float = Field(ge=0.0, le=1.0, default=0.0)
+    # "local" (default) | "reducto" | "extend_ai" — which engine actually
+    # produced this page's text. Exists so a document that used an external
+    # cloud fallback is auditable per-page, not just a silent aggregate —
+    # this matters for the air-gapped/DGH-sovereignty posture: any page
+    # that left the local boundary must be traceable. See pipeline/cloud_fallback.py.
+    extraction_source: str = "local"
 
 
 # ---------------------------------------------------------------------------
@@ -376,6 +382,14 @@ class DocumentExtractionResult(BaseModel):
     all_drilling_events: List[DrillingEvent] = Field(default_factory=list)
     all_casing_records: List[CasingRecord] = Field(default_factory=list)
     mud_properties: List[MudProperties] = Field(default_factory=list)
+
+    # Cloud fallback audit trail (see pipeline/cloud_fallback.py). Stays at
+    # zero/empty for every document unless NWIS_REDUCTO_API_KEY or
+    # NWIS_EXTEND_API_KEY is actually configured AND at least one page's
+    # local confidence fell below threshold — i.e. the air-gapped default
+    # posture is unaffected unless this is visibly non-zero.
+    cloud_fallback_pages_count: int = 0
+    cloud_fallback_providers_used: List[str] = Field(default_factory=list)
 
     # Physics & Operational Summary
     total_npt_hours: float = 0.0

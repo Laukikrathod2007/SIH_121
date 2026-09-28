@@ -47,7 +47,20 @@ def is_page_scanned(page: "fitz.Page") -> bool:
     text = page.get_text("text").strip()
     char_count = len(text)
 
-    # Check image coverage
+    # The final verdict is `(char_count < 50) AND (image_coverage > 0.6)` —
+    # so whenever this page already has >=50 characters of extractable text,
+    # the result is False no matter what image_coverage turns out to be.
+    # get_image_rects() below renders and MD5-hashes every image on the page
+    # (PyMuPDF's own implementation), which is by far the most expensive part
+    # of this function — on an image-heavy real-world document this doubled
+    # end-to-end pipeline time once every page started getting scan-checked
+    # (previously only page 0 was sampled). Skip it entirely when it cannot
+    # change the outcome.
+    if char_count >= 50:
+        logger.debug(f"Page scan detection: chars={char_count} (>=50) — native text page, is_scanned=False")
+        return False
+
+    # Check image coverage (only reached when char_count < 50)
     page_area = page.rect.width * page.rect.height
     image_list = page.get_images(full=True)
 
@@ -61,7 +74,7 @@ def is_page_scanned(page: "fitz.Page") -> bool:
     image_coverage = total_image_area / page_area if page_area > 0 else 0
 
     # Heuristic: scanned if very few chars AND high image coverage
-    is_scanned = (char_count < 50) and (image_coverage > 0.6)
+    is_scanned = image_coverage > 0.6
 
     logger.debug(
         f"Page scan detection: chars={char_count}, "
@@ -73,6 +86,7 @@ def is_page_scanned(page: "fitz.Page") -> bool:
 def extract_page_native(
     page: "fitz.Page",
     page_number: int,
+    is_scanned: Optional[bool] = None,
 ) -> Optional[PageExtractionResult]:
     """
     Extract text and bounding boxes from a single native digital PDF page.
@@ -82,6 +96,15 @@ def extract_page_native(
     - Each span has: text, font, size, color, bbox [x0, y0, x1, y1]
 
     This is Layer 1 of the 6-layer pipeline.
+
+    Args:
+        is_scanned: pass the already-computed is_page_scanned(page) result if
+            the caller has one (e.g. from a document-wide pre-pass) to avoid
+            recomputing it. is_page_scanned() renders and MD5-hashes every
+            image on the page (PyMuPDF's get_image_rects), which is expensive
+            on image-heavy pages — calling it twice per page nearly doubled
+            this function's runtime on a 74-page real-world test document.
+            Leave as None to compute it here (backward compatible).
     """
     if not PYMUPDF_AVAILABLE:
         return None
@@ -90,7 +113,7 @@ def extract_page_native(
 
     try:
         # Check if scanned — if so, signal caller to use Tier 2
-        scanned = is_page_scanned(page)
+        scanned = is_page_scanned(page) if is_scanned is None else is_scanned
 
         if scanned:
             elapsed = time.time() * 1000 - start_ms

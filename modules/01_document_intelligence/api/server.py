@@ -18,13 +18,14 @@ import os
 from pathlib import Path
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
 
 from api.routes import ingest, status, results
 from api.job_store import SQLiteJobStore
+from api.auth import require_api_key, rate_limit_ingest, auth_enabled
 
 # ---------------------------------------------------------------------------
 # Upload Directory
@@ -146,9 +147,24 @@ results.OUTPUT_DIR = Path(__file__).parent.parent / "data" / "output"
 # ---------------------------------------------------------------------------
 # Include Routers
 # ---------------------------------------------------------------------------
-app.include_router(ingest.router, prefix="/api/v1", tags=["Document Ingestion"])
-app.include_router(status.router, prefix="/api/v1", tags=["Job Status"])
-app.include_router(results.router, prefix="/api/v1", tags=["Extraction Results"])
+# Every route below requires X-API-Key when NWIS_API_KEY is configured (see
+# api/auth.py) — these are the routes that mutate state, serve extracted
+# document content, or (via ingest -> cloud_fallback) can trigger a paid
+# third-party API call. Root/health/docs stay open for monitoring.
+# rate_limit_ingest additionally caps /ingest specifically, since that's the
+# one endpoint an attacker could use to burn cloud-fallback credits.
+app.include_router(
+    ingest.router, prefix="/api/v1", tags=["Document Ingestion"],
+    dependencies=[Depends(require_api_key), Depends(rate_limit_ingest)],
+)
+app.include_router(
+    status.router, prefix="/api/v1", tags=["Job Status"],
+    dependencies=[Depends(require_api_key)],
+)
+app.include_router(
+    results.router, prefix="/api/v1", tags=["Extraction Results"],
+    dependencies=[Depends(require_api_key)],
+)
 
 
 # ---------------------------------------------------------------------------
@@ -212,6 +228,43 @@ async def health():
         checks["spacy"] = {"status": "ok", "required": False, "role": "not currently used by the pipeline", "version": spacy.__version__}
     except ImportError:
         checks["spacy"] = {"status": "not_installed", "required": False, "role": "not currently used by the pipeline"}
+
+    # Cloud fallback (Reducto / Extend.ai) — OPTIONAL, and OFF unless an API
+    # key is configured. Surfaced here because this is the one component that
+    # can send document content outside the air-gapped boundary — its status
+    # should always be visible at a glance, not just discoverable in logs.
+    from pipeline.cloud_fallback import (
+        CLOUD_FALLBACK_ENABLED,
+        REDUCTO_API_KEY,
+        EXTEND_API_KEY,
+        CONFIDENCE_THRESHOLD,
+        cloud_fallback_configured,
+    )
+    checks["cloud_fallback"] = {
+        "status": "configured" if cloud_fallback_configured() else "not_configured",
+        "required": False,
+        "role": "Reducto/Extend.ai fallback for pages below the local confidence threshold",
+        "reducto_key_set": bool(REDUCTO_API_KEY),
+        "extend_key_set": bool(EXTEND_API_KEY),
+        "master_switch_enabled": CLOUD_FALLBACK_ENABLED,
+        "confidence_threshold": CONFIDENCE_THRESHOLD,
+        "note": "Sends the affected page's content to a third-party API when active — see pipeline/cloud_fallback.py",
+    }
+
+    # Auth — deliberately not gated behind the API key itself (this endpoint
+    # is intentionally public), but visible so it's obvious at a glance
+    # whether the deployment is actually protected.
+    from api.auth import auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
+    checks["auth"] = {
+        "status": "enabled" if auth_enabled() else "disabled",
+        "required": False,
+        "role": "X-API-Key required on /ingest, /jobs, /results when enabled",
+        "rate_limiting": {
+            "enabled": RATE_LIMIT_ENABLED,
+            "max_requests": RATE_LIMIT_MAX_REQUESTS,
+            "window_seconds": RATE_LIMIT_WINDOW_SECONDS,
+        },
+    }
 
     return {
         "status": "healthy" if required_ok else "unhealthy",

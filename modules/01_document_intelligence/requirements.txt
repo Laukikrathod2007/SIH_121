@@ -9,12 +9,22 @@ Pillow==10.4.0               # Image processing for scanned page detection
 
 # --- Layout-Aware OCR (Tier 2) ---
 # Docling: IBM Research layout-aware document converter (matches cloud accuracy)
-docling==2.5.0
-docling-core==2.5.0
+# NOTE: the 2.5.0 pin below was never actually installed/verified in this repo
+# until 2026-09-28 — it turned out to need a newer pydantic than the 2.8.2
+# pinned below supports (docling's pydantic model definitions raised
+# `AttributeError: force_full_page_ocr` at import time on 2.8.2). Pinning to
+# the versions actually verified working here instead of guessing at 2.5.0's
+# compatibility with today's other pins.
+docling==2.130.0
+docling-core==2.99.0
 
 # --- NLP & Entity Extraction (Tier 3) ---
-spacy==3.7.6                 # NLP framework for domain NER
-# After install, run: python -m spacy download en_core_web_sm
+# Tier 3 (pipeline/tier3_entity_extractor.py) is pure regex/rules-based and
+# does NOT use spaCy — nothing imports it on the extraction path. spaCy is
+# listed here only because api/server.py's health check reports its presence
+# as an informational signal for a possible future NER upgrade. Uninstalling
+# it does not affect extraction accuracy or any current feature.
+spacy==3.7.6
 
 # --- FastAPI Server ---
 fastapi==0.115.0
@@ -23,8 +33,11 @@ python-multipart==0.0.9      # For file upload endpoints
 aiofiles==24.1.0             # Async file handling
 
 # --- Data Models & Validation ---
-pydantic==2.8.2
-pydantic-settings==2.4.0
+# Must stay >=2.9 for docling==2.130.0 compatibility (see note above) — the
+# rest of this codebase's Pydantic usage (BaseModel, Field, ConfigDict) is
+# unaffected either way.
+pydantic==2.13.5
+pydantic-settings==2.15.0
 
 # --- Background Job Queue ---
 # FastAPI BackgroundTasks running in a thread pool, with job status persisted
@@ -41,5 +54,5 @@ numpy==1.26.4
 python-dotenv==1.0.1
 loguru==0.7.2                # Superior structured logging
 rich==13.8.1                 # Beautiful terminal output
-httpx==0.27.2                # Async HTTP client
+httpx==0.27.2                # Also used by pipeline/cloud_fallback.py (Reducto/Extend.ai calls)
 orjson==3.10.7               # Fast JSON serialization

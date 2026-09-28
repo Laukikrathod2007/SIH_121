@@ -8,3 +8,6 @@ data/templates/
 data/logs/
 __pycache__/
 *.pyc
+
+# API keys (NWIS_REDUCTO_API_KEY / NWIS_EXTEND_API_KEY / etc.) — see .env.example
+.env
