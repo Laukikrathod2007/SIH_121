@@ -133,11 +133,11 @@ export const CopilotPage: React.FC = () => {
       if (corridors && corridors.length > 0) {
         const worst = [...corridors].sort((a, b) => {
           const rank = { LOW: 0, MODERATE: 1, HIGH: 2, CRITICAL: 3 } as const;
-          return (rank[b.proximity_risk_level] ?? 0) - (rank[a.proximity_risk_level] ?? 0);
+          return (rank[b.risk_level] ?? 0) - (rank[a.risk_level] ?? 0);
         })[0];
         parts.push(
           `${corridors.length} historical risk corridor(s) ahead of the current bit depth for ${matchedWell?.well_id} — ` +
-          `highest proximity risk: ${worst.proximity_risk_level} (${worst.hazard_type.replace(/_/g, ' ')}, ${worst.event_count} historical event(s)).`
+          `highest proximity risk: ${worst.risk_level} (${worst.hazard_type.replace(/_/g, ' ')}, ${worst.event_count} historical event(s)).`
         );
       }
 

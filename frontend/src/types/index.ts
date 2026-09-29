@@ -180,7 +180,7 @@ export interface RiskCorridor {
   max_severity: string;
   historical_frequency: number;
   lead_distance_m?: number | null;
-  proximity_risk_level: RiskLevel;
+  risk_level: RiskLevel;
   recommended_action: string;
   formation?: string | null;
 }

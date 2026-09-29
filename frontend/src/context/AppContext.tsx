@@ -79,7 +79,7 @@ const DEFAULT_TELEMETRY: TelemetryData = {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeWellId, setActiveWellId] = useState<string>('WELL-NHK-001');
+  const [activeWellId, setActiveWellId] = useState<string>('15/9-F-12');
   const [wells, setWells] = useState<Well[]>([]);
   const [activeDepth, setActiveDepth] = useState<number>(2450.0);
   const [telemetry, setTelemetry] = useState<TelemetryData>(DEFAULT_TELEMETRY);

@@ -400,9 +400,9 @@ export const GeologicalCorrelationPage: React.FC = () => {
           )}
           {corridors.map((c) => {
             const riskColor =
-              c.proximity_risk_level === 'CRITICAL' ? 'border-rose-500/30 text-rose-400' :
-              c.proximity_risk_level === 'HIGH' ? 'border-amber-500/30 text-amber-400' :
-              c.proximity_risk_level === 'MODERATE' ? 'border-amber-500/20 text-amber-300' :
+              c.risk_level === 'CRITICAL' ? 'border-rose-500/30 text-rose-400' :
+              c.risk_level === 'HIGH' ? 'border-amber-500/30 text-amber-400' :
+              c.risk_level === 'MODERATE' ? 'border-amber-500/20 text-amber-300' :
               'border-slate-800 text-emerald-400';
             return (
               <div key={c.corridor_id} className={`bg-slate-900/80 border p-3 rounded space-y-2 ${riskColor}`}>
@@ -414,7 +414,7 @@ export const GeologicalCorrelationPage: React.FC = () => {
                   Formation: <span className="text-amber-300 font-semibold">{c.formation ?? 'Unknown'}</span>
                 </div>
                 <div className="text-[11px] font-mono text-slate-400">
-                  Proximity Risk: <span className="font-semibold">{c.proximity_risk_level}</span> · {c.event_count} historical event(s) · avg {c.avg_npt_hours.toFixed(1)}h NPT
+                  Proximity Risk: <span className="font-semibold">{c.risk_level}</span> · {c.event_count} historical event(s) · avg {c.avg_npt_hours.toFixed(1)}h NPT
                 </div>
                 {c.recommended_action && (
                   <div className="text-[11px] font-mono">{c.recommended_action}</div>

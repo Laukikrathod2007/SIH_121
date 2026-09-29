@@ -150,6 +150,30 @@ async def get_well(well_id: str):
     }
 
 
+@app.get("/api/v2/trajectory/{well_id:path}", tags=["Wells"])
+async def get_trajectory(well_id: str):
+    """
+    Full real survey stations for the 3D trajectory viewer. This route did
+    not exist until now -- found missing during a frontend/backend wiring
+    audit: 3 separate frontend components (LiveDrillingScene3D,
+    WellTrajectory3D via WellInspector3DModal, WellCutawayCockpit) already
+    called GET /api/v2/trajectory/{well_id} and silently fell back to no
+    trajectory on every single call, despite the backend genuinely holding
+    real computed trajectory data in store.all_trajectories for 15/9-F-12
+    and 15/9-F-1 since the minimum-curvature extraction work. Only wells
+    with real or synthetic trajectory data return 200; a well that
+    genuinely has none (e.g. 15/9-19B, 15/9-F-1C) returns 404, not a
+    fabricated flat trajectory.
+    """
+    _require_store()
+    if well_id not in store.wells_by_id:
+        raise HTTPException(404, f"Well '{well_id}' not found")
+    traj = store.all_trajectories.get(well_id)
+    if traj is None:
+        raise HTTPException(404, f"No trajectory data available for well '{well_id}'")
+    return traj.model_dump()
+
+
 # ---------------------------------------------------------------------------
 # Formations
 # ---------------------------------------------------------------------------
