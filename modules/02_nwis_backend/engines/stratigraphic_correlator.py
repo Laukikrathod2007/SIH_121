@@ -159,6 +159,59 @@ def azimuth_at_md(trajectory: WellTrajectory, target_md: float) -> float:
     return stations[-1].azimuth_deg
 
 
+def inclination_at_md(trajectory: WellTrajectory, target_md: float) -> float:
+    """
+    Interpolate inclination (degrees) at a given MD — same interpolation
+    pattern as tvd_at_md above, applied to inclination_deg instead. Shared by
+    engines/dors_engine.py's trajectory-similarity scoring and ml/
+    feature_engineering.py's model features, so both use the exact same
+    interpolation (a discrepancy here would silently skew one or the other).
+    """
+    stations = trajectory.stations
+    if not stations:
+        return 0.0
+    if target_md <= stations[0].md_m:
+        return stations[0].inclination_deg
+    for i in range(1, len(stations)):
+        s_prev, s_curr = stations[i - 1], stations[i]
+        if s_curr.md_m >= target_md:
+            frac = (target_md - s_prev.md_m) / max(s_curr.md_m - s_prev.md_m, 0.001)
+            return s_prev.inclination_deg + frac * (s_curr.inclination_deg - s_prev.inclination_deg)
+    return stations[-1].inclination_deg
+
+
+def azimuth_at_md(trajectory: WellTrajectory, target_md: float) -> float:
+    """
+    Interpolate azimuth (degrees, 0-360) at a given MD. Azimuth is circular
+    (0 and 360 are the same heading), so this interpolates via unit vectors
+    (cos/sin) rather than the raw angle — a naive linear interpolation
+    between e.g. 350 deg and 10 deg would wrongly average to 180 deg (due
+    south) instead of the correct ~0 deg (due north).
+    """
+    import math
+    stations = trajectory.stations
+    if not stations:
+        return 0.0
+
+    def _to_vec(deg: float) -> tuple[float, float]:
+        rad = math.radians(deg)
+        return math.cos(rad), math.sin(rad)
+
+    def _vec_to_deg(x: float, y: float) -> float:
+        return math.degrees(math.atan2(y, x)) % 360
+
+    if target_md <= stations[0].md_m:
+        return stations[0].azimuth_deg
+    for i in range(1, len(stations)):
+        s_prev, s_curr = stations[i - 1], stations[i]
+        if s_curr.md_m >= target_md:
+            frac = (target_md - s_prev.md_m) / max(s_curr.md_m - s_prev.md_m, 0.001)
+            x1, y1 = _to_vec(s_prev.azimuth_deg)
+            x2, y2 = _to_vec(s_curr.azimuth_deg)
+            return _vec_to_deg(x1 + frac * (x2 - x1), y1 + frac * (y2 - y1))
+    return stations[-1].azimuth_deg
+
+
 def tvdss_at_md(trajectory: WellTrajectory, well: Well, target_md: float) -> float:
     """
     TVD Subsea = TVD - KB_Elevation.
