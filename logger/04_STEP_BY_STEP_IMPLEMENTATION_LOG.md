@@ -1683,5 +1683,58 @@ Inspired Visualization
   actual browser was explicitly flagged as unconfirmed, not claimed.
 
 ---
+
+### Step 31: Real Brand Identity Integration + Competitor-Inspired
+Command Center Features (Scoped, Not Copied)
+* **Date & Time:** 2026-09-30
+* **Action:** Two related pieces of work: adopting the real DrillWise
+  (Powered by eWIS) brand identity, and evaluating a direct competitor's
+  ("GeoMine") demo video/UI for genuinely useful patterns to adapt.
+  - **Brand**: saved all 4 provided logo renders to
+    `frontend/public/brand/`; replaced the placeholder Flame-icon +
+    "eRTMAC-NWIS" text lockup in `Sidebar.tsx` with the real horizontal
+    logo; updated the favicon and page title. Deliberately scoped to
+    logo/favicon/title only -- the app's existing cyan/amber accent
+    colors were left untouched pending an explicit, separate decision on
+    a full site-wide color rebrand (a large, systemic change spanning
+    every component, not something to fold in silently alongside a logo
+    swap).
+  - **Competitor review**: applied the same skepticism used on the
+    12-repo comparison to a direct opponent's ("GeoMine") demo video and
+    screenshots. Found several of its own headline claims don't survive
+    its own screenshots: "Live Surface Sensors" are manual +/- stepper
+    inputs, not a live feed; "real-time physics engine" for its
+    stick-slip detector is a threshold toggle (the underlying MSE formula
+    shown is genuinely real, standard Teale mechanical specific energy --
+    that part is legitimate); financial figures (₹1.5 Cr - ₹4.1 Cr
+    exposure, "AI Value of Information") have no visible backing shown
+    anywhere in the walkthrough. None of this was copied.
+  - What *was* judged genuinely good and adapted, using only real data
+    already in this app's pipeline: a header KPI strip
+    (`KPIStrip.tsx` -- overall risk, offset analog count, worst hazard
+    corridor, event count, all from `analyzeWell`'s real response), an
+    "Operational Directive" banner (`OperationalDirective.tsx` -- the
+    highest-composite-score hazard's `recommended_action` in plain
+    English, with the same `m_ml_source` disclosure used elsewhere rather
+    than an unqualified AI verdict), click-to-expand event detail
+    (`EventDeepDive.tsx` -- wired to both the 3D event markers and the
+    depth-correlation strip's ticks, surfacing `raw_narrative`/
+    `mitigation_description`/`outcome` fields that existed on
+    `DrillingEvent` but were previously only a hover tooltip), and
+    client-side CSV export of the real offset-well ranking table.
+  - Explicitly declined to adapt: GeoMine's Google-Maps-satellite basemap
+    option (needs a billed API key -- flagged Esri World Imagery as the
+    free-tier equivalent for a future map-provider pass, not yet built)
+    and its NPT-to-cost financial figures (no real backing to honestly
+    replicate yet).
+* **Status after this step:** `tsc --noEmit` clean; every new/changed
+  file confirmed transforming through Vite's dev pipeline; the real
+  `analyzeWell` response's fields confirmed present before wiring the new
+  components to them. Still open, by deliberate choice pending
+  direction: a full light/dark theme system (flagged as a large, separate
+  undertaking -- colors are hardcoded per-component throughout the app,
+  not token-driven) and a multi-basemap switcher on `BasinMap.tsx`.
+
+---
 *This log will be continuously updated throughout the development lifecycle.*
 
