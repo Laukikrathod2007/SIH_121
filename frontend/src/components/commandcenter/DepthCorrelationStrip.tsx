@@ -11,8 +11,9 @@ import { DrillingEvent } from '../../types';
 
 const SEVERITY_COLOR: Record<string, string> = { CRITICAL: '#ef4444', HIGH: '#f97316', MEDIUM: '#f59e0b', LOW: '#eab308' };
 
-function Track({ label, currentPct, events, minMd, maxMd }: {
+function Track({ label, currentPct, events, minMd, maxMd, onEventClick }: {
   label: string; currentPct: number; events: DrillingEvent[]; minMd: number; maxMd: number;
+  onEventClick: (e: DrillingEvent) => void;
 }) {
   const span = Math.max(maxMd - minMd, 1);
   return (
@@ -23,15 +24,17 @@ function Track({ label, currentPct, events, minMd, maxMd }: {
           const pct = Math.min(100, Math.max(0, ((e.depth_start_md_m - minMd) / span) * 100));
           const c = SEVERITY_COLOR[e.severity] || '#94a3b8';
           return (
-            <div
+            <button
               key={e.event_id}
-              title={`${e.event_type} @ ${e.depth_start_md_m.toFixed(0)}m (${e.severity})`}
-              className="absolute top-0.5 bottom-0.5 w-1 rounded-full"
+              type="button"
+              title={`${e.event_type} @ ${e.depth_start_md_m.toFixed(0)}m (${e.severity}) — click for details`}
+              onClick={() => onEventClick(e)}
+              className="absolute top-0.5 bottom-0.5 w-1.5 rounded-full cursor-pointer hover:scale-150 transition-transform"
               style={{ left: `${pct}%`, backgroundColor: c }}
             />
           );
         })}
-        <div className="absolute inset-y-0 w-px bg-cyan-400" style={{ left: `${currentPct}%` }} />
+        <div className="absolute inset-y-0 w-px bg-cyan-400 pointer-events-none" style={{ left: `${currentPct}%` }} />
       </div>
     </div>
   );
@@ -45,10 +48,11 @@ interface DepthCorrelationStripProps {
   currentDepth: number;
   minDepth: number;
   maxDepth: number;
+  onEventClick: (e: DrillingEvent) => void;
 }
 
 export const DepthCorrelationStrip: React.FC<DepthCorrelationStripProps> = ({
-  activeLabel, activeEvents, offsetLabel, offsetEvents, currentDepth, minDepth, maxDepth,
+  activeLabel, activeEvents, offsetLabel, offsetEvents, currentDepth, minDepth, maxDepth, onEventClick,
 }) => {
   const span = Math.max(maxDepth - minDepth, 1);
   const currentPct = Math.min(100, Math.max(0, ((currentDepth - minDepth) / span) * 100));
@@ -60,9 +64,9 @@ export const DepthCorrelationStrip: React.FC<DepthCorrelationStripProps> = ({
         <span className="text-[10px] font-mono text-cyan-400">{currentDepth.toFixed(0)}m MD</span>
       </div>
       <div className="space-y-1.5">
-        <Track label={activeLabel} currentPct={currentPct} events={activeEvents} minMd={minDepth} maxMd={maxDepth} />
+        <Track label={activeLabel} currentPct={currentPct} events={activeEvents} minMd={minDepth} maxMd={maxDepth} onEventClick={onEventClick} />
         {offsetLabel && (
-          <Track label={offsetLabel} currentPct={currentPct} events={offsetEvents} minMd={minDepth} maxMd={maxDepth} />
+          <Track label={offsetLabel} currentPct={currentPct} events={offsetEvents} minMd={minDepth} maxMd={maxDepth} onEventClick={onEventClick} />
         )}
       </div>
       <div className="flex justify-between text-[9px] font-mono text-slate-600 mt-1">

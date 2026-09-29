@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Radar } from 'lucide-react';
+import { Radar, Download } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import { CommandScene3D } from '../components/commandcenter/CommandScene3D';
@@ -7,6 +7,11 @@ import { LookAheadPanel } from '../components/commandcenter/LookAheadPanel';
 import { DepthCorrelationStrip } from '../components/commandcenter/DepthCorrelationStrip';
 import { TelemetryHUD } from '../components/commandcenter/TelemetryHUD';
 import { WellListPanel } from '../components/commandcenter/WellListPanel';
+import { KPIStrip } from '../components/commandcenter/KPIStrip';
+import { OperationalDirective } from '../components/commandcenter/OperationalDirective';
+import { EventDeepDive } from '../components/commandcenter/EventDeepDive';
+import { downloadCSV } from '../lib/csvExport';
+import { DrillingEvent } from '../types';
 
 // The IVAAP/DrillPlan/Tela-inspired command center, built directly against
 // real Module 02 endpoints from the start (trajectory, analyzeWell, real
@@ -18,6 +23,7 @@ import { WellListPanel } from '../components/commandcenter/WellListPanel';
 export const CommandCenterPage: React.FC = () => {
   const { wells, activeWellId, setActiveWellId } = useApp();
   const [radiusKm, setRadiusKm] = useState(25);
+  const [selectedEvent, setSelectedEvent] = useState<DrillingEvent | null>(null);
 
   const {
     trajectory, formations, events, depth, setDepth, minDepth, maxDepth,
@@ -26,6 +32,18 @@ export const CommandCenterPage: React.FC = () => {
 
   const activeWell = wells.find((w) => w.well_id === activeWellId);
   const corridors = analysis?.active_risk_corridors ?? [];
+
+  const handleExportOffsets = () => {
+    if (!analysis || analysis.offset_rankings.length === 0) return;
+    downloadCSV(
+      `offset_wells_${activeWellId.replace(/\//g, '-')}_${depth.toFixed(0)}m.csv`,
+      analysis.offset_rankings.map((r) => ({
+        rank: r.rank, well_id: r.well_id, well_name: r.well_name, field: r.field,
+        well_type: r.well_type, dors_score: r.dors_score, distance_km: r.distance_km,
+        formation_match: r.formation_match, events_in_lookahead: r.events_in_lookahead,
+      })),
+    );
+  };
 
   return (
     <div className="p-4 space-y-3 h-full flex flex-col">
@@ -41,7 +59,20 @@ export const CommandCenterPage: React.FC = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" /> REPLAY
           </span>
           <span className="text-slate-400">MD {depth.toFixed(0)}m</span>
+          <button
+            onClick={handleExportOffsets}
+            disabled={!analysis || analysis.offset_rankings.length === 0}
+            className="flex items-center gap-1 px-2 py-0.5 rounded border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Download className="w-3 h-3" /> Export Offsets CSV
+          </button>
         </div>
+      </div>
+
+      {/* KPI strip + operational directive */}
+      <div className="shrink-0 space-y-2">
+        <KPIStrip analysis={analysis} eventCount={events.length} />
+        <OperationalDirective analysis={analysis} />
       </div>
 
       {/* Main 3-column layout */}
@@ -70,6 +101,7 @@ export const CommandCenterPage: React.FC = () => {
             corridors={corridors}
             depth={depth}
             offsetWellName={offsetWell?.well_name}
+            onEventClick={setSelectedEvent}
           />
         </div>
 
@@ -88,9 +120,12 @@ export const CommandCenterPage: React.FC = () => {
           currentDepth={depth}
           minDepth={minDepth}
           maxDepth={maxDepth}
+          onEventClick={setSelectedEvent}
         />
         <TelemetryHUD telemetry={telemetry} depth={depth} />
       </div>
+
+      <EventDeepDive event={selectedEvent} onClose={() => setSelectedEvent(null)} />
     </div>
   );
 };

@@ -70,7 +70,10 @@ function HazardCorridorBands({ corridors, stations }: { corridors: RiskCorridor[
   );
 }
 
-function EventMarkers({ events, stations, onHover }: { events: DrillingEvent[]; stations: SurveyStation[]; onHover: (e: DrillingEvent | null) => void }) {
+function EventMarkers({ events, stations, onHover, onClick }: {
+  events: DrillingEvent[]; stations: SurveyStation[];
+  onHover: (e: DrillingEvent | null) => void; onClick: (e: DrillingEvent) => void;
+}) {
   return (
     <>
       {events.map((evt) => {
@@ -81,6 +84,7 @@ function EventMarkers({ events, stations, onHover }: { events: DrillingEvent[]; 
           <mesh key={evt.event_id} position={pos}
             onPointerOver={(e) => { e.stopPropagation(); onHover(evt); }}
             onPointerOut={() => onHover(null)}
+            onClick={(e) => { e.stopPropagation(); onClick(evt); }}
           >
             <sphereGeometry args={[0.1, 16, 16]} />
             <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.6} />
@@ -117,6 +121,7 @@ interface CommandScene3DProps {
   corridors: RiskCorridor[];
   depth: number;
   offsetWellName?: string;
+  onEventClick: (e: DrillingEvent) => void;
 }
 
 const PRESET_META: Record<CameraPreset, { label: string; icon: React.ElementType }> = {
@@ -128,7 +133,7 @@ const PRESET_META: Record<CameraPreset, { label: string; icon: React.ElementType
 };
 
 export const CommandScene3D: React.FC<CommandScene3DProps> = ({
-  activeTrajectory, offsetTrajectory, formations, events, corridors, depth, offsetWellName,
+  activeTrajectory, offsetTrajectory, formations, events, corridors, depth, offsetWellName, onEventClick,
 }) => {
   const [preset, setPreset] = useState<CameraPreset>('RIG_FLOOR');
   const [hovered, setHovered] = useState<DrillingEvent | null>(null);
@@ -169,7 +174,7 @@ export const CommandScene3D: React.FC<CommandScene3DProps> = ({
           <WellboreTube stations={offsetTrajectory.stations} color="#f59e0b" radius={0.035} opacity={0.7} />
         )}
         <HazardCorridorBands corridors={corridors} stations={stations} />
-        <EventMarkers events={events} stations={stations} onHover={setHovered} />
+        <EventMarkers events={events} stations={stations} onHover={setHovered} onClick={onEventClick} />
         <Bit stations={stations} depth={depth} />
 
         <CameraRig preset={preset} bitPosition={bitPositionRef} extent={extent} />
