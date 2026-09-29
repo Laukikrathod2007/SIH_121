@@ -197,6 +197,7 @@ def process_document(
     all_formations = []
     all_npt = []
     all_casing = []
+    all_reservoir_properties: dict = {}
     all_mud_properties = []
     total_confidence_sum = 0.0
     flagged_count = 0
@@ -245,11 +246,20 @@ def process_document(
         page_result.formation_tops = entities.get("formation_tops", [])
         page_result.npt_records = entities.get("npt_records", [])
         page_result.drilling_events = entities.get("drilling_events", [])
+        page_result.casing_records = entities.get("casing_records", [])
 
         # Accumulate for document-level aggregation
         all_events.extend(page_result.drilling_events)
         all_formations.extend(page_result.formation_tops)
         all_npt.extend(page_result.npt_records)
+        all_casing.extend(page_result.casing_records)
+        reservoir_props = entities.get("reservoir_properties") or {}
+        if reservoir_props:
+            # Well-level headline reading (see extract_reservoir_properties'
+            # docstring) — first real value found wins rather than being
+            # overwritten by a later, possibly-unrelated page mention.
+            for key, val in reservoir_props.items():
+                all_reservoir_properties.setdefault(key, val)
         if page_result.mud_properties is not None:
             # Without this, Layer 5's OCR-slip auto-repair (e.g. "3.2 ppg"
             # -> "13.2 ppg") never runs on any real document — it validates
@@ -317,6 +327,8 @@ def process_document(
     result.all_formation_tops = all_formations
     result.mud_properties = all_mud_properties
     result.all_npt_records = all_npt
+    result.all_casing_records = all_casing
+    result.reservoir_properties = all_reservoir_properties
     result.all_casing_records = all_casing
     result.scanned_pages = scanned_count
     # -----------------------------------------------------------------------

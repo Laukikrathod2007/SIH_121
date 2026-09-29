@@ -114,21 +114,40 @@ if __name__ == "__main__":
         from generate_testbed import generate_all
         generate_all()
 
+    # NWIS_ENV controls dev vs. production behavior (mirrors module 01):
+    #   dev (default)  -> auto-reload on code changes, single process
+    #   production     -> no reload, configurable host/port via env
+    env = os.environ.get("NWIS_ENV", "dev").lower()
+    is_prod = env == "production"
+
+    host = os.environ.get("NWIS_HOST", "0.0.0.0")
+    port = int(os.environ.get("NWIS_PORT", "8002"))
+
     print("\n" + "=" * 60)
     print("  NWIS Backend Intelligence API — Module 02")
     print("  Engines: DORS | Stratigraphy | Risk Corridors | 4-Pillar")
     print("=" * 60)
-    print("  Server:    http://localhost:8002")
-    print("  Docs:      http://localhost:8002/docs")
-    print("  Health:    http://localhost:8002/api/v2/health")
-    print("  Map Data:  http://localhost:8002/api/v2/map/wells")
+    print(f"  Mode:      {'production' if is_prod else 'dev'} (set NWIS_ENV=production to deploy)")
+    print(f"  Server:    http://{host}:{port}")
+    print(f"  Docs:      http://{host}:{port}/docs")
+    print(f"  Health:    http://{host}:{port}/api/v2/health")
+    print(f"  Map Data:  http://{host}:{port}/api/v2/map/wells")
     print("=" * 60 + "\n")
 
-    uvicorn.run(
-        "server:app",
-        host="0.0.0.0",
-        port=8002,
-        reload=True,
-        reload_dirs=[str(MODULE_ROOT)],
-        log_level="info",
-    )
+    if is_prod:
+        uvicorn.run(
+            "server:app",
+            host=host,
+            port=port,
+            reload=False,
+            log_level="info",
+        )
+    else:
+        uvicorn.run(
+            "server:app",
+            host=host,
+            port=port,
+            reload=True,
+            reload_dirs=[str(MODULE_ROOT)],
+            log_level="info",
+        )

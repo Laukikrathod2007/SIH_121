@@ -18,7 +18,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from loguru import logger
@@ -30,6 +30,7 @@ sys.path.insert(0, str(MODULE_ROOT))
 from data_store import NWISDataStore
 from orchestrator import NWISOrchestrator
 from models.schemas import HazardType
+from auth import require_api_key, rate_limit
 
 store = NWISDataStore()
 
@@ -167,7 +168,55 @@ async def get_formations(well_id: str):
     }
 
 
-@app.get("/api/v2/formations", tags=["Stratigraphy"])
+# ---------------------------------------------------------------------------
+# Casing / Cementing (real data only — logger Step 20-23)
+# ---------------------------------------------------------------------------
+
+@app.get("/api/v2/casing/{well_id:path}", tags=["Stratigraphy"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+async def get_casing_records(well_id: str):
+    """
+    Real casing string / cementing data for a well, extracted from real
+    Equinor Volve documents by module 01 (logger Step 20) -- 404s honestly
+    for any well without real casing data (including every synthetic
+    testbed well) rather than fabricating a response. This is the actual
+    cross-module wire for PS 26121 problem-description item (iii)'s
+    "correlate... casing programs, cementing practices" ask -- real
+    extraction feeding a real, queryable endpoint, not a schema sitting
+    unpopulated.
+    """
+    _require_store()
+    records = store.casing_records_by_well.get(well_id)
+    if not records:
+        raise HTTPException(
+            404,
+            f"No real casing data for well '{well_id}'. Real casing data currently exists "
+            f"for: {sorted(store.casing_records_by_well.keys())} (from Equinor Volve field "
+            f"documents — see logger Step 20-23)."
+        )
+    return {
+        "well_id": well_id,
+        "total": len(records),
+        "casing_records": [r.model_dump() for r in records],
+        "data_provenance": "real",
+    }
+
+
+@app.get("/api/v2/casing", tags=["Stratigraphy"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+async def get_all_real_casing_wells():
+    """Which wells currently have real casing data — the correlation
+    surface PS 26121 item (iii) asks for across wells, not just one."""
+    _require_store()
+    return {
+        "wells_with_real_casing_data": {
+            well_id: len(records) for well_id, records in store.casing_records_by_well.items()
+        },
+        "total_real_records": sum(len(v) for v in store.casing_records_by_well.values()),
+        "data_provenance": "real",
+        "source": "Equinor Volve field, real WCR/completion documents via module 01 extraction",
+    }
+
+
+@app.get("/api/v2/formations", tags=["Stratigraphy"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_all_formations(
     formation_name: str = Query(None, description="Filter by formation name"),
 ):

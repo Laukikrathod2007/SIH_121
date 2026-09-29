@@ -18,6 +18,7 @@ from models.schemas import (
     HazardRiskAssessment, FourPillarConfidence, EvidenceStrength,
     TelemetryRecord, OffsetWellRanking,
 )
+from ml.hazard_predictor import MLScoreResult
 
 # ---------------------------------------------------------------------------
 # Risk Aggregation Weights
@@ -141,6 +142,7 @@ def _build_corridor(
         HazardType.WELLBORE_INSTABILITY: "Raise KCl inhibitor; increase mud weight; ream frequently",
         HazardType.TORQUE_SPIKE: "Reduce WOB; reciprocate string; check stabilizer size",
         HazardType.CEMENTING_FAILURE: "Review cement design; verify centralizer placement; re-run caliper",
+        HazardType.OVERPRESSURE_ZONE: "Increase mud weight ahead of the transition zone; monitor d-exponent trend and connection gas; reduce ROP through the interval",
     }
 
     formation = max(events, key=lambda e: severity_to_numeric(e.severity)).formation
@@ -222,6 +224,24 @@ def compute_sensor_anomaly(
         torques = [r.torque_kn_m for r in records]
         return round(z_score_latest(torques), 4)
 
+    elif hazard_type == HazardType.OVERPRESSURE_ZONE:
+        # Real, standard petroleum-engineering overpressure indicator: the
+        # d-exponent (normalized ROP for WOB/RPM) trends DOWN below the
+        # normal compaction trend line when entering an undercompacted,
+        # overpressured zone -- this is directional (a decrease matters, an
+        # increase doesn't), unlike the undirected z-scores used above, so
+        # it's computed as a real trend comparison, not borrowed from
+        # z_score_latest.
+        d_exps = [r.d_exponent for r in records]
+        if len(d_exps) < 10:
+            return 0.0
+        baseline = sum(d_exps[:-5]) / len(d_exps[:-5])
+        recent = sum(d_exps[-5:]) / 5
+        if baseline <= 0:
+            return 0.0
+        drop_fraction = max(0.0, (baseline - recent) / baseline)
+        return round(min(1.0, drop_fraction / 0.30), 4)  # normalize: 30% drop -> 1.0
+
     return 0.0
 
 
@@ -235,39 +255,31 @@ def compute_ml_score(
     formation: Optional[str],
     mud_weight_ppg: float = 9.5,
     pore_pressure_ppg: float = 9.2,
-) -> float:
+    formation_tops: Optional[List] = None,
+    trajectory=None,
+    well_type: str = "Vertical",
+) -> "MLScoreResult":
     """
-    Deterministic ML proxy score based on physics relationships.
-    Replaces a true trained model for demonstration without training data.
-    M_ML ∈ [0, 1]
+    M_ML ∈ [0, 1]. Returns an ml.hazard_predictor.MLScoreResult (score +
+    which path produced it: "trained_model" or "heuristic_fallback") rather
+    than a bare float, so callers can surface which one was actually used —
+    consistent with the 4-Pillar Confidence Evaluator's whole point of never
+    presenting a hand-coded heuristic and a real model as the same kind of
+    number. formation_tops/trajectory/well_type are optional purely so any
+    existing direct caller that doesn't have them yet still gets a score (via
+    the heuristic path) instead of a hard error.
     """
-    score = 0.0
-
-    # Overbalance window: if mud weight is close to pore pressure → higher risk
-    overbalance = mud_weight_ppg - pore_pressure_ppg
-    if overbalance < 0.3:
-        score += 0.5
-    elif overbalance < 0.7:
-        score += 0.25
-
-    # Formation-specific risk
-    high_risk_formations = {
-        HazardType.MUD_LOSS: {"Tipam Sandstone", "Sylhet Limestone", "Kopili"},
-        HazardType.STUCK_PIPE: {"Girujan Clay", "Barail Coal-Shale"},
-        HazardType.KICK: {"Barail Sandstone", "Sylhet Limestone"},
-        HazardType.WELLBORE_INSTABILITY: {"Girujan Clay", "Barail Coal-Shale"},
-    }
-    if formation and hazard_type in high_risk_formations:
-        if formation in high_risk_formations[hazard_type]:
-            score += 0.35
-
-    # Depth-based trend (deeper = higher risk in Assam basin)
-    if current_depth_m > 2500:
-        score += 0.15
-    elif current_depth_m > 2000:
-        score += 0.08
-
-    return round(min(1.0, score), 4)
+    from ml.hazard_predictor import predict_ml_score
+    return predict_ml_score(
+        hazard_type=hazard_type,
+        current_depth_m=current_depth_m,
+        formation=formation,
+        formation_tops=formation_tops or [],
+        trajectory=trajectory,
+        well_type=well_type,
+        mud_weight_ppg=mud_weight_ppg,
+        pore_pressure_ppg=pore_pressure_ppg,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -337,6 +349,9 @@ def assess_hazard(
     recent_telemetry: List[TelemetryRecord],
     mud_weight_ppg: float = 9.5,
     pore_pressure_ppg: float = 9.2,
+    formation_tops: Optional[List] = None,
+    trajectory=None,
+    well_type: str = "Vertical",
 ) -> HazardRiskAssessment:
     """
     Full R_H(t) = α·P_history + β·A_sensor + γ·M_ML for one hazard family.
@@ -373,8 +388,14 @@ def assess_hazard(
     # A_sensor
     a_sensor = compute_sensor_anomaly(hazard_type, recent_telemetry)
 
-    # M_ML
-    m_ml = compute_ml_score(hazard_type, current_depth_m, formation, mud_weight_ppg, pore_pressure_ppg)
+    # M_ML — real trained model where one exists for this hazard type,
+    # physics heuristic otherwise (see ml/hazard_predictor.py)
+    ml_result = compute_ml_score(
+        hazard_type, current_depth_m, formation, mud_weight_ppg, pore_pressure_ppg,
+        formation_tops=formation_tops, trajectory=trajectory, well_type=well_type,
+    )
+    m_ml = ml_result.score
+    m_ml_source = ml_result.source
 
     # Composite score
     composite = ALPHA * p_history + BETA * a_sensor + GAMMA * m_ml
@@ -399,6 +420,7 @@ def assess_hazard(
         HazardType.WELLBORE_INSTABILITY: "Increase KCl inhibitor concentration; raise MW to 11.0 ppg; limit drilling breaks",
         HazardType.TORQUE_SPIKE: "Reduce WOB by 30%; check top-drive parameters; prepare for string reciprocation",
         HazardType.CEMENTING_FAILURE: "Review centralizer spacing; ensure caliper data; use foam cement for narrow annuli",
+        HazardType.OVERPRESSURE_ZONE: "Raise mud weight ahead of the predicted transition; track d-exponent and connection-gas trend; have kill mud staged",
     }
 
     evidence_event_ids = [e.event_id for e in top_offset_events if e.event_type == hazard_type][:10]
@@ -410,6 +432,7 @@ def assess_hazard(
         p_history=p_history,
         a_sensor=a_sensor,
         m_ml=m_ml,
+        m_ml_source=m_ml_source,
         confidence=confidence,
         active_corridor=active_corridor,
         lead_time_meters=lead_time,

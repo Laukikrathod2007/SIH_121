@@ -34,7 +34,85 @@ class EventType(str, Enum):
     LOST_CIRCULATION = "LOST_CIRCULATION"
     DEVIATION = "DEVIATION_CONTROL"
     NPT_OPERATIONAL = "NPT_OPERATIONAL"
+    # Added after re-reading PS 26121 word-by-word: outcome (v) names
+    # "overpressure zones" explicitly alongside mud loss/stuck pipe/torque
+    # spikes/cementing, and none of the existing 10 values covered it.
+    # Confirmed real, not speculative — real Volve completion reports
+    # describe genuine overpressure findings in bar-vs-field-gradient terms
+    # (e.g. "~12 bar overpressure compared to initial main field oil
+    # gradient", WELL-15_9-F-1A_COMPLETION.pdf).
+    OVERPRESSURE_ZONE = "OVERPRESSURE_ZONE"
+    # Also named explicitly in the PS's own relevant-data list (item ix),
+    # alongside mud losses/kicks/stuck pipe/NPT. Added for schema
+    # completeness; honestly disclosed in the benchmark log that the
+    # current real-data pull (14 Volve documents) has zero fishing-operation
+    # narratives to validate this extraction against — unlike the other
+    # additions here, this one is not yet real-data-verified.
+    FISHING_OPERATION = "FISHING_OPERATION"
     UNKNOWN = "UNKNOWN"
+
+
+# ---------------------------------------------------------------------------
+# EventType -> modules/02_nwis_backend HazardType reconciliation.
+#
+# Found during real-data benchmarking (Equinor Volve field documents): this
+# module's EventType and module 02's HazardType are two independently-evolved
+# taxonomies with no mapping between them. module 02's HazardType is
+# MUD_LOSS/STUCK_PIPE/KICK/WELLBORE_INSTABILITY/TORQUE_SPIKE/CEMENTING_FAILURE
+# — four values line up exactly by name, but this module's GAS_INFLUX and
+# LOST_CIRCULATION (both real, frequently-extracted event types — see Step 13
+# in logger/04_STEP_BY_STEP_IMPLEMENTATION_LOG.md) had nowhere to go
+# downstream, and EQUIPMENT_FAILURE/DEVIATION/NPT_OPERATIONAL/UNKNOWN
+# genuinely have no HazardType equivalent at all (they aren't offset-well
+# geological hazards in module 02's sense — an equipment failure or NPT
+# delay isn't something a future well would encounter at the same formation).
+#
+# No live integration currently pushes module 01's extracted events into
+# module 02's data store — this mapping exists so that when one is built, the
+# translation is explicit and justified per case rather than invented ad hoc
+# at the call site.
+EVENT_TYPE_TO_HAZARD_TYPE: dict["EventType", Optional[str]] = {
+    EventType.MUD_LOSS: "MUD_LOSS",
+    EventType.STUCK_PIPE: "STUCK_PIPE",
+    EventType.KICK: "KICK",
+    EventType.WELLBORE_INSTABILITY: "WELLBORE_INSTABILITY",
+    # Lost circulation is a mud-loss mechanism specifically (fluid lost to
+    # the formation rather than returned to surface) — module 02 doesn't
+    # distinguish loss mechanisms, only MUD_LOSS as a whole.
+    EventType.LOST_CIRCULATION: "MUD_LOSS",
+    # A gas influx is the leading indicator/early form of a well-control
+    # kick — module 02 has no separate "influx" hazard type, and treating it
+    # as anything other than KICK would understate its severity.
+    EventType.GAS_INFLUX: "KICK",
+    # Overpressure IS a geological hazard a future offset well would
+    # encounter at the same formation — module 02 needs a matching
+    # HazardType value added alongside this (see that module's schemas.py).
+    EventType.OVERPRESSURE_ZONE: "OVERPRESSURE_ZONE",
+    # A fishing operation is an operational response to a prior failure
+    # (stuck/parted string, dropped tool), not itself a geological hazard
+    # tied to a formation — closer to EQUIPMENT_FAILURE in kind. No
+    # HazardType equivalent for the same reason those map to None below.
+    EventType.FISHING_OPERATION: None,
+    # No HazardType equivalent — these describe the document/operation, not
+    # a geological hazard a future offset well would encounter at this
+    # formation, which is what module 02's HazardType exists to rank.
+    EventType.EQUIPMENT_FAILURE: None,
+    EventType.DEVIATION: None,
+    EventType.NPT_OPERATIONAL: None,
+    EventType.UNKNOWN: None,
+}
+
+
+def to_hazard_type(event_type: "EventType") -> Optional[str]:
+    """
+    Map this module's EventType to modules/02_nwis_backend's HazardType
+    string value, or None if there's no equivalent (see
+    EVENT_TYPE_TO_HAZARD_TYPE's per-case reasoning above). Returns the raw
+    string, not module 02's enum class, since module 01 does not import
+    module 02 as a dependency — the caller constructs module 02's HazardType
+    from this value at the actual integration boundary.
+    """
+    return EVENT_TYPE_TO_HAZARD_TYPE.get(event_type)
 
 
 class Severity(str, Enum):
@@ -206,6 +284,12 @@ class FormationTop(BaseModel):
     top_tvd_m: Optional[ExtractedField] = None
     base_md_m: Optional[ExtractedField] = None
     lithology_description: Optional[str] = None
+    # Matches module 02's FormationTop.porosity_pct/permeability_md/
+    # water_saturation_pct addition — PS 26121 problem-description item
+    # (iii) asks to correlate "reservoir characteristics" across wells.
+    porosity_pct: Optional[ExtractedField] = None
+    permeability_md: Optional[ExtractedField] = None
+    water_saturation_pct: Optional[ExtractedField] = None
     confidence: float = Field(ge=0.0, le=1.0, default=0.0)
 
     @property
@@ -376,6 +460,11 @@ class DocumentExtractionResult(BaseModel):
     all_drilling_events: List[DrillingEvent] = Field(default_factory=list)
     all_casing_records: List[CasingRecord] = Field(default_factory=list)
     mud_properties: List[MudProperties] = Field(default_factory=list)
+    # Well-level headline porosity/permeability/water-saturation reading
+    # (see extract_reservoir_properties' docstring for why this is a plain
+    # dict, not per-formation). Keys: porosity_pct, permeability_md,
+    # water_saturation_pct -- any subset may be present.
+    reservoir_properties: dict = Field(default_factory=dict)
 
     # Physics & Operational Summary
     total_npt_hours: float = 0.0

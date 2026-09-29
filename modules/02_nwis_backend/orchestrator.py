@@ -28,13 +28,24 @@ from engines.risk_corridor_engine import assess_hazard, identify_risk_corridors
 
 import datetime
 
-# All 5 hazard families from PS 26121
+# All hazard families from PS 26121. Real gaps found and fixed here
+# (logger Step 21): this list was missing CEMENTING_FAILURE entirely (it
+# existed in the HazardType enum since before this session but was never
+# in this list -- /api/v2/analyze has never computed a cementing-failure
+# assessment for any well until this fix) and OVERPRESSURE_ZONE (added
+# this session per the PS word-by-word gap analysis, Step 20). Every other
+# engine (risk_corridor_engine.py, hazard_predictor.py) already derives
+# its hazard coverage from HazardType directly or has a safe per-hazard
+# fallback -- this hardcoded list was the one real place a new/existing
+# enum member could silently never reach a live assessment.
 ALL_HAZARDS = [
     HazardType.MUD_LOSS,
     HazardType.STUCK_PIPE,
     HazardType.KICK,
     HazardType.WELLBORE_INSTABILITY,
     HazardType.TORQUE_SPIKE,
+    HazardType.CEMENTING_FAILURE,
+    HazardType.OVERPRESSURE_ZONE,
 ]
 
 
@@ -115,6 +126,9 @@ class NWISOrchestrator:
                 recent_telemetry=recent_telemetry,
                 mud_weight_ppg=mud_weight_ppg,
                 pore_pressure_ppg=pore_pp,
+                formation_tops=active_tops,
+                trajectory=active_traj,
+                well_type=active_well.well_type.value,
             )
             hazard_assessments.append(assessment)
             if assessment.active_corridor:

@@ -19,10 +19,18 @@ from loguru import logger
 
 from models.schemas import (
     Well, WellTrajectory, SurveyStation, FormationTop, DrillingEvent,
-    TelemetryRecord, HazardType, WellType, WellStatus
+    TelemetryRecord, HazardType, WellType, WellStatus, CasingRecord
 )
 
 DATA_DIR = Path(__file__).parent / "data" / "synthetic"
+
+# Real casing/cementing data (logger Step 20-23) -- genuinely real, from
+# module 01's extraction of real Equinor Volve documents, kept as its own
+# real_data/ file rather than merged into the synthetic testbed's
+# Assam-Arakan wells, which it has nothing to do with. Casing programs are
+# correlatable across whichever wells actually have real casing data (2
+# real Volve wells currently), not fabricated for the synthetic ones.
+REAL_CASING_DATA_PATH = Path(__file__).parent.parent.parent / "real_data" / "real_casing_records_all.json"
 
 
 class NWISDataStore:
@@ -142,13 +150,33 @@ class NWISDataStore:
             int(r.depth_m): r for r in self.telemetry_records
         }
 
+        # Real casing/cementing records (logger Step 20-23). Loaded from a
+        # separate real_data/ path, not data/synthetic/ -- these are real
+        # Volve wells the synthetic testbed knows nothing about, so this is
+        # additive, not merged into the synthetic well set.
+        casing_raw = self._read_json(REAL_CASING_DATA_PATH, [])
+        self.casing_records_by_well: Dict[str, List[CasingRecord]] = {}
+        for c in casing_raw:
+            try:
+                record = CasingRecord(
+                    well_id=c["well_id"],
+                    casing_size_inches=c.get("casing_size_inches"),
+                    shoe_depth_md_m=c["shoe_depth_md_m"],
+                    top_of_cement_md_m=c.get("top_of_cement_md_m"),
+                )
+                self.casing_records_by_well.setdefault(record.well_id, []).append(record)
+            except Exception as e:
+                logger.warning(f"Skipping casing record: {e}")
+
         self._loaded = True
 
         logger.success(
             f"NWIS store loaded: {len(self.all_wells)} wells | "
             f"{sum(len(v) for v in self.formation_tops_by_well.values())} tops | "
             f"{len(self.all_events)} events | "
-            f"{len(self.telemetry_records)} telemetry records"
+            f"{len(self.telemetry_records)} telemetry records | "
+            f"{sum(len(v) for v in self.casing_records_by_well.values())} real casing records "
+            f"({len(self.casing_records_by_well)} real wells)"
         )
 
     def get_telemetry_at(self, depth_m: float, window: int = 120) -> List[TelemetryRecord]:

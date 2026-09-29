@@ -22,6 +22,7 @@ from models.schemas import (
     MudProperties,
     DrillingParameters,
     FormationTop,
+    CasingRecord,
     NPTRecord,
     DrillingEvent,
     ExtractedField,
@@ -149,6 +150,26 @@ EVENT_KEYWORDS: dict[EventType, List[str]] = {
     EventType.LOST_CIRCULATION: [
         "lost circulation", "loss zone", "thief zone", "fracture",
         "vugular", "cavernous", "open fracture",
+    ],
+    # Real narratives confirmed in Volve completion reports, e.g. "~12 bar
+    # overpressure compared to initial main field oil gradient"
+    # (WELL-15_9-F-1A_COMPLETION.pdf). Deliberately just the "overpressur"
+    # stem, not "abnormal pressure" -- a real match for that phrase in the
+    # same document set turned out to be a NEGATIVE case ("losses were NOT
+    # due to abnormal pressure conditions"), the same false-positive shape
+    # kick/kickoff had, so it's excluded rather than risk repeating it.
+    EventType.OVERPRESSURE_ZONE: [
+        "overpressure", "overpressured", "over-pressured", "over pressured",
+    ],
+    # Standard oilfield terminology, added for schema completeness per PS
+    # 26121's explicit mention (relevant-data item ix) -- NOT yet validated
+    # against real data. The current 14-document Volve pull has zero
+    # fishing-operation narratives (confirmed by keyword scan), so this list
+    # is un-tested against real text, unlike every other entry here.
+    EventType.FISHING_OPERATION: [
+        "fishing operation", "fishing job", "fishing string", "fishing tool",
+        "junk in hole", "overshot", "fishing spear", "recover the fish",
+        "lost in hole", "retrieve the assembly",
     ],
 }
 
@@ -548,6 +569,216 @@ def extract_formation_tops(text: str) -> List[FormationTop]:
 
 
 # ===========================================================================
+# Casing Records (incl. cementing top-of-cement) — PS 26121 problem-
+# description item (iii) asks to correlate "casing programs" and
+# "cementing practices" across wells. The CasingRecord schema already
+# existed in models/schemas.py (top_of_cement_md_m included) but had zero
+# extraction logic anywhere in this pipeline -- found by grepping the
+# codebase, not assumed. This is the first function that actually
+# populates it.
+# ===========================================================================
+
+# Real pattern confirmed against WELL-15_9-F-1A_COMPLETION.pdf's casing
+# records table: '20" Casing shoe | 1348.4 | 1336.4' and
+# '13 3/8" Casing shoe | 2595.4 | 2446.8' (size | MD | TVD, cells joined
+# with either '|' or a bare newline depending on document/row -- both
+# real, confirmed by inspecting actual PyMuPDF output on real documents).
+#
+# Real bug found testing: the separator between the two number groups was
+# originally `\s*\|?\s*` -- every piece individually optional, so it could
+# match ZERO characters. When a row has only one real number (e.g. a liner
+# shoe depth "3090" with no TVD following, real case:
+# '9 5/8" Casing shoe\n3090'), the regex still "matched" by splitting the
+# single contiguous number into two arbitrary halves ("30" + "90") to
+# satisfy both required groups, rather than correctly failing to match.
+# Fixed by requiring at least one real separator character ([\s|]+, one
+# or more) between groups, so two numbers can only be split where a real
+# newline or pipe actually separates them.
+RE_CASING_SHOE_TABLE_ROW = re.compile(
+    r'(\d{1,2}(?:\s\d/\d)?)\s*"\s*Casing\s*shoe[\s|]+(\d{2,5}\.?\d{0,2})[\s|]+(\d{2,5}\.?\d{0,2})\b',
+    re.IGNORECASE,
+)
+
+# Single-number fallback for a real row shape confirmed above: casing size
+# + shoe MD with no TVD following (a liner or an incompletely-tabulated
+# row) -- tried only when the two-number pattern above doesn't match this
+# specific "Casing shoe" mention, so a row that DOES have both numbers is
+# never double-counted by also matching this looser pattern.
+RE_CASING_SHOE_SINGLE = re.compile(
+    r'(\d{1,2}(?:\s\d/\d)?)\s*"\s*Casing\s*shoe[\s|]+(\d{2,5}\.?\d{0,2})\b',
+    re.IGNORECASE,
+)
+
+# Narrative fallback for documents without a clean table (e.g. DDR prose:
+# "13 3/8-inch casing run to 2595m" or "9 5/8" casing set at 2200m").
+RE_CASING_NARRATIVE = re.compile(
+    r'(\d{1,2}(?:[\s-]\d/\d)?)\s*(?:"|inch(?:es)?)\s*casing\s*(?:run|set|landed)?\s*(?:to|at|@)?\s*(\d{2,5}\.?\d{0,2})\s*m',
+    re.IGNORECASE,
+)
+
+RE_TOP_OF_CEMENT = re.compile(
+    r'top\s*of\s*cement\D{0,20}(\d{1,5}\.?\d{0,2})\s*m',
+    re.IGNORECASE,
+)
+
+
+def _parse_casing_size(raw: str) -> Optional[float]:
+    """
+    Real bug found testing against WELL-15_9-F-1A_COMPLETION.pdf: the
+    naive 'replace space with .' approach turned '13 3/8' into the string
+    '13.3/8', which float() correctly rejects -- so every fractional-inch
+    casing size (the norm in real casing programs: 13 3/8", 9 5/8", 7") was
+    silently dropped. Parses 'N F/D' (whole + fraction) or a plain integer.
+    """
+    raw = raw.strip()
+    frac_m = re.match(r'^(\d{1,2})\s+(\d)/(\d)$', raw)
+    if frac_m:
+        whole, num, den = frac_m.groups()
+        return float(whole) + float(num) / float(den)
+    return _parse_numeric(raw)
+
+
+def extract_casing_records(text: str) -> List[CasingRecord]:
+    """
+    Extract casing size + shoe depth (+ top-of-cement where stated nearby)
+    from WCR completion-report casing-records tables or DDR narrative.
+    """
+    records: List[CasingRecord] = []
+    if not text:
+        return records
+
+    seen_shoe_depths: set = set()
+    for m in RE_CASING_SHOE_TABLE_ROW.finditer(text):
+        size_val = _parse_casing_size(m.group(1))
+        md_val = _parse_numeric(m.group(2))
+        if md_val is None or md_val in seen_shoe_depths:
+            continue
+        seen_shoe_depths.add(md_val)
+        records.append(
+            CasingRecord(
+                casing_size_inches=_make_field("casing_size_inches", m.group(1), size_val or 0.0, "in", confidence=0.85)
+                if size_val is not None else None,
+                shoe_depth_md_m=_make_field("shoe_depth_md_m", m.group(0), md_val, "m", confidence=0.85),
+            )
+        )
+
+    # Real rows with only a shoe MD and no TVD (see RE_CASING_SHOE_SINGLE's
+    # docstring) -- checked against seen_shoe_depths so a row the two-number
+    # pattern above already captured isn't duplicated here.
+    for m in RE_CASING_SHOE_SINGLE.finditer(text):
+        size_val = _parse_casing_size(m.group(1))
+        md_val = _parse_numeric(m.group(2))
+        if md_val is None or md_val in seen_shoe_depths:
+            continue
+        seen_shoe_depths.add(md_val)
+        records.append(
+            CasingRecord(
+                casing_size_inches=_make_field("casing_size_inches", m.group(1), size_val or 0.0, "in", confidence=0.80)
+                if size_val is not None else None,
+                shoe_depth_md_m=_make_field("shoe_depth_md_m", m.group(0), md_val, "m", confidence=0.80),
+            )
+        )
+
+    if not records:
+        for m in RE_CASING_NARRATIVE.finditer(text):
+            size_val = _parse_casing_size(m.group(1).replace("-", " "))
+            md_val = _parse_numeric(m.group(2))
+            if md_val is None or md_val in seen_shoe_depths:
+                continue
+            seen_shoe_depths.add(md_val)
+            records.append(
+                CasingRecord(
+                    casing_size_inches=_make_field("casing_size_inches", m.group(1), size_val or 0.0, "in", confidence=0.70)
+                    if size_val is not None else None,
+                    shoe_depth_md_m=_make_field("shoe_depth_md_m", m.group(0), md_val, "m", confidence=0.70),
+                )
+            )
+
+    # Attach top-of-cement to the nearest-depth casing record if any is
+    # mentioned in the document (real docs typically state it once near a
+    # specific string, not per-record — best-effort attach to the deepest
+    # shoe, which is the common real convention: TOC reported for the
+    # production/intermediate string, not surface casing).
+    toc_m = RE_TOP_OF_CEMENT.search(text)
+    if toc_m and records:
+        toc_val = _parse_numeric(toc_m.group(1))
+        if toc_val is not None:
+            deepest = max(records, key=lambda r: r.shoe_depth_md_m.normalized_value or 0)
+            deepest.top_of_cement_md_m = _make_field("top_of_cement_md_m", toc_m.group(0), toc_val, "m", confidence=0.75)
+
+    return records
+
+
+# ===========================================================================
+# Reservoir Characteristics (porosity, permeability, water saturation)
+# ===========================================================================
+
+# Real pattern confirmed against WELL-15_9-F-12_COMPLETION.pdf: "porosity of
+# 0.17" (decimal fraction, not percentage) and "4 p.u. less than the
+# porosity" (p.u. = porosity units = percentage points). Value is stored
+# as a percentage (0.17 -> 17.0) to match module 02's porosity_pct field.
+RE_POROSITY = re.compile(r'porosity\s+(?:of|is|was|being)?\s*(\d{1,2}\.\d{1,3})\b', re.IGNORECASE)
+RE_PERMEABILITY = re.compile(r'permeabilit\w*\D{0,15}(\d{1,6}\.?\d{0,2})\s*(?:mD|md)\b', re.IGNORECASE)
+RE_WATER_SATURATION = re.compile(r'water\s+saturation\D{0,20}(\d{1,3}\.?\d{0,2})\s*%', re.IGNORECASE)
+
+# Real bug found testing against WELL-15_9-F-1_PETROPHYSICAL.pdf: the first
+# "permeability...mD" match in that document was "cut offs correspond to a
+# overburden corrected core permeability of 0.5 mD" -- a methodology
+# CUTOFF threshold, not an actual reservoir reading. Same class of mistake
+# as formation-tops matching methodology prose instead of a data table.
+# Fixed by skipping any match whose nearby context mentions "cut off"/
+# "cutoff"/"cut-off", and by checking ALL matches (not just the first) so a
+# real value elsewhere in the document isn't lost when the first mention
+# happens to be a cutoff.
+_CUTOFF_CONTEXT = re.compile(r'cut[\s-]?off', re.IGNORECASE)
+
+
+def _first_non_cutoff_match(pattern: "re.Pattern", text: str, context_window: int = 60) -> Optional["re.Match"]:
+    for m in pattern.finditer(text):
+        ctx_start = max(0, m.start() - context_window)
+        if not _CUTOFF_CONTEXT.search(text[ctx_start:m.end()]):
+            return m
+    return None
+
+
+def extract_reservoir_properties(text: str) -> dict:
+    """
+    Extract porosity/permeability/water-saturation from petrophysical or
+    completion report narrative text. Returns a plain dict (well-level, not
+    per-formation) since real documents in this data set report these as
+    single headline values for the target reservoir, not a per-formation
+    table -- attaching a well-level reading to a specific FormationTop
+    record would overstate precision the source text doesn't have.
+    """
+    result: dict = {}
+    if not text:
+        return result
+
+    m = _first_non_cutoff_match(RE_POROSITY, text)
+    if m:
+        val = _parse_numeric(m.group(1))
+        if val is not None:
+            # "porosity of 0.17" is a decimal fraction -> 17.0%; values
+            # already >1 (rare, but seen as "porosity of 17.0" in some
+            # narrative styles) are treated as already-percentage.
+            result["porosity_pct"] = round(val * 100, 1) if val <= 1.0 else val
+
+    m = _first_non_cutoff_match(RE_PERMEABILITY, text)
+    if m:
+        val = _parse_numeric(m.group(1))
+        if val is not None:
+            result["permeability_md"] = val
+
+    m = _first_non_cutoff_match(RE_WATER_SATURATION, text)
+    if m:
+        val = _parse_numeric(m.group(1))
+        if val is not None:
+            result["water_saturation_pct"] = val
+
+    return result
+
+
+# ===========================================================================
 # NPT Calculation from Time Ranges
 # ===========================================================================
 
@@ -645,7 +876,11 @@ def extract_all_entities(page_text: str, page_number: int) -> dict:
         "formation_tops": extract_formation_tops(page_text),
         "npt_records": calculate_npt_from_times(page_text),
         "drilling_events": extract_drilling_events(page_text),
-        "casing_records": [],  # Implemented in phase 2
+        # Was a stub ("Implemented in phase 2") with zero extraction logic
+        # behind it — found by grepping the codebase for CasingRecord's only
+        # other reference, which was its own schema definition. Now real.
+        "casing_records": extract_casing_records(page_text),
+        "reservoir_properties": extract_reservoir_properties(page_text),
     }
 
     elapsed = time.time() * 1000 - start_ms

@@ -11,8 +11,10 @@ and directional wells drilling through the same geological formation.
 """
 
 from __future__ import annotations
+import math
 from typing import List, Optional, Dict
 from models.schemas import Well, WellTrajectory, FormationTop, SurveyStation
+from engines.trajectory_engine import compute_dogleg_angle, compute_ratio_factor
 
 
 # ---------------------------------------------------------------------------
@@ -23,13 +25,37 @@ def tvd_at_md(trajectory: WellTrajectory, target_md: float) -> float:
     """
     Interpolate TVD at any MD using the minimum curvature method.
     Returns TVD in meters.
+
+    Each survey station's own tvd_m is already minimum-curvature-accurate
+    (data/synthetic/generate_testbed.py's generate_trajectory_stations
+    builds it that way). What used to be missing was the interpolation
+    BETWEEN two known stations and the extrapolation BEYOND the last one —
+    previously both did a naive linear/flat treatment of tvd_m, which threw
+    away that accuracy for any query MD that doesn't land exactly on a 30m
+    survey station. This now uses the SPE/API Minimum Curvature Method (see
+    engines/trajectory_engine.py, ported from a teammate's more rigorous
+    trajectory engine) for both:
+      - Interior interval: minimum-curvature sub-interval calculation from
+        the bracketing station (s_prev) to the target MD, using the
+        angle-interpolated inclination/azimuth at target_md (via
+        inclination_at_md/azimuth_at_md below) as the second survey point.
+      - Beyond the last station: tangential extrapolation along the last
+        known inclination/azimuth vector, instead of clamping flat (a
+        deviated well still building/holding angle does NOT stop gaining
+        TVD just because surveys ran out).
+    Signature/contract unchanged — same inputs, same float TVD return — so
+    every existing caller (tvdss_at_md, stratigraphic_depth,
+    align_horizons_across_wells, and anything reached from
+    /api/v2/stratigraphic_depth_track) keeps working unmodified.
     """
     stations = trajectory.stations
     if not stations:
         return target_md  # assume vertical
 
     if target_md <= stations[0].md_m:
-        # Extrapolate before first survey
+        # Extrapolate before first survey (near-surface, inclination ~0 in
+        # practice, so this proportional-vertical approximation is left as
+        # a low-risk fallback — not the gap this upgrade targets).
         frac = target_md / max(stations[0].md_m, 0.001)
         return stations[0].tvd_m * frac
 
@@ -37,10 +63,100 @@ def tvd_at_md(trajectory: WellTrajectory, target_md: float) -> float:
         s_prev = stations[i - 1]
         s_curr = stations[i]
         if s_curr.md_m >= target_md:
-            frac = (target_md - s_prev.md_m) / max(s_curr.md_m - s_prev.md_m, 0.001)
-            return s_prev.tvd_m + frac * (s_curr.tvd_m - s_prev.tvd_m)
+            return _min_curvature_tvd_from_station(trajectory, s_prev, target_md)
 
-    return stations[-1].tvd_m
+    # Beyond the last surveyed station: tangential extrapolation along the
+    # last known inclination vector (was: `return stations[-1].tvd_m`, a
+    # flat clamp that silently assumed the well goes vertical past TD).
+    last = stations[-1]
+    delta_md = target_md - last.md_m
+    return last.tvd_m + delta_md * math.cos(math.radians(last.inclination_deg))
+
+
+def _min_curvature_tvd_from_station(
+    trajectory: WellTrajectory,
+    s_prev: SurveyStation,
+    target_md: float,
+) -> float:
+    """
+    Minimum-curvature TVD delta from a known survey station (s_prev) to an
+    arbitrary target_md that falls before the NEXT survey station, anchored
+    on s_prev's already-known (and already minimum-curvature-accurate)
+    tvd_m rather than recomputing the whole trajectory from surface. The
+    "second survey point" for the dogleg calculation is the
+    angle-interpolated inclination/azimuth at target_md (inclination_at_md/
+    azimuth_at_md already do correct linear/circular interpolation of the
+    raw angles — reused here rather than duplicated).
+    """
+    delta_md = target_md - s_prev.md_m
+    if delta_md <= 0:
+        return s_prev.tvd_m
+
+    inc_target = inclination_at_md(trajectory, target_md)
+    az_target = azimuth_at_md(trajectory, target_md)
+
+    inc1_rad = math.radians(s_prev.inclination_deg)
+    inc2_rad = math.radians(inc_target)
+    az1_rad = math.radians(s_prev.azimuth_deg)
+    az2_rad = math.radians(az_target)
+
+    beta_rad = compute_dogleg_angle(inc1_rad, inc2_rad, az1_rad, az2_rad)
+    rf = compute_ratio_factor(beta_rad)
+
+    delta_tvd = (delta_md / 2.0) * (math.cos(inc1_rad) + math.cos(inc2_rad)) * rf
+    return s_prev.tvd_m + delta_tvd
+
+
+def inclination_at_md(trajectory: WellTrajectory, target_md: float) -> float:
+    """
+    Interpolate inclination (degrees) at a given MD — same interpolation
+    pattern as tvd_at_md above, applied to inclination_deg instead. Shared by
+    engines/dors_engine.py's trajectory-similarity scoring and ml/
+    feature_engineering.py's model features, so both use the exact same
+    interpolation (a discrepancy here would silently skew one or the other).
+    """
+    stations = trajectory.stations
+    if not stations:
+        return 0.0
+    if target_md <= stations[0].md_m:
+        return stations[0].inclination_deg
+    for i in range(1, len(stations)):
+        s_prev, s_curr = stations[i - 1], stations[i]
+        if s_curr.md_m >= target_md:
+            frac = (target_md - s_prev.md_m) / max(s_curr.md_m - s_prev.md_m, 0.001)
+            return s_prev.inclination_deg + frac * (s_curr.inclination_deg - s_prev.inclination_deg)
+    return stations[-1].inclination_deg
+
+
+def azimuth_at_md(trajectory: WellTrajectory, target_md: float) -> float:
+    """
+    Interpolate azimuth (degrees, 0-360) at a given MD. Azimuth is circular
+    (0 and 360 are the same heading), so this interpolates via unit vectors
+    (cos/sin) rather than the raw angle — a naive linear interpolation
+    between e.g. 350 deg and 10 deg would wrongly average to 180 deg (due
+    south) instead of the correct ~0 deg (due north).
+    """
+    stations = trajectory.stations
+    if not stations:
+        return 0.0
+
+    def _to_vec(deg: float) -> tuple[float, float]:
+        rad = math.radians(deg)
+        return math.cos(rad), math.sin(rad)
+
+    def _vec_to_deg(x: float, y: float) -> float:
+        return math.degrees(math.atan2(y, x)) % 360
+
+    if target_md <= stations[0].md_m:
+        return stations[0].azimuth_deg
+    for i in range(1, len(stations)):
+        s_prev, s_curr = stations[i - 1], stations[i]
+        if s_curr.md_m >= target_md:
+            frac = (target_md - s_prev.md_m) / max(s_curr.md_m - s_prev.md_m, 0.001)
+            x1, y1 = _to_vec(s_prev.azimuth_deg)
+            x2, y2 = _to_vec(s_curr.azimuth_deg)
+            return _vec_to_deg(x1 + frac * (x2 - x1), y1 + frac * (y2 - y1))
+    return stations[-1].azimuth_deg
 
 
 def tvdss_at_md(trajectory: WellTrajectory, well: Well, target_md: float) -> float:
@@ -192,3 +308,11 @@ def _md_at_tvd(trajectory: WellTrajectory, target_tvd: float) -> Optional[float]
             return last.md_m + (target_tvd - last.tvd_m) / tvd_rate
 
     return None
+
+
+# Public alias — this function is used internally (align_horizons_across_wells
+# above calls the leading-underscore name directly), but the ahead-of-bit
+# corridor projection added in engines/risk_corridor_engine.py needs it as a
+# cross-module import, so it's exposed here under a non-private name rather
+# than having another module reach into a "private" function.
+md_at_tvd = _md_at_tvd

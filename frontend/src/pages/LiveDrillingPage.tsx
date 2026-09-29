@@ -1,8 +1,15 @@
-import React, { useMemo } from 'react';
-import { Gauge, Play, Pause, RotateCcw, StepForward } from 'lucide-react';
+import React, { useMemo, useState, useEffect, lazy, Suspense } from 'react';
+import { Gauge, Play, Pause, RotateCcw, StepForward, Box } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { api } from '../services/api';
 import { StripChart, StripSeries } from '../components/StripChart';
 import { WellCutawayCockpit } from '../components/WellCutawayCockpit';
+import { WellTrajectory, FormationTop } from '../types';
+
+// Lazy-loaded: pulls in three.js (~800kB), only needed once mounted.
+const LiveDrillingScene3D = lazy(() =>
+  import('../components/LiveDrillingScene3D').then((m) => ({ default: m.LiveDrillingScene3D }))
+);
 
 const FLOW_SERIES: StripSeries[] = [
   { key: 'flow_in', label: 'Flow In (LPM)', color: '#06b6d4' },
@@ -41,6 +48,23 @@ export const LiveDrillingPage: React.FC = () => {
     telemetryRateHz,
     telemetryLatencyMs,
   } = useApp();
+
+  const [trajectory3D, setTrajectory3D] = useState<WellTrajectory | null>(null);
+  const [formations3D, setFormations3D] = useState<FormationTop[]>([]);
+  const [show3DLive, setShow3DLive] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      api.getTrajectory(activeWellId).catch(() => null),
+      api.getFormations(activeWellId).catch(() => []),
+    ]).then(([traj, forms]) => {
+      if (cancelled) return;
+      setTrajectory3D(traj);
+      setFormations3D(forms);
+    });
+    return () => { cancelled = true; };
+  }, [activeWellId]);
 
   const chartData = useMemo(() => {
     return telemetryHistory.map((t, idx) => ({
@@ -152,6 +176,37 @@ export const LiveDrillingPage: React.FC = () => {
         telemetry={telemetry}
         activeRisk={activeRisk}
       />
+
+      {/* 1.6. Live 3D Rig View -- real trajectory, real formations, real
+          live bit position (moves with the actual telemetry WebSocket
+          stream), switchable camera perspectives (Rig Floor / Cross-
+          Section / Downhole Follow / Free Orbit). */}
+      <div className="scada-panel overflow-hidden">
+        <div className="px-4 py-2.5 flex items-center justify-between border-b border-slate-800 bg-slate-900/60">
+          <div className="flex items-center gap-2 text-xs font-mono">
+            <Box className="w-4 h-4 text-cyan-400" />
+            <span className="font-bold text-slate-200 uppercase">Live 3D Rig View</span>
+          </div>
+          <button
+            onClick={() => setShow3DLive(!show3DLive)}
+            className="text-[10px] font-mono text-slate-400 hover:text-slate-200 border border-slate-700 rounded px-2 py-1"
+          >
+            {show3DLive ? 'Hide' : 'Show'}
+          </button>
+        </div>
+        {show3DLive && (
+          <div className="h-[460px]">
+            <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-500 font-mono text-xs">Loading 3D scene...</div>}>
+              <LiveDrillingScene3D
+                trajectory={trajectory3D}
+                formations={formations3D}
+                telemetry={telemetry}
+                wellName={activeWell?.well_name || activeWellId}
+              />
+            </Suspense>
+          </div>
+        )}
+      </div>
 
       {/* 2. Top Metric Cards (16 Industrial Channels) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
