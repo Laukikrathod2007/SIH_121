@@ -9,6 +9,8 @@ from app.modules.well_intelligence.routes import (
     well_router,
     intelligence_router,
     telemetry_router,
+    knowledge_router,
+    decision_router,
 )
 from app.modules.physics_engine.routes.physics_routes import physics_router
 from app.modules.predictive_analytics.routes.predictive_routes import predictive_router
@@ -18,6 +20,9 @@ api_router = APIRouter()
 
 # Mount Domain Sub-Routers
 api_router.include_router(document_router)
+# knowledge_router first: its /events/search must win over well_router's /events/{well_id}
+api_router.include_router(knowledge_router)
+api_router.include_router(decision_router)
 api_router.include_router(well_router)
 api_router.include_router(intelligence_router)
 api_router.include_router(telemetry_router)

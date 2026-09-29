@@ -37,6 +37,9 @@ async def lifespan(app: FastAPI):
     try:
         store.load()
         logger.success(f"NWIS Data Store loaded successfully: {store.status()}")
+        from app.modules.well_intelligence.services.document_bridge import ingest_all_outputs
+        bridged = ingest_all_outputs()
+        logger.info(f"Document bridge: {bridged} extracted events merged into the knowledge repository")
     except Exception as exc:
         logger.error(f"Failed to load testbed data store: {exc}")
 

@@ -101,6 +101,17 @@ class NWISDataStore:
 
         # Load drilling events
         events_raw = self._read_json(data_dir / "drilling_events.json", [])
+        # Demo augmentation layer (augment_demo.py): casing/mud programs plus
+        # torque-spike, cementing and mud-loss events derived from the base
+        # testbed. Optional — absent file means base testbed only.
+        augmentation = self._read_json(data_dir / "demo_augmentation.json", {}) if (data_dir / "demo_augmentation.json").exists() else {}
+        events_raw = list(events_raw) + list(augmentation.get("events", []))
+        self.casing_by_well: Dict[str, List[dict]] = {}
+        for c in augmentation.get("casing_programs", []):
+            self.casing_by_well.setdefault(c["well_id"], []).append(c)
+        self.mud_program_by_well: Dict[str, List[dict]] = {}
+        for m in augmentation.get("mud_programs", []):
+            self.mud_program_by_well.setdefault(m["well_id"], []).append(m)
         self.events_by_well: Dict[str, List[DrillingEvent]] = {}
         self.all_events: List[DrillingEvent] = []
         for ev in events_raw:

@@ -84,7 +84,30 @@ async def replay_well(
             await asyncio.sleep(tick_seconds)
             continue
 
+        from app.modules.well_intelligence.services.alert_center import AlertCenter
+        raised = AlertCenter().evaluate(result, source="live_replay")
+
         yield {
+            "alerts": [
+                {k: a[k] for k in ("alert_id", "hazard_type", "severity", "title", "message", "lead_distance_m", "offset_wells")}
+                for a in raised
+            ],
+            "corridors_ahead": [
+                {
+                    "hazard_type": c.hazard_type.value,
+                    "from_m": c.depth_start_m,
+                    "to_m": c.depth_end_m,
+                    "lead_distance_m": c.lead_distance_m,
+                    "wells": c.contributing_wells,
+                    "event_count": c.event_count,
+                }
+                for c in result.active_risk_corridors
+                if c.lead_distance_m is not None and c.lead_distance_m >= -(c.depth_end_m - c.depth_start_m)
+            ][:8],
+            "top_offsets": [
+                {"well_id": r.well_id, "well_name": r.well_name, "distance_km": r.distance_km, "score": r.dors_score}
+                for r in result.offset_rankings[:5]
+            ],
             "tick": tick,
             "well_id": well_id,
             "depth_m": round(current_depth, 1),

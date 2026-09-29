@@ -128,6 +128,11 @@ class DocumentController:
                 ),
             )
             logger.success(f"[{job_id}] Background processing complete")
+            try:
+                from app.modules.well_intelligence.services.document_bridge import ingest_document_result
+                ingest_document_result(self._load_result(result.document_id))
+            except Exception as bridge_exc:
+                logger.warning(f"[{job_id}] Could not merge events into knowledge repository: {bridge_exc}")
         except Exception as exc:
             logger.exception(f"[{job_id}] Pipeline failed: {exc}")
             self.job_store.update(
@@ -228,6 +233,145 @@ class DocumentController:
             "speed_benefit": "< 50ms per page (bypasses layout detection)",
             "templates": templates,
         }
+
+    def list_results(self) -> dict:
+        results = []
+        for f in sorted(self.output_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+            try:
+                with open(f, "r", encoding="utf-8") as fp:
+                    data = json.load(fp)
+            except Exception:
+                continue
+            results.append({
+                "document_id": data.get("document_id"),
+                "job_id": data.get("job_id"),
+                "source_filename": data.get("source_filename"),
+                "document_type": data.get("document_type"),
+                "well_name": data.get("well_name"),
+                "operator": data.get("operator"),
+                "total_pages": data.get("total_pages"),
+                "overall_confidence": data.get("overall_confidence"),
+                "validation_status": data.get("validation_status"),
+                "reviewed": bool(data.get("reviewed")),
+                "review_decision": data.get("review_decision"),
+                "events_count": len(data.get("all_drilling_events", [])),
+                "formations_count": len(data.get("all_formation_tops", [])),
+                "npt_count": len(data.get("all_npt_records", [])),
+                "processing_time_ms": data.get("total_processing_time_ms"),
+                "extraction_completed_at": data.get("extraction_completed_at"),
+            })
+        return {"total_results": len(results), "results": results}
+
+    def get_quality_report(self, doc_id: str) -> dict:
+        data = self._load_result(doc_id)
+        total_pages = data.get("total_pages", 0) or 0
+        scanned = data.get("scanned_pages", 0) or 0
+        return {
+            "document_id": doc_id,
+            "source_filename": data.get("source_filename"),
+            "quality_metrics": {
+                "overall_confidence": data.get("overall_confidence", 0),
+                "pages_native_digital": total_pages - scanned,
+                "pages_ocr_required": scanned,
+                "physics_violations_caught": data.get("physics_violations_count", 0),
+                "flagged_for_review": data.get("flagged_fields_count", 0),
+                "cloud_fallback_pages": data.get("cloud_fallback_pages_count", 0),
+                "drilling_events_extracted": len(data.get("all_drilling_events", [])),
+                "formation_tops_extracted": len(data.get("all_formation_tops", [])),
+                "npt_records_extracted": len(data.get("all_npt_records", [])),
+                "processing_time_ms": data.get("total_processing_time_ms", 0),
+            },
+        }
+
+    def get_document_file_path(self, doc_id: str) -> Path:
+        """Original uploaded PDF for a processed document (resolved via the job_id on its result)."""
+        data = self._load_result(doc_id)
+        job_id = data.get("job_id")
+        if not job_id:
+            raise HTTPException(404, f"No job_id on record for document '{doc_id}'.")
+        matches = list(self.upload_dir.glob(f"{job_id}_*"))
+        if not matches:
+            raise HTTPException(404, f"Original PDF for document '{doc_id}' (job {job_id}) not found on disk.")
+        file_path = matches[0].resolve()
+        upload_root = self.upload_dir.resolve()
+        if upload_root not in file_path.parents:
+            raise HTTPException(400, "Resolved file path is outside the upload directory.")
+        return file_path
+
+    # -- Human curation / review workflow (ported from backend-working) -------
+
+    NEEDS_REVIEW = {"FLAGGED", "FAILED", "MANUAL_REVIEW"}
+
+    def review_queue(self) -> dict:
+        order = {"MANUAL_REVIEW": 0, "FAILED": 1, "FLAGGED": 2}
+        queue = []
+        for path in self.output_dir.glob("*.json"):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except Exception as exc:
+                logger.warning(f"Skipping unreadable result file {path}: {exc}")
+                continue
+            status = data.get("validation_status")
+            if status not in self.NEEDS_REVIEW or data.get("reviewed"):
+                continue
+            queue.append({
+                "document_id": data.get("document_id"),
+                "source_filename": data.get("source_filename"),
+                "well_name": data.get("well_name"),
+                "operator": data.get("operator"),
+                "validation_status": status,
+                "overall_confidence": data.get("overall_confidence"),
+                "physics_violations_count": data.get("physics_violations_count"),
+                "flagged_fields_count": data.get("flagged_fields_count"),
+                "cloud_fallback_pages_count": data.get("cloud_fallback_pages_count"),
+                "extraction_completed_at": data.get("extraction_completed_at"),
+            })
+        queue.sort(key=lambda d: order.get(d["validation_status"], 99))
+        return {"total": len(queue), "queue": queue}
+
+    def submit_review_decision(self, doc_id: str, reviewer: str, decision: str, notes: Optional[str]) -> dict:
+        if decision not in ("approved", "rejected"):
+            raise HTTPException(400, "decision must be 'approved' or 'rejected'")
+        data = self._load_result(doc_id)
+        data.update({
+            "reviewed": True,
+            "reviewed_by": reviewer,
+            "reviewed_at": datetime.utcnow().isoformat(),
+            "review_decision": decision,
+            "review_notes": notes,
+            "validation_status": "PASS" if decision == "approved" else "FAILED",
+        })
+        self._save_result(doc_id, data)
+        logger.info(f"Review decision on {doc_id}: {decision} by {reviewer}")
+        return {"document_id": doc_id, "reviewed": True, "decision": decision,
+                "validation_status": data["validation_status"]}
+
+    def annotate_field(self, doc_id: str, reviewer: str, field_path: str, note: str) -> dict:
+        data = self._load_result(doc_id)
+        annotations = data.get("field_annotations") or []
+        annotations.append({
+            "field_path": field_path,
+            "note": note,
+            "annotated_by": reviewer,
+            "annotated_at": datetime.utcnow().isoformat(),
+        })
+        data["field_annotations"] = annotations
+        self._save_result(doc_id, data)
+        return {"document_id": doc_id, "total_annotations": len(annotations)}
+
+    def _result_path(self, doc_id: str) -> Path:
+        path = self.output_dir / f"{doc_id}.json"
+        if not path.exists():
+            matches = list(self.output_dir.glob(f"*{doc_id}*.json"))
+            if not matches:
+                raise HTTPException(404, f"Result for document '{doc_id}' not found.")
+            path = matches[0]
+        return path
+
+    def _save_result(self, doc_id: str, data: dict) -> None:
+        with open(self._result_path(doc_id), "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, default=str)
 
     def _load_result(self, doc_id: str) -> dict:
         result_path = self.output_dir / f"{doc_id}.json"
