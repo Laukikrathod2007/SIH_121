@@ -15,6 +15,7 @@ import {
   Flame,
   Radio,
   Bot,
+  Radar,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -25,6 +26,7 @@ export const Sidebar: React.FC = () => {
 
   const navItems = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/command-center', label: 'Command Center', icon: Radar, badge: 'NEW' },
     { to: '/drilling', label: 'Live Drilling', icon: Gauge, badge: isWsConnected ? 'LIVE' : undefined },
     { to: '/wells', label: 'Nearby Wells', icon: Compass },
     { to: '/correlation', label: 'Geological Correlation', icon: Layers },

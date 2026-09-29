@@ -4,6 +4,7 @@ import { AppProvider } from './context/AppContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { DashboardPage } from './pages/DashboardPage';
+import { CommandCenterPage } from './pages/CommandCenterPage';
 import { LiveDrillingPage } from './pages/LiveDrillingPage';
 import { NearbyWellsPage } from './pages/NearbyWellsPage';
 import { GeologicalCorrelationPage } from './pages/GeologicalCorrelationPage';
@@ -22,6 +23,7 @@ const RoutedContent: React.FC = () => {
     <main key={location.pathname} className="flex-1 overflow-y-auto bg-grid-scada page-transition">
       <Routes>
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/command-center" element={<CommandCenterPage />} />
         <Route path="/drilling" element={<LiveDrillingPage />} />
         <Route path="/wells" element={<NearbyWellsPage />} />
         <Route path="/correlation" element={<GeologicalCorrelationPage />} />
