@@ -1538,5 +1538,150 @@ Formation-Top Parser Bug at Its Source; Expanded to 2 Live Real Wells
   stops at 2 wells until more source documents exist.
 
 ---
+
+### Step 28: Frontend/Backend Wiring Audit — Found the Frontend's Entire
+3D Stack Was Calling Routes That Never Existed
+* **Date & Time:** 2026-09-29 to 2026-09-30
+* **Action:** Before building any new visualization, ran a full, read-only
+  audit of the existing frontend 3D/visualization stack against the real
+  backend, per an explicit user-provided audit template (inspect first,
+  don't rebuild blind). Read every relevant frontend file
+  (`LiveDrillingScene3D.tsx`, `WellTrajectory3D.tsx`,
+  `WellCutawayCockpit.tsx`, `WellInspector3DModal.tsx`, `AppContext.tsx`,
+  `services/api.ts`, `types/index.ts`, `NearbyWellsPage.tsx`) against
+  `server.py`'s actual route table (not the frontend's assumptions about
+  it).
+  - **The single most important finding**: `GET /api/v2/trajectory/{well_id}`
+    — called by all 3 existing 3D/cutaway components — **did not exist
+    anywhere in `server.py`**. Every one of those components had been
+    silently rendering with `trajectory: null` in production this entire
+    session, despite the backend genuinely holding real computed
+    trajectory data in memory since Step 27. Two more routes the frontend
+    calls (`stratigraphic_depth_track`, `live/replay`, `events/search`)
+    also don't exist on the backend at all.
+  - **A second, independent bug found**: `RiskCorridor`'s real backend
+    field is `risk_level` (`schemas.py`), but `frontend/src/types/index.ts`
+    declared `proximity_risk_level` — actively read in
+    `GeologicalCorrelationPage.tsx` (severity coloring silently no-ops,
+    UI renders "Proximity Risk: undefined") and `CopilotPage.tsx`
+    (the "highest risk" corridor sort compares `undefined` values).
+    Unrelated to this session's own backend work — a pre-existing,
+    independent schema-drift bug.
+  - **`AppContext.tsx`'s entire telemetry/depth/risk/alert state is bound
+    to Module 03** (the physics digital twin), which has zero FastAPI/WS
+    routes — confirmed by `services/api.ts`'s own comments. Every page
+    reading "current depth" via `useApp()` has been reading a frozen
+    constant (`DEFAULT_TELEMETRY`, honestly labeled
+    `provenance: 'SYNTHETIC'` in the object itself), not live or replayed
+    data — while a real, working, depth-indexed telemetry endpoint
+    (`getTelemetryRecords`) sat on Module 02 called nowhere in the app.
+  - `analyzeWell` — the one endpoint returning the full orchestrated real
+    result (DORS + hazard assessments + corridors + `m_ml_source`) — is
+    called nowhere in the frontend either.
+  - Fixed the 3 smallest, highest-leverage items immediately: added the
+    missing `/api/v2/trajectory/{well_id:path}` route (and applied the
+    same `:path` fix that Step 26 only gave to 6 of 7 well_id-keyed
+    routes, retroactively covering `/wells/{id}`, `/formations/{id}`,
+    `/events/{id}`, `/telemetry/{id}`, `/offset_rank/{id}`,
+    `/analyze/{id}`, `/corridors/{id}`); fixed `proximity_risk_level` →
+    `risk_level` in the type and its 2 real call sites; defaulted
+    `AppContext.activeWellId` to a real well (`15/9-F-12`) instead of a
+    synthetic one.
+* **Status after this step:** Verified live: the new route returns 204
+  real stations for 15/9-F-12 and a correct 404 (not synthetic filler)
+  for 15/9-19B. `tsc --noEmit` clean. This is a case where reading the
+  real code (not the README, not the type file, not what "should" exist)
+  found a materially different picture than what the app's own source
+  files claimed to call — exactly the discipline this whole engagement
+  has tried to hold to when auditing itself.
+
+---
+
+### Step 29: Extracted Shared Trajectory Geometry + Camera Rig Before
+Building a Second 3D Scene
+* **Date & Time:** 2026-09-30
+* **Action:** The Step 28 audit had already flagged real, not
+  hypothetical, code duplication: `stationToVec3`/`positionAtMD`
+  (and `WellCutawayCockpit`'s differently-shaped `interpolateAtMD`) were
+  independently reimplemented in 3 separate files with near-identical
+  logic. Before writing a 4th consumer (the new command-center view),
+  extracted the shared math into `frontend/src/lib/trajectoryGeometry.ts`
+  and refactored `LiveDrillingScene3D.tsx`, `WellTrajectory3D.tsx`, and
+  `WellCutawayCockpit.tsx` to import from it — pure extraction, no
+  behavior change, verified via `tsc --noEmit` (zero errors before and
+  after).
+  - Did the same for the camera-preset system: extracted
+    `LiveDrillingScene3D`'s `CameraRig` into
+    `frontend/src/components/three/CameraRig.tsx`, adding a 5th `PLAN`
+    (top-down) preset for the new scene while leaving
+    `LiveDrillingScene3D`'s original 4-button UI unchanged.
+* **Status after this step:** Two small, low-risk, purely-mechanical
+  refactors landed and verified before any new feature code touched
+  them — avoiding repeating the exact duplication mistake the audit had
+  just found, rather than making it a 4th time and cleaning it up later.
+
+---
+
+### Step 30: Built the Command Center — Real-Data IVAAP/DrillPlan/Tela-
+Inspired Visualization
+* **Date & Time:** 2026-09-30
+* **Action:** New page (`/command-center`), built from scratch directly
+  against real Module 02 endpoints — not retrofitted onto
+  `LiveDrillingPage`'s existing Module-03-bound state (Step 28 found why
+  that would be the wrong foundation to build on). Follows a 3-layer
+  visual synthesis validated against PS 26121 and real data availability
+  before building: IVAAP-style "what is there" (trajectory, formations),
+  DrillPlan-style "what happened" (depth-based hazard corridors, offset
+  events), Tela-style "what does it mean" (evidence-weighted look-ahead
+  intelligence) — deliberately not imitating any single reference product.
+  - `CommandScene3D.tsx`: real active trajectory + real top-DORS-offset
+    trajectory (when the offset well has one) + formation bands + hazard
+    corridors rendered as colored 3D bands along the real wellbore
+    (`analyzeWell`'s `active_risk_corridors`, previously surfaced nowhere)
+    + event markers + the shared 5-preset `CameraRig`.
+  - `LookAheadPanel.tsx`: `hazard_assessments` with `m_ml_source` shown
+    plainly ("TRAINED MODEL" vs "HEURISTIC"), lead-time, evidence count,
+    recommended action — real fields that existed in the backend response
+    since Step 25 but were rendered in zero UI before this.
+  - `DepthCorrelationStrip.tsx`: active + real offset well event tracks
+    aligned by depth, DrillingMetrics-reference-inspired. Deliberately 2
+    real tracks, not a fabricated 4 — that's what real trajectory+event
+    data currently supports without either inventing offset wells or
+    silently blending in unlabeled synthetic ones.
+  - `WellListPanel.tsx`: well/offset selection, radius selector (1-25km,
+    wired through to `analyzeWell`'s real `radius_km` param), depth
+    scrubber. Synthetic wells visibly tagged "SYNTH" rather than blended
+    in unlabeled with the 2 real Volve wells — a pattern pulled directly
+    from a competitor-repo review (repo02/repo03 both label synthetic
+    data explicitly on their maps).
+  - `TelemetryHUD.tsx` + `useCommandCenterData.ts`: real depth-indexed
+    telemetry (`getTelemetryRecords`), previously called nowhere in the
+    app; depth is a manually-scrubbed value with an explicit "REPLAY"
+    badge, not a fake live clock — there is no real live rig feed to
+    honestly present as one.
+  - **A second real, previously-undetected backend bug found while wiring
+    the telemetry HUD**: `data_store.py`'s `get_telemetry_at()` ignores
+    `well_id` entirely and always returns the synthetic testbed's one
+    telemetry-equipped well (`WELL-HGJ-012`) — a pre-existing limitation
+    (only one synthetic well was ever generated with telemetry), not
+    something this session introduced. The endpoint's own response wraps
+    the requested `well_id` at the top level while the actual telemetry
+    record inside carries its own, different, real `well_id` — a real
+    attribution mismatch. Rather than silently show `WELL-HGJ-012`'s
+    numbers mislabeled as belonging to whichever well is actually
+    selected, `useCommandCenterData` checks the record's own `well_id`
+    and only accepts it on a genuine match; the HUD otherwise states
+    plainly that no telemetry data exists for the selected well.
+* **Status after this step:** `tsc --noEmit` clean across the full build.
+  Every new/changed file confirmed to transform cleanly through Vite's
+  real dev pipeline (HTTP 200 on direct module fetch, not a 500 with a
+  stack trace) — no browser automation tool is available in this
+  environment, so this plus live API verification (real
+  `analyzeWell`/`getTrajectory`/`getTelemetryRecords` responses checked
+  against what each component expects, for both a real well and a
+  synthetic one) is what was actually verified; visual rendering in an
+  actual browser was explicitly flagged as unconfirmed, not claimed.
+
+---
 *This log will be continuously updated throughout the development lifecycle.*
 
