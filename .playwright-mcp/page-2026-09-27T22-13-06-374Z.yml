@@ -1,0 +1,182 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - text: eRTMAC-NWIS
+        - generic [ref=e11]: v1.0
+      - generic [ref=e12]: OIL INDIA LIMITED
+    - navigation [ref=e13]:
+      - generic [ref=e14]: OPERATIONAL MODULES
+      - link "Dashboard" [ref=e15] [cursor=pointer]:
+        - /url: /
+      - link "Live Drilling" [ref=e23] [cursor=pointer]:
+        - /url: /drilling
+      - link "Nearby Wells" [ref=e29] [cursor=pointer]:
+        - /url: /wells
+      - link "Geological Correlation" [ref=e35] [cursor=pointer]:
+        - /url: /correlation
+      - link "Risk & Prediction" [ref=e42] [cursor=pointer]:
+        - /url: /risk
+      - link "Alerts & Advisory" [ref=e47] [cursor=pointer]:
+        - /url: /alerts
+      - link "Historical Search" [ref=e55] [cursor=pointer]:
+        - /url: /knowledge
+      - link "Document Ingestion" [ref=e60] [cursor=pointer]:
+        - /url: /documents
+      - link "Scenario Simulator" [ref=e67] [cursor=pointer]:
+        - /url: /simulator
+      - link "Reports & Analytics" [ref=e73] [cursor=pointer]:
+        - /url: /reports
+      - link "System Architecture" [ref=e79] [cursor=pointer]:
+        - /url: /status
+    - generic [ref=e84]:
+      - generic [ref=e85]:
+        - generic [ref=e86]: TELEMETRY BUS
+        - generic [ref=e93]: POLLING
+      - generic [ref=e94]:
+        - generic [ref=e95]: SIMULATOR
+        - generic [ref=e96]: PAUSED
+  - generic [ref=e97]:
+    - banner [ref=e98]:
+      - generic [ref=e99]:
+        - combobox [ref=e101] [cursor=pointer]:
+          - option "NHK-001 (Nahorkatiya) - Active" [selected]
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic [ref=e104]: "MD:"
+            - generic [ref=e105]: 2450.0 m
+          - generic [ref=e106]:
+            - generic [ref=e107]: "TVDSS:"
+            - generic [ref=e108]: 2315.6 m
+          - generic [ref=e109]:
+            - generic [ref=e114]: "FORMATION:"
+            - generic [ref=e115]: Porous Sandstone
+            - generic [ref=e116]: "ξ: 0.250"
+      - generic [ref=e117]:
+        - generic [ref=e118]: "RISK: LOW"
+        - combobox [ref=e123] [cursor=pointer]:
+          - option "⚡ Inject Scenario..." [disabled] [selected]
+          - option "NORMAL DRILLING"
+          - option "⚠️ LOST CIRCULATION"
+          - option "🚨 KICK / OVERPRESSURE"
+          - option "🛑 STUCK PIPE"
+          - option "🌀 STICK-SLIP VIBRATION"
+          - option "💧 BIT WASHOUT"
+          - option "📡 SENSOR FAULT"
+        - generic [ref=e124]:
+          - button "Start Simulation" [ref=e125] [cursor=pointer]
+          - button "Reset Simulator" [ref=e128] [cursor=pointer]
+        - generic [ref=e132]:
+          - generic "FastAPI Core" [ref=e133]: API
+          - generic "WebSocket Telemetry" [ref=e136]: WS
+          - generic "ML Risk Fusion" [ref=e139]: ML
+    - main [ref=e142]:
+      - generic [ref=e143]:
+        - generic [ref=e144]:
+          - generic [ref=e145]:
+            - generic [ref=e146]:
+              - generic [ref=e147]: DRILLING TARGET IDENTIFICATION
+              - generic [ref=e148]: ONLINE
+            - generic [ref=e149]:
+              - text: NHK-001
+              - generic [ref=e150]: (Nahorkatiya Field, Assam Shelf)
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - generic [ref=e153]: MEASURED DEPTH
+              - generic [ref=e154]: 2450.0 m
+            - generic [ref=e155]:
+              - generic [ref=e156]: TRUE VERT. SUBSEA
+              - generic [ref=e157]: 2315.6 m
+            - generic [ref=e158]:
+              - generic [ref=e159]: ACTIVE FORMATION
+              - generic [ref=e160]: Porous Sandstone
+            - generic [ref=e161]:
+              - generic [ref=e162]: STRATIGRAPHIC ξ
+              - generic [ref=e163]: "0.250"
+        - generic [ref=e164]:
+          - generic [ref=e165]: "SUBSYSTEM STATUS:"
+          - generic [ref=e166]:
+            - generic [ref=e167]: "Mod 1: Docs"
+            - generic [ref=e169]: "Mod 2: Offsets"
+            - generic [ref=e171]: "Mod 3: RAG Store"
+            - generic [ref=e173]: "Mod 4: ξ Engine"
+            - generic [ref=e175]: "Mod 5: Physics Twin"
+            - generic [ref=e177]: "Mod 5: XGBoost ML"
+            - generic [ref=e179]: "Mod 6: Advisory"
+        - generic [ref=e181]:
+          - generic [ref=e182]:
+            - generic [ref=e183]:
+              - generic [ref=e184]:
+                - generic [ref=e185]: Stratigraphic Correlation (Module 4)
+                - link "Full Cross-Section" [ref=e191] [cursor=pointer]:
+                  - /url: /correlation
+              - generic [ref=e194]:
+                - generic [ref=e195]:
+                  - generic [ref=e196]: "Formation Boundary Progress:"
+                  - generic [ref=e197]: 25.0% through interval
+                - generic [ref=e198]:
+                  - generic:
+                    - generic: Top (ξ=0.0)
+                    - generic: Mid (ξ=0.5)
+                    - generic: Base (ξ=1.0)
+            - generic [ref=e200]:
+              - generic [ref=e201]: "Correlation Algorithm: SPE Min. Curvature + Stratigraphic ξ"
+              - generic [ref=e202]: 100% Deterministic
+          - generic [ref=e203]:
+            - generic [ref=e205]:
+              - generic [ref=e206]: Nearby Offset Wells (Module 2 DORS)
+              - link "Field GIS Map" [ref=e211] [cursor=pointer]:
+                - /url: /wells
+            - generic [ref=e214]:
+              - generic [ref=e215]: "DORS 5-Factor: Spatial, Formation, Depth, Trajectory, Hazard"
+              - generic [ref=e216]: Dynamic Offset Relevance
+          - generic [ref=e217]:
+            - generic [ref=e218]:
+              - generic [ref=e219]:
+                - generic [ref=e220]: Live Drilling Cockpit (Module 5 Twin)
+                - link "Full Cockpit" [ref=e225] [cursor=pointer]:
+                  - /url: /drilling
+              - generic [ref=e228]:
+                - generic [ref=e229]:
+                  - generic [ref=e230]: ROP
+                  - generic [ref=e231]: 12.4 m/hr
+                - generic [ref=e232]:
+                  - generic [ref=e233]: TORQUE
+                  - generic [ref=e234]: 14.5 kN·m
+                - generic [ref=e235]:
+                  - generic [ref=e236]: SPP
+                  - generic [ref=e237]: 185.0 bar
+                - generic [ref=e238]:
+                  - generic [ref=e239]: FLOW IN/OUT
+                  - generic [ref=e240]: 2200 / 2195
+                - generic [ref=e241]:
+                  - generic [ref=e242]: PIT VOLUME
+                  - generic [ref=e243]: 45.20 m³
+                - generic [ref=e244]:
+                  - generic [ref=e245]: ECD
+                  - generic [ref=e246]: 1.29 g/cc
+            - generic [ref=e247]:
+              - generic [ref=e248]: 1 Hz Coupled Physics ODE Twin
+              - generic [ref=e250]: "Provenance: SYNTHETIC"
+          - generic [ref=e251]:
+            - generic [ref=e252]:
+              - generic [ref=e253]:
+                - generic [ref=e254]: Multi-Signal Hazard Forecast (Module 5 & 6)
+                - link "Risk Details" [ref=e258] [cursor=pointer]:
+                  - /url: /risk
+              - generic [ref=e261]:
+                - generic [ref=e263]:
+                  - generic [ref=e264]: LOST CIRCULATION
+                  - generic [ref=e265]: 10%
+                - generic [ref=e269]:
+                  - generic [ref=e270]: KICK
+                  - generic [ref=e271]: 10%
+                - generic [ref=e275]:
+                  - generic [ref=e276]: STUCK PIPE
+                  - generic [ref=e277]: 10%
+                - generic [ref=e281]:
+                  - generic [ref=e282]: TORQUE DRAG
+                  - generic [ref=e283]: 10%
+            - generic [ref=e286]:
+              - generic [ref=e287]: "Models: Rules (35%) + IsolationForest (20%) + XGBoost (30%) + Mod 4 (15%)"
+              - generic [ref=e288]: Fused Output

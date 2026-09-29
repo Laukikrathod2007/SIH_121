@@ -1,0 +1,66 @@
+"""
+Document Intelligence Models Package.
+"""
+
+from app.modules.document_intelligence.models.schemas import (
+    DocumentType,
+    EventType,
+    Severity,
+    ExtractionTier,
+    ValidationStatus,
+    BoundingBox,
+    ExtractedField,
+    MudProperties,
+    DrillingParameters,
+    FormationTop,
+    WellboreFormation,
+    NPTRecord,
+    DrillingEvent,
+    CasingRecord,
+    PageExtractionResult,
+    DocumentExtractionResult,
+    IngestJobStatus,
+    IngestJobResponse,
+    JobStatusResponse,
+    BenchmarkScore,
+)
+
+from app.modules.document_intelligence.models.domain_rules import (
+    ValidationRule,
+    DRILLING_DOMAIN_RULES,
+    STANDARD_ASSAM_CASING_PROGRAM,
+    IADC_NPT_CODES,
+    ASSAM_ARAKAN_FORMATIONS,
+    validate_field,
+    fuzzy_match_formation,
+)
+
+__all__ = [
+    "DocumentType",
+    "EventType",
+    "Severity",
+    "ExtractionTier",
+    "ValidationStatus",
+    "BoundingBox",
+    "ExtractedField",
+    "MudProperties",
+    "DrillingParameters",
+    "FormationTop",
+    "WellboreFormation",
+    "NPTRecord",
+    "DrillingEvent",
+    "CasingRecord",
+    "PageExtractionResult",
+    "DocumentExtractionResult",
+    "IngestJobStatus",
+    "IngestJobResponse",
+    "JobStatusResponse",
+    "BenchmarkScore",
+    "ValidationRule",
+    "DRILLING_DOMAIN_RULES",
+    "STANDARD_ASSAM_CASING_PROGRAM",
+    "IADC_NPT_CODES",
+    "ASSAM_ARAKAN_FORMATIONS",
+    "validate_field",
+    "fuzzy_match_formation",
+]
