@@ -1410,5 +1410,133 @@ on Synthetic — a Deliberate, Verified Decision
   rather than left as a vague "small sample" excuse.
 
 ---
+
+### Step 25: Branch-Accident Recovery — Found the Real Trained Model Was
+Never Actually Wired Into Live Serving
+* **Date & Time:** 2026-09-29
+* **Action:** An accidental `git checkout` + `git stash pop` run on the wrong
+  branch merged `backend-working`'s Steps 20-24 stash onto `laukik`,
+  producing real merge conflicts. `git reset --hard` and `git checkout --`
+  were both correctly blocked by the Claude Code safety classifier as
+  irreversible; resolved instead via non-destructive Read/Edit and
+  `git show stash@{0}:<path>` reads, then `git add`.
+  - Recovery surfaced a **real, load-bearing gap that predated the
+    accident**: `engines/risk_corridor_engine.py`'s `compute_ml_score()` was
+    never wired to call `ml/hazard_predictor.py`'s real trained model — it
+    was still the original hand-coded heuristic
+    (`"Deterministic ML proxy score... replaces a true trained model for
+    demonstration"`). The wiring existed only in the stash (not flagged as a
+    conflict, since `laukik` never had it at all) and had silently never
+    made it onto this branch. Fixed: `compute_ml_score` now delegates to
+    `ml.hazard_predictor.predict_ml_score`, and every `HazardRiskAssessment`
+    now carries `m_ml_source` ("trained_model" vs "heuristic_fallback") so
+    the API can never present a heuristic and a real model as the same kind
+    of number.
+  - Restoring the stash's files exposed **6 more files genuinely missing
+    from disk** (only stale `.pyc` remained): `auth.py`,
+    `ml/feature_engineering.py`, `ml/train_hazard_models.py`,
+    `engines/trajectory_engine.py`, and the unwired `live/`/`search/`
+    subpackages. Also restored a real minimum-curvature rewrite of
+    `stratigraphic_correlator.py` — the working copy on disk was silently
+    doing linear TVD interpolation despite its own docstring claiming
+    minimum curvature.
+  - **Real bug in `run_server.py`**: hardcoded `port=8002` and
+    `reload=True`, silently ignoring `NWIS_PORT`/`NWIS_ENV` — root cause of
+    3 stray PIDs found fighting over port 8002 earlier in this session.
+    Fixed to mirror module 01's real env-driven prod/dev pattern.
+* **Status after this step:** No known correctness bugs left in the code
+  paths touched. STUCK_PIPE's real model genuinely fires on live
+  `/api/v2/analyze` calls for the first time this session (confirmed via
+  `m_ml_source=trained_model` in the live response, not just the sanity
+  check at deployment time).
+
+---
+
+### Step 26: One Real Well, Fully Live — Not Just at the Training Stage
+* **Date & Time:** 2026-09-29
+* **Action:** Every hazard model trained on real Volve data up to this point
+  was still only ever *tested* offline — the live `/api/v2/analyze` endpoint
+  had never served a real well; `data_store.py`'s `load()` defaults entirely
+  to `data/synthetic/`. Wired 15/9-F-12 in as a genuinely real, fully live
+  well (additive to the synthetic set, not replacing it).
+  - Real formation tops and real hazard-typed events loaded from
+    `real_data/`. **Found a data-quality bug while doing this**: several
+    formation-top rows for F-12 (and F-1A) had 6-digit garbage depths (e.g.
+    `285220.0`m for a ~4500m TD well) — traced to a one-off reconnaissance
+    script from earlier in the session, not the production pipeline.
+    Sanity-filtered rather than shipped, with the drop logged.
+  - No real trajectory existed yet for this well — module 01 was never
+    built to parse a survey-table PDF (see Step 27) — so trajectory-
+    dependent features used the same disclosed 0.0-inclination fallback
+    already established for 15/9-19B.
+  - **Found the same `{well_id:path}` routing bug from Step 23's casing
+    endpoint on 6 other routes** (wells, formations, events, telemetry,
+    offset_rank, analyze) — Volve well IDs contain a literal `/`, which
+    FastAPI's default `{well_id}` path param can't match. Fixed all 7 at
+    once.
+* **Status after this step:** `/api/v2/analyze/15/9-F-12` verified live:
+  real formation names resolve at covered depths, real casing returns via
+  the path-fixed route, and STUCK_PIPE reports `m_ml_source=trained_model`
+  computed from this well's real (not synthetic) inputs.
+
+---
+
+### Step 27: Built Real Trajectory Extraction From Scratch; Fixed the Real
+Formation-Top Parser Bug at Its Source; Expanded to 2 Live Real Wells
+* **Date & Time:** 2026-09-29
+* **Action:** Closed the two remaining real gaps: module 01 had never had a
+  trajectory-table extractor at all, and the formation-top garbage-depth
+  bug from Step 26 had only been worked around, not fixed at its root.
+  - **Root cause of the formation-top bug, found and fixed**:
+    `tier3_entity_extractor.py`'s `extract_formation_tops` already computed
+    physics validation via `validate_field()` (max 12,000m per
+    `domain_rules.py`), but shipped `ValidationStatus.FAILED` rows anyway
+    with just a lowered confidence — a depth off by 2+ orders of magnitude
+    isn't "low confidence," it's wrong. Now dropped at extraction. (This
+    fixes module 01's production Assam pipeline going forward; the specific
+    garbage already in `real_formations_fresh.json` came from a separate,
+    now-discarded reconnaissance script this fix doesn't retroactively
+    touch — `data_store.py`'s own filter remains the enforcement point for
+    that file.)
+  - **New `real_data/extract_real_trajectories.py`**: parses the real Volve
+    "Standard Survey Report" (Statoil/COMPASS) PDFs for 15/9-F-12 and
+    15/9-F-1 into structured stations. Only Measured Depth, Inclination,
+    and Azimuth are read directly off the table — confirmed unambiguous
+    (first 3 header phrases, correct order, physically sane: MD strictly
+    increasing, Inc 0-90°, Azi 0-360° across 203 and 94 real stations
+    respectively). The other 7 header phrases on this report (+E/-W,
+    Vertical Section, Dogleg/Build/Turn Rate, Survey Vertical Depth) do
+    **not** reliably map onto data columns in the order they're extracted
+    in — a real multi-row-header linearization artifact discovered by
+    testing, not assumed. Rather than guess-map 7 ambiguous columns,
+    TVD/TVDSS/North/East are instead **computed** from the 3 clean columns
+    via `engines/trajectory_engine.py`'s existing real minimum-curvature
+    implementation — the same method this report's own header states was
+    used to produce it. Cross-validated: the computed TVD matches the
+    source document's own printed values to within 0.01–0.05m at every
+    station checked.
+  - Generalized `data_store.py`'s single-well real wiring into a loop over
+    a `REAL_WELLS` list; added 15/9-F-1 as a second fully-real live well
+    (real trajectory, real formation tops, real deduped events — no real
+    casing data exists for it, correctly left absent, not fabricated).
+    Deduped real events on (well_id, hazard_type, depth): the same real
+    incident appeared in more than one source document for F-1 (e.g.
+    `MUD_LOG.pdf` and `MUD_LOG_COMBINED.pdf` both narrate the same
+    stuck-pipe event) and was being double-counted.
+  - Retrained and redeployed STUCK_PIPE with the new real inclination
+    signal instead of the mostly-0.0-fallback rows used before: mean LOWO
+    AUC **0.594** (down slightly from Step 24's 0.661, but now genuinely
+    grounded in real trajectory data rather than placeholder rows, with a
+    physically meaningful positive inclination coefficient this time,
+    versus ~0 before).
+* **Status after this step:** Verified live: DORS offset ranking for
+  15/9-F-1 scores 15/9-F-12 as its top analog (distance 0.005km — same
+  platform slot — trajectory-similarity 0.9929, not the 0.0 fallback).
+  Confirmed as a genuine data-availability floor, not a gap being skipped:
+  no trajectory survey document exists in the corpus for 15/9-F-1C or
+  15/9-19B (only drilling/end-of-well reports), so real trajectory work
+  stops at 2 wells until more source documents exist.
+
+---
 *This log will be continuously updated throughout the development lifecycle.*
 
