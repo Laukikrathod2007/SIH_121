@@ -97,13 +97,30 @@ class RiskFusionEngine:
         telemetry_q = float(features.get("telemetry_quality", 1.0))
         base_confidence = min(1.0, max(0.2, telemetry_q * correlation_confidence))
 
+        # An unfitted XGBoostHazardClassifier always predicts 0.0 for every
+        # non-NORMAL hazard (see XGBoostHazardClassifier.predict_probabilities).
+        # Blending that fixed zero at the static w_ml weight silently caps every
+        # fused score at (1 - w_ml) = 0.70 -- exactly the MEDIUM/HIGH boundary,
+        # so a HIGH state becomes unreachable until a trained model is loaded.
+        # Redistribute w_ml across the remaining pillars instead, so "no ML
+        # signal available" doesn't read as "ML pillar votes NORMAL".
+        if getattr(self.ml_classifier, "_is_fitted", False):
+            w_rules, w_anomaly, w_ml, w_hist = self.w_rules, self.w_anomaly, self.w_ml, self.w_hist
+        else:
+            remaining = self.w_rules + self.w_anomaly + self.w_hist
+            scale = (1.0 / remaining) if remaining > 0 else 0.0
+            w_rules = self.w_rules * scale
+            w_anomaly = self.w_anomaly * scale
+            w_ml = 0.0
+            w_hist = self.w_hist * scale
+
         # Helper to compute weighted fused score and classification state
         def compute_fused(r_score: float, m_score: float, h_score: float) -> Tuple[float, str, float]:
             score = (
-                self.w_rules * r_score
-                + self.w_anomaly * anom_score
-                + self.w_ml * m_score
-                + self.w_hist * h_score
+                w_rules * r_score
+                + w_anomaly * anom_score
+                + w_ml * m_score
+                + w_hist * h_score
             )
             score = max(0.0, min(1.0, score))
             if score < 0.35:

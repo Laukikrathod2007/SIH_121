@@ -320,7 +320,7 @@ class DrillingPhysicsEngine:
             timestamp=datetime.now(timezone.utc).isoformat(),
             simulation_time_s=round(self.state.sim_time_s, 2),
             depth=DepthRecord(
-                md_m=round(self.state.md_m, 3),
+                md_m=round(self.state.md_m, 2),
                 tvd_m=round(self.state.tvd_m, 3),
                 tvdss_m=round(self.state.tvdss_m, 3),
             ),

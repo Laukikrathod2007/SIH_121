@@ -71,6 +71,7 @@ def tvd_at_md(trajectory: Optional[WellTrajectory], target_md: float) -> float:
     if not trajectory or not trajectory.stations:
         return target_md  # assume vertical
 
+    stations = trajectory.stations
     if target_md <= stations[0].md_m:
         # Extrapolate before first survey (near-surface, inclination ~0 in
         # practice, so this proportional-vertical approximation is left as
@@ -82,7 +83,18 @@ def tvd_at_md(trajectory: Optional[WellTrajectory], target_md: float) -> float:
         s_prev = stations[i - 1]
         s_curr = stations[i]
         if s_curr.md_m >= target_md:
-            return _min_curvature_tvd_from_station(trajectory, s_prev, target_md)
+            # Minimum curvature gives the shape of the TVD curve between the
+            # two stations; scale it so it lands exactly on s_curr's recorded
+            # tvd_m. On self-consistent surveys the scale is ~1.0 (pure
+            # minimum curvature); on surveys whose recorded TVDs disagree with
+            # their angles it prevents a TVD jump at every station.
+            mc_full = _min_curvature_tvd_from_station(trajectory, s_prev, s_curr.md_m) - s_prev.tvd_m
+            mc_part = _min_curvature_tvd_from_station(trajectory, s_prev, target_md) - s_prev.tvd_m
+            recorded = s_curr.tvd_m - s_prev.tvd_m
+            if abs(mc_full) < 1e-9:
+                frac = (target_md - s_prev.md_m) / max(s_curr.md_m - s_prev.md_m, 0.001)
+                return s_prev.tvd_m + frac * recorded
+            return s_prev.tvd_m + mc_part * (recorded / mc_full)
 
     # Beyond the last surveyed station: tangential extrapolation along the
     # last known inclination vector (was: `return stations[-1].tvd_m`, a

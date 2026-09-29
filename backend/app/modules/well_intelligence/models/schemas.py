@@ -383,30 +383,6 @@ class HazardRiskAssessment(BaseModel):
 # risk density along the trajectory), built on our own data shapes.
 # ---------------------------------------------------------------------------
 
-class AheadOfBitCorridorPoint(BaseModel):
-    depth_ahead_m: float             # 0..max_lookahead_m, step_m apart
-    md_m: float
-    tvd_m: float
-    tvdss_m: float
-    formation: Optional[str] = None
-    window_tier: str = "LOOKAHEAD_50_200M"  # IMMEDIATE_0_20M / SHORT_TERM_20_50M / LOOKAHEAD_50_200M
-    # hazard_type.value -> Gaussian-smoothed severity density [0,1], same
-    # SIGMA_D-style smoothing as engines/dors_engine.py's score_hazard, so
-    # the numbers are on a familiar scale to anything already reading S_hazard.
-    hazard_risk: Dict[str, float] = Field(default_factory=dict)
-    evidence_count: int = 0
-    evidence_event_ids: List[str] = Field(default_factory=list)
-
-
-class AheadOfBitCorridor(BaseModel):
-    active_well_id: str
-    current_md_m: float
-    current_tvd_m: float
-    current_tvdss_m: float
-    current_formation: Optional[str] = None
-    points: List[AheadOfBitCorridorPoint] = Field(default_factory=list)
-
-
 # ---------------------------------------------------------------------------
 # Full NWIS Analysis Response
 # ---------------------------------------------------------------------------

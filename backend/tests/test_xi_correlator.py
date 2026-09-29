@@ -335,9 +335,13 @@ class TestMissingSurveyFallback:
 
 class TestInterpolation:
     def test_tvdss_interpolates_between_stations(self, active_well, active_trajectory_exact):
-        # Halfway between MD=0 (TVD=0) and MD=3200 (TVD=2986)
-        tvdss = tvdss_at_md(active_trajectory_exact, active_well, 1600.0)
-        assert round(tvdss, 1) == round(2986.0 / 2, 1)
+        # Halfway between MD=0 (TVD=0) and MD=3200 (TVD=2986). Interpolation
+        # follows the minimum-curvature shape (inclination builds 0 -> 15 deg),
+        # so the midpoint sits slightly above the linear midpoint, while the
+        # recorded station TVDs are still honoured exactly.
+        mid = tvdss_at_md(active_trajectory_exact, active_well, 1600.0)
+        assert 2986.0 / 2 <= mid < 2986.0 / 2 + 0.01 * 2986.0
+        assert round(tvdss_at_md(active_trajectory_exact, active_well, 3200.0), 1) == 2986.0
 
 
 # ---------------------------------------------------------------------------
