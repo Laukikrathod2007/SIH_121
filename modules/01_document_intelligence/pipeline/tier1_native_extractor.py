@@ -47,7 +47,20 @@ def is_page_scanned(page: "fitz.Page") -> bool:
     text = page.get_text("text").strip()
     char_count = len(text)
 
-    # Check image coverage
+    # The final verdict is `(char_count < 50) AND (image_coverage > 0.6)` —
+    # so whenever this page already has >=50 characters of extractable text,
+    # the result is False no matter what image_coverage turns out to be.
+    # get_image_rects() below renders and MD5-hashes every image on the page
+    # (PyMuPDF's own implementation), which is by far the most expensive part
+    # of this function — on an image-heavy real-world document this doubled
+    # end-to-end pipeline time once every page started getting scan-checked
+    # (previously only page 0 was sampled). Skip it entirely when it cannot
+    # change the outcome.
+    if char_count >= 50:
+        logger.debug(f"Page scan detection: chars={char_count} (>=50) — native text page, is_scanned=False")
+        return False
+
+    # Check image coverage (only reached when char_count < 50)
     page_area = page.rect.width * page.rect.height
     image_list = page.get_images(full=True)
 
@@ -61,7 +74,7 @@ def is_page_scanned(page: "fitz.Page") -> bool:
     image_coverage = total_image_area / page_area if page_area > 0 else 0
 
     # Heuristic: scanned if very few chars AND high image coverage
-    is_scanned = (char_count < 50) and (image_coverage > 0.6)
+    is_scanned = image_coverage > 0.6
 
     logger.debug(
         f"Page scan detection: chars={char_count}, "
@@ -73,6 +86,7 @@ def is_page_scanned(page: "fitz.Page") -> bool:
 def extract_page_native(
     page: "fitz.Page",
     page_number: int,
+    is_scanned: Optional[bool] = None,
 ) -> Optional[PageExtractionResult]:
     """
     Extract text and bounding boxes from a single native digital PDF page.
@@ -82,6 +96,15 @@ def extract_page_native(
     - Each span has: text, font, size, color, bbox [x0, y0, x1, y1]
 
     This is Layer 1 of the 6-layer pipeline.
+
+    Args:
+        is_scanned: pass the already-computed is_page_scanned(page) result if
+            the caller has one (e.g. from a document-wide pre-pass) to avoid
+            recomputing it. is_page_scanned() renders and MD5-hashes every
+            image on the page (PyMuPDF's get_image_rects), which is expensive
+            on image-heavy pages — calling it twice per page nearly doubled
+            this function's runtime on a 74-page real-world test document.
+            Leave as None to compute it here (backward compatible).
     """
     if not PYMUPDF_AVAILABLE:
         return None
@@ -90,7 +113,7 @@ def extract_page_native(
 
     try:
         # Check if scanned — if so, signal caller to use Tier 2
-        scanned = is_page_scanned(page)
+        scanned = is_page_scanned(page) if is_scanned is None else is_scanned
 
         if scanned:
             elapsed = time.time() * 1000 - start_ms
@@ -215,18 +238,81 @@ def extract_document_metadata(doc: "fitz.Document", filename: str) -> dict:
     # Extract from first page text
     first_page_text = doc[0].get_text("text") if len(doc) > 0 else ""
 
-    # Multi-pattern regex for DDR/WCR header fields
-    well_match = (
-        re.search(r"WELL\s*(?:NAME|NO|NUMBER|#)?[:\.\s]+([A-Z0-9\(\)\-_/]+)", first_page_text, re.IGNORECASE)
-        or re.search(r"Well\s+([A-Z0-9\(\)\-_/]+)", filename, re.IGNORECASE)
+    # Well-name extraction, in priority order, each candidate VALIDATED before
+    # acceptance rather than taking the first regex hit blindly. Real-data
+    # testing (Volve field documents) found the original single pattern —
+    # `WELL\s*(?:NAME|NO|NUMBER|#)?[:\.\s]+(...)` with an OPTIONAL qualifier —
+    # matched "WELL REPORT", "WELL CONTROL", "WELL EVALUATION" etc. just as
+    # readily as an actual labeled well name, since any word after "WELL "
+    # satisfied it. 13 of 14 real test documents got a garbage well name this
+    # way (correct in only 1/14). A real well identifier always contains at
+    # least one digit (15/9-F-1, NHK-001, F-12); a section heading generally
+    # doesn't — used as the acceptance filter below rather than a fixed
+    # blacklist, so it isn't tied to the specific bad words seen in this one
+    # test set.
+    _WELL_CANDIDATE_HAS_DIGIT = re.compile(r"\d")
+
+    def _valid_well_candidate(raw: Optional[str]) -> Optional[str]:
+        if not raw:
+            return None
+        candidate = raw.strip().strip(":.-_ ")
+        if len(candidate) < 2 or len(candidate) > 40:
+            return None
+        if not _WELL_CANDIDATE_HAS_DIGIT.search(candidate):
+            return None
+        return candidate
+
+    extracted_well = None
+
+    # 1. Strict: an explicit "Well Name/No/Number/#" label (qualifier
+    #    required, not optional) — the least ambiguous signal when present.
+    #    Punctuation after the qualifier is OPTIONAL, not required: real
+    #    documents (Volve field reports) use "Well NO 15/9-F-11..." with only
+    #    whitespace, no colon. The qualifier requirement alone is what
+    #    excludes false matches like "Final Well Report" (title text)
+    #    elsewhere on the same page — "Report" isn't NAME/NO/NUMBER/#, so it
+    #    can't satisfy this pattern regardless of punctuation.
+    strict_match = re.search(
+        r"WELL\s*(?:NAME|NO\.?|NUMBER|#)\s*[:\.]?\s*([A-Z0-9][A-Z0-9\(\)\-_/ ]{1,35}?)(?:\n|\r|,|$)",
+        first_page_text, re.IGNORECASE,
     )
+    extracted_well = _valid_well_candidate(strict_match.group(1) if strict_match else None)
+
+    # 2. Filename: this project's own convention (and Volve's real filenames,
+    #    e.g. "WELL-15_9-F-1C_DRILLING_REPORT.pdf") often names the well
+    #    directly — a good source once the strict label isn't found.
+    if not extracted_well:
+        # api/routes/ingest.py saves uploads as "{job_id}_{original_filename}"
+        # for storage-collision safety (job_id like "JOB-39858BE94E") — found
+        # via real-data re-testing that this hex job-id prefix was itself
+        # matching the well-ID shape below (e.g. "D59F2BC68F_WELL-15" was
+        # extracted as the well name, the job ID mistaken for the well's first
+        # segment). Strip that known prefix before matching rather than
+        # trying to make the shape pattern guess around it.
+        filename_for_match = re.sub(r"^JOB-[0-9A-F]+_", "", filename, flags=re.IGNORECASE)
+        # Bounded to the well-ID shape itself (digits-separator-digits-hyphen-
+        # letter[-digits]) rather than a generic greedy character class — the
+        # latter swallowed trailing "_DOCTYPE" filename suffixes (e.g.
+        # "15_9-F-1_BIOSTRAT" instead of "15_9-F-1") on this project's own
+        # "WELL-<id>_<DOCTYPE>.pdf" naming convention.
+        fn_match = re.search(
+            r"(?:WELL[-_])?([A-Z0-9]+[_/][A-Z0-9]+-[A-Z0-9]+(?:-[A-Z0-9]+)?)",
+            filename_for_match, re.IGNORECASE,
+        )
+        extracted_well = _valid_well_candidate(fn_match.group(1) if fn_match else None)
+
+    # 3. Loose fallback: the original permissive "WELL <word>" pattern, but
+    #    now filtered through the same digit-presence validity check instead
+    #    of being accepted unconditionally.
+    if not extracted_well:
+        loose_match = re.search(r"WELL\s*(?:NAME|NO|NUMBER|#)?[:\.\s]+([A-Z0-9\(\)\-_/]+)", first_page_text, re.IGNORECASE)
+        extracted_well = _valid_well_candidate(loose_match.group(1) if loose_match else None)
     op_match = (
         re.search(r"OPERATOR[:\.\s]+([A-Za-z0-9\s]+?)(?:\n|WELL|FIELD|—|–|\r)", first_page_text, re.IGNORECASE)
         or re.search(r"(?:Utah FORGE|Oil India|ONGC|Equinor|Shell|Chevron|BP)", first_page_text, re.IGNORECASE)
     )
     date_match = re.search(r"(?:DATE|REPORT\s*DATE)[:\.\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})", first_page_text, re.IGNORECASE)
 
-    extracted_well = well_match.group(1).strip() if (well_match and well_match.groups()) else (well_match.group(0).strip() if well_match else None)
     extracted_op = op_match.group(1).strip() if (op_match and op_match.groups()) else (op_match.group(0).strip() if op_match else None)
 
     return {

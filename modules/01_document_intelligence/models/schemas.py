@@ -37,6 +37,60 @@ class EventType(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+# ---------------------------------------------------------------------------
+# EventType -> modules/02_nwis_backend HazardType reconciliation.
+#
+# Found during real-data benchmarking (Equinor Volve field documents): this
+# module's EventType and module 02's HazardType are two independently-evolved
+# taxonomies with no mapping between them. module 02's HazardType is
+# MUD_LOSS/STUCK_PIPE/KICK/WELLBORE_INSTABILITY/TORQUE_SPIKE/CEMENTING_FAILURE
+# — four values line up exactly by name, but this module's GAS_INFLUX and
+# LOST_CIRCULATION (both real, frequently-extracted event types — see Step 13
+# in logger/04_STEP_BY_STEP_IMPLEMENTATION_LOG.md) had nowhere to go
+# downstream, and EQUIPMENT_FAILURE/DEVIATION/NPT_OPERATIONAL/UNKNOWN
+# genuinely have no HazardType equivalent at all (they aren't offset-well
+# geological hazards in module 02's sense — an equipment failure or NPT
+# delay isn't something a future well would encounter at the same formation).
+#
+# No live integration currently pushes module 01's extracted events into
+# module 02's data store — this mapping exists so that when one is built, the
+# translation is explicit and justified per case rather than invented ad hoc
+# at the call site.
+EVENT_TYPE_TO_HAZARD_TYPE: dict["EventType", Optional[str]] = {
+    EventType.MUD_LOSS: "MUD_LOSS",
+    EventType.STUCK_PIPE: "STUCK_PIPE",
+    EventType.KICK: "KICK",
+    EventType.WELLBORE_INSTABILITY: "WELLBORE_INSTABILITY",
+    # Lost circulation is a mud-loss mechanism specifically (fluid lost to
+    # the formation rather than returned to surface) — module 02 doesn't
+    # distinguish loss mechanisms, only MUD_LOSS as a whole.
+    EventType.LOST_CIRCULATION: "MUD_LOSS",
+    # A gas influx is the leading indicator/early form of a well-control
+    # kick — module 02 has no separate "influx" hazard type, and treating it
+    # as anything other than KICK would understate its severity.
+    EventType.GAS_INFLUX: "KICK",
+    # No HazardType equivalent — these describe the document/operation, not
+    # a geological hazard a future offset well would encounter at this
+    # formation, which is what module 02's HazardType exists to rank.
+    EventType.EQUIPMENT_FAILURE: None,
+    EventType.DEVIATION: None,
+    EventType.NPT_OPERATIONAL: None,
+    EventType.UNKNOWN: None,
+}
+
+
+def to_hazard_type(event_type: "EventType") -> Optional[str]:
+    """
+    Map this module's EventType to modules/02_nwis_backend's HazardType
+    string value, or None if there's no equivalent (see
+    EVENT_TYPE_TO_HAZARD_TYPE's per-case reasoning above). Returns the raw
+    string, not module 02's enum class, since module 01 does not import
+    module 02 as a dependency — the caller constructs module 02's HazardType
+    from this value at the actual integration boundary.
+    """
+    return EVENT_TYPE_TO_HAZARD_TYPE.get(event_type)
+
+
 class Severity(str, Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
@@ -329,6 +383,12 @@ class PageExtractionResult(BaseModel):
     drilling_events: List[DrillingEvent] = Field(default_factory=list)
     casing_records: List[CasingRecord] = Field(default_factory=list)
     page_confidence: float = Field(ge=0.0, le=1.0, default=0.0)
+    # "local" (default) | "reducto" | "extend_ai" — which engine actually
+    # produced this page's text. Exists so a document that used an external
+    # cloud fallback is auditable per-page, not just a silent aggregate —
+    # this matters for the air-gapped/DGH-sovereignty posture: any page
+    # that left the local boundary must be traceable. See pipeline/cloud_fallback.py.
+    extraction_source: str = "local"
 
 
 # ---------------------------------------------------------------------------
@@ -377,6 +437,14 @@ class DocumentExtractionResult(BaseModel):
     all_casing_records: List[CasingRecord] = Field(default_factory=list)
     mud_properties: List[MudProperties] = Field(default_factory=list)
 
+    # Cloud fallback audit trail (see pipeline/cloud_fallback.py). Stays at
+    # zero/empty for every document unless NWIS_REDUCTO_API_KEY or
+    # NWIS_EXTEND_API_KEY is actually configured AND at least one page's
+    # local confidence fell below threshold — i.e. the air-gapped default
+    # posture is unaffected unless this is visibly non-zero.
+    cloud_fallback_pages_count: int = 0
+    cloud_fallback_providers_used: List[str] = Field(default_factory=list)
+
     # Physics & Operational Summary
     total_npt_hours: float = 0.0
     validation_status: ValidationStatus = ValidationStatus.PASS
@@ -388,6 +456,27 @@ class DocumentExtractionResult(BaseModel):
 
     # WITSML export ready flag
     witsml_compliant: bool = True
+
+    # -------------------------------------------------------------------
+    # Human curation / review workflow (inspired by GDR/OpenEI's curator
+    # review before publication — see logger/04_STEP_BY_STEP_IMPLEMENTATION_LOG.md).
+    # validation_status can already carry MANUAL_REVIEW (models/schemas.py's
+    # ValidationStatus enum), but until this, nothing ever set it and there
+    # was no way for a human to act on it — see api/routes/review.py.
+    # -------------------------------------------------------------------
+    reviewed: bool = False
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[str] = None
+    review_decision: Optional[str] = None  # "approved" | "rejected"
+    review_notes: Optional[str] = None
+    # Lightweight, non-destructive field-level annotations — deliberately
+    # NOT an automatic patch-in-place of extracted values. A generic
+    # deep-path JSON patcher is exactly the kind of thing that silently
+    # corrupts data when the path is slightly wrong; a human-readable note
+    # attached to the document is safer and still closes the audit-trail
+    # gap ("a person looked at this specific field and here's what's
+    # actually true") without that risk.
+    field_annotations: List[dict] = Field(default_factory=list)
 
     @property
     def formation_tops(self) -> List[FormationTop]:

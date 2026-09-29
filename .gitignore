@@ -1,0 +1,29 @@
+# Root safety net -- each module/frontend also has its own .gitignore for
+# module-specific generated paths; this catches anything at the repo root
+# or in a folder that doesn't have its own.
+
+# Secrets -- real API keys, never the .example templates
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+
+# OS / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Logs
+*.log

@@ -1,0 +1,10 @@
+1  GlcSettingsLog
+2  GenTime2
+3  TripTime
+4  GwdTime
+5  GenTime
+6  Pits
+7  Hydraulics
+8  TripConn
+9  CementData
+10  GasTime

@@ -17,7 +17,10 @@ from models.schemas import (
     DrillingEvent, HazardType, RiskLevel, RiskCorridor,
     HazardRiskAssessment, FourPillarConfidence, EvidenceStrength,
     TelemetryRecord, OffsetWellRanking,
+    Well, WellTrajectory, FormationTop,
+    AheadOfBitCorridor, AheadOfBitCorridorPoint,
 )
+from ml.hazard_predictor import MLScoreResult
 
 # ---------------------------------------------------------------------------
 # Risk Aggregation Weights
@@ -125,13 +128,15 @@ def _build_corridor(
 
     lead_dist = start - current_depth_m
 
-    # Risk level: CRITICAL if active bit inside corridor
+    # Proximity risk level: CRITICAL if active bit inside corridor. This is
+    # deliberately separate from HazardRiskAssessment.risk_level (the full
+    # R_H(t) composite) — see RiskCorridor.proximity_risk_level's docstring.
     if current_depth_m >= start:
-        risk_level = RiskLevel.CRITICAL if max_sev == "CRITICAL" else RiskLevel.HIGH
+        proximity_risk_level = RiskLevel.CRITICAL if max_sev == "CRITICAL" else RiskLevel.HIGH
     elif lead_dist <= EARLY_WARNING_M:
-        risk_level = RiskLevel.HIGH if max_sev in ["CRITICAL", "HIGH"] else RiskLevel.MODERATE
+        proximity_risk_level = RiskLevel.HIGH if max_sev in ["CRITICAL", "HIGH"] else RiskLevel.MODERATE
     else:
-        risk_level = risk_level_from_score(freq * severity_to_numeric(max_sev))
+        proximity_risk_level = risk_level_from_score(freq * severity_to_numeric(max_sev))
 
     # Recommended action
     actions = {
@@ -156,7 +161,7 @@ def _build_corridor(
         max_severity=max_sev,
         historical_frequency=round(freq, 3),
         lead_distance_m=round(lead_dist, 1) if lead_dist > 0 else 0.0,
-        risk_level=risk_level,
+        proximity_risk_level=proximity_risk_level,
         recommended_action=actions.get(hazard_type, "Monitor closely"),
         formation=formation,
     )
@@ -226,7 +231,10 @@ def compute_sensor_anomaly(
 
 
 # ---------------------------------------------------------------------------
-# Deterministic ML Score (physics-based fallback)
+# ML Score — real trained model where enough historical data exists to train
+# one, physics heuristic elsewhere. See ml/hazard_predictor.py for the full
+# design rationale (why this is a hybrid, not either extreme) and
+# ml/train_hazard_models.py to (re)train as more historical events accumulate.
 # ---------------------------------------------------------------------------
 
 def compute_ml_score(
@@ -235,39 +243,31 @@ def compute_ml_score(
     formation: Optional[str],
     mud_weight_ppg: float = 9.5,
     pore_pressure_ppg: float = 9.2,
-) -> float:
+    formation_tops: Optional[List] = None,
+    trajectory=None,
+    well_type: str = "Vertical",
+) -> "MLScoreResult":
     """
-    Deterministic ML proxy score based on physics relationships.
-    Replaces a true trained model for demonstration without training data.
-    M_ML ∈ [0, 1]
+    M_ML ∈ [0, 1]. Returns an ml.hazard_predictor.MLScoreResult (score +
+    which path produced it: "trained_model" or "heuristic_fallback") rather
+    than a bare float, so callers can surface which one was actually used —
+    consistent with the 4-Pillar Confidence Evaluator's whole point of never
+    presenting a hand-coded heuristic and a real model as the same kind of
+    number. formation_tops/trajectory/well_type are optional purely so any
+    existing direct caller that doesn't have them yet still gets a score (via
+    the heuristic path) instead of a hard error.
     """
-    score = 0.0
-
-    # Overbalance window: if mud weight is close to pore pressure → higher risk
-    overbalance = mud_weight_ppg - pore_pressure_ppg
-    if overbalance < 0.3:
-        score += 0.5
-    elif overbalance < 0.7:
-        score += 0.25
-
-    # Formation-specific risk
-    high_risk_formations = {
-        HazardType.MUD_LOSS: {"Tipam Sandstone", "Sylhet Limestone", "Kopili"},
-        HazardType.STUCK_PIPE: {"Girujan Clay", "Barail Coal-Shale"},
-        HazardType.KICK: {"Barail Sandstone", "Sylhet Limestone"},
-        HazardType.WELLBORE_INSTABILITY: {"Girujan Clay", "Barail Coal-Shale"},
-    }
-    if formation and hazard_type in high_risk_formations:
-        if formation in high_risk_formations[hazard_type]:
-            score += 0.35
-
-    # Depth-based trend (deeper = higher risk in Assam basin)
-    if current_depth_m > 2500:
-        score += 0.15
-    elif current_depth_m > 2000:
-        score += 0.08
-
-    return round(min(1.0, score), 4)
+    from ml.hazard_predictor import predict_ml_score
+    return predict_ml_score(
+        hazard_type=hazard_type,
+        current_depth_m=current_depth_m,
+        formation=formation,
+        formation_tops=formation_tops or [],
+        trajectory=trajectory,
+        well_type=well_type,
+        mud_weight_ppg=mud_weight_ppg,
+        pore_pressure_ppg=pore_pressure_ppg,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -337,6 +337,9 @@ def assess_hazard(
     recent_telemetry: List[TelemetryRecord],
     mud_weight_ppg: float = 9.5,
     pore_pressure_ppg: float = 9.2,
+    formation_tops: Optional[List] = None,
+    trajectory=None,
+    well_type: str = "Vertical",
 ) -> HazardRiskAssessment:
     """
     Full R_H(t) = α·P_history + β·A_sensor + γ·M_ML for one hazard family.
@@ -373,8 +376,14 @@ def assess_hazard(
     # A_sensor
     a_sensor = compute_sensor_anomaly(hazard_type, recent_telemetry)
 
-    # M_ML
-    m_ml = compute_ml_score(hazard_type, current_depth_m, formation, mud_weight_ppg, pore_pressure_ppg)
+    # M_ML — real trained model where one exists for this hazard type,
+    # physics heuristic otherwise (see ml/hazard_predictor.py)
+    ml_result = compute_ml_score(
+        hazard_type, current_depth_m, formation, mud_weight_ppg, pore_pressure_ppg,
+        formation_tops=formation_tops, trajectory=trajectory, well_type=well_type,
+    )
+    m_ml = ml_result.score
+    m_ml_source = ml_result.source
 
     # Composite score
     composite = ALPHA * p_history + BETA * a_sensor + GAMMA * m_ml
@@ -415,4 +424,174 @@ def assess_hazard(
         lead_time_meters=lead_time,
         recommended_action=recommended_actions.get(hazard_type, "Monitor closely"),
         evidence_events=evidence_event_ids,
+        m_ml_source=m_ml_source,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Ahead-of-Bit Projected Corridor (new capability)
+#
+# Idea ported from a teammate's (Prasad's) parallel `well_intelligence`
+# module (services/risk_corridor_engine.py's compute_ahead_of_bit_corridor,
+# confirmed genuinely new by the prior audit — we had nothing that projects
+# risk AHEAD of the bit, only identify_risk_corridors above which reports
+# corridors already present in the historical record). His version maps
+# each lookahead step into offset wells via a separate TVDSS/xi-normalized
+# stratigraphic-coordinate system (services/xi_correlator.py) that doesn't
+# exist in our data model (our FormationTop has no top_tvdss_m, and our
+# formation-position representation is stratigraphic_depth / d_strat, not a
+# normalized 0..1 xi) — porting that machinery wholesale would have meant
+# introducing a second, parallel, partially-incompatible formation-position
+# system alongside stratigraphic_correlator.py's existing one. Instead this
+# reimplements the SAME externally-visible capability (0-200m lookahead in
+# 10m steps, per-hazard-type risk density pulled from offset wells) using
+# our own existing tvd_at_md/tvdss_at_md/formation_at_depth/
+# stratigraphic_depth functions (engines/stratigraphic_correlator.py) and
+# our own Gaussian severity-smoothing convention (same SIGMA_D-style
+# weighting as score_hazard in engines/dors_engine.py), wired into our own
+# AheadOfBitCorridor/AheadOfBitCorridorPoint schema (models/schemas.py) —
+# not a parallel incompatible data shape.
+#
+# Also fixes, while porting, the exact code-quality defect the prior audit
+# flagged in Prasad's version of this function: its type hints reference
+# Well/WellTrajectory/FormationTop which are never imported at module scope
+# there (only works because `from __future__ import annotations` makes
+# annotations lazy strings — would break under strict type checking). Here
+# Well/WellTrajectory/FormationTop are imported properly at the top of this
+# file alongside the other schema imports.
+# ---------------------------------------------------------------------------
+
+AHEAD_OF_BIT_MAX_LOOKAHEAD_M = 200.0
+AHEAD_OF_BIT_STEP_M = 10.0
+AHEAD_OF_BIT_SIGMA_M = 25.0  # matches dors_engine.SIGMA_D — same smoothing convention
+
+
+def compute_ahead_of_bit_corridor(
+    active_well: Well,
+    active_traj: Optional[WellTrajectory],
+    active_tops: List[FormationTop],
+    current_md_m: float,
+    top_offset_wells: List[Well],
+    offset_trajectories: Dict[str, WellTrajectory],
+    offset_tops_map: Dict[str, List[FormationTop]],
+    offset_events_map: Dict[str, List[DrillingEvent]],
+    max_lookahead_m: float = AHEAD_OF_BIT_MAX_LOOKAHEAD_M,
+    step_m: float = AHEAD_OF_BIT_STEP_M,
+    sigma_m: float = AHEAD_OF_BIT_SIGMA_M,
+) -> AheadOfBitCorridor:
+    """
+    Projects 0-200m ahead of the active bit along the wellbore trajectory in
+    10m steps. At each projected MD:
+      1. Computes projected TVD/TVDSS via tvd_at_md/tvdss_at_md (now
+         minimum-curvature-accurate — see engines/trajectory_engine.py).
+      2. Identifies the projected formation and its stratigraphic depth
+         (d_strat) within that formation.
+      3. Maps the equivalent position into each top-ranked offset well by
+         finding the same formation's top there and inverse-interpolating
+         MD from (offset_top_tvd + d_strat) — the exact same
+         "Trajectory Trap"-safe alignment engines/stratigraphic_correlator.py's
+         align_horizons_across_wells already uses, reused here rather than
+         reimplemented differently.
+      4. Aggregates historical events near that equivalent MD into
+         per-hazard-type Gaussian-smoothed risk density.
+
+    Returns an AheadOfBitCorridor with one AheadOfBitCorridorPoint per step.
+    Gracefully degrades (formation/hazard fields left None/0.0) when
+    active_traj or formation-top data is missing, rather than raising.
+    """
+    from engines.stratigraphic_correlator import (
+        tvd_at_md, tvdss_at_md, formation_at_depth, stratigraphic_depth, md_at_tvd,
+    )
+
+    if active_traj is not None:
+        current_tvd = tvd_at_md(active_traj, current_md_m)
+        current_tvdss = tvdss_at_md(active_traj, active_well, current_md_m)
+    else:
+        current_tvd = current_md_m
+        current_tvdss = current_md_m - active_well.kb_elevation_m
+    current_fm = formation_at_depth(active_tops, current_md_m)
+
+    steps = int(max_lookahead_m / step_m)
+    points: List[AheadOfBitCorridorPoint] = []
+
+    for i in range(steps + 1):
+        d_ahead = i * step_m
+        proj_md = current_md_m + d_ahead
+
+        if active_traj is not None:
+            proj_tvd = tvd_at_md(active_traj, proj_md)
+            proj_tvdss = tvdss_at_md(active_traj, active_well, proj_md)
+        else:
+            proj_tvd = proj_md
+            proj_tvdss = proj_md - active_well.kb_elevation_m
+
+        proj_fm = formation_at_depth(active_tops, proj_md)
+        proj_fm_name = proj_fm.formation_name if proj_fm else None
+
+        if d_ahead <= 20.0:
+            tier = "IMMEDIATE_0_20M"
+        elif d_ahead <= 50.0:
+            tier = "SHORT_TERM_20_50M"
+        else:
+            tier = "LOOKAHEAD_50_200M"
+
+        d_strat = (
+            stratigraphic_depth(active_traj, active_tops, proj_md)
+            if active_traj is not None and proj_fm else None
+        )
+
+        hazard_risk: Dict[str, float] = {h.value: 0.0 for h in HazardType}
+        evidence_ids: List[str] = []
+
+        if proj_fm is not None and d_strat is not None:
+            for offset in top_offset_wells:
+                if offset.well_id == active_well.well_id:
+                    continue
+                o_traj = offset_trajectories.get(offset.well_id)
+                o_tops = offset_tops_map.get(offset.well_id, [])
+                o_events = offset_events_map.get(offset.well_id, [])
+                if o_traj is None or not o_traj.stations:
+                    continue
+
+                o_top = next((t for t in o_tops if t.formation_name == proj_fm_name), None)
+                if o_top is None:
+                    continue
+
+                target_tvd = o_top.top_tvd_m + d_strat
+                equiv_md = md_at_tvd(o_traj, target_tvd)
+                if equiv_md is None:
+                    continue
+
+                for ev in o_events:
+                    delta = abs(ev.depth_start_md_m - equiv_md)
+                    if delta > sigma_m * 3:
+                        continue  # negligible Gaussian contribution beyond 3 sigma
+                    sev = severity_to_numeric(ev.severity)
+                    gaussian = math.exp(-(delta ** 2) / (2 * sigma_m ** 2))
+                    key = ev.event_type.value
+                    hazard_risk[key] = min(1.0, hazard_risk.get(key, 0.0) + sev * gaussian)
+                    if len(evidence_ids) < 15:
+                        evidence_ids.append(ev.event_id)
+
+        points.append(
+            AheadOfBitCorridorPoint(
+                depth_ahead_m=round(d_ahead, 1),
+                md_m=round(proj_md, 2),
+                tvd_m=round(proj_tvd, 2),
+                tvdss_m=round(proj_tvdss, 2),
+                formation=proj_fm_name,
+                window_tier=tier,
+                hazard_risk={k: round(v, 4) for k, v in hazard_risk.items()},
+                evidence_count=len(evidence_ids),
+                evidence_event_ids=evidence_ids,
+            )
+        )
+
+    return AheadOfBitCorridor(
+        active_well_id=active_well.well_id,
+        current_md_m=round(current_md_m, 2),
+        current_tvd_m=round(current_tvd, 2),
+        current_tvdss_m=round(current_tvdss, 2),
+        current_formation=current_fm.formation_name if current_fm else None,
+        points=points,
     )

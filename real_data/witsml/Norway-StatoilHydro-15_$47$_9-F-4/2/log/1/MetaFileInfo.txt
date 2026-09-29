@@ -1,0 +1,7 @@
+1  GlcSettingsLog
+2  Mud Log Data 36in Section - Time Log
+3  Real Time MWD_$47$_LWD data - 17.5in. section - Time Log
+4  Preload Test - Time Log
+5  Real Time MWD_$47$_LWD data - 36in. section - Time Log
+6  Real Time MWD_$47$_LWD Mudlog Data - 12.25 in. section - Time Log
+7  Real Time MWD_$47$_LWD Mudlog Data - 8.5 in. section - Time Log

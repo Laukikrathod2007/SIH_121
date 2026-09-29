@@ -35,7 +35,7 @@ from models.domain_rules import (
     validate_field,
     fuzzy_match_formation,
     IADC_NPT_CODES,
-    ASSAM_ARAKAN_FORMATIONS,
+    get_active_formations,
 )
 
 
@@ -395,10 +395,21 @@ def extract_drilling_events(text: str) -> List[DrillingEvent]:
 
         s_lower = sentence.lower()
 
+        # "Kick off"/"kicked off"/"kick-off" is directional-drilling jargon
+        # (starting to build inclination) with no relation to a well-control
+        # kick — but the bare "kick" keyword below is a substring match, so it
+        # fired on both senses. Found via real-data testing (Volve field DDRs):
+        # e.g. "Bit #1 kicked off and drilled without problem to 2345m" was
+        # misclassified as a HIGH-severity KICK event. Neutralize the
+        # directional-drilling phrase before keyword matching, for both event
+        # type and severity, rather than dropping "kick" from the keyword list
+        # entirely (which would miss real well-control kicks).
+        s_lower_kw = re.sub(r"kick(?:ed)?[\s-]?off", "KICKOFF_DIRECTIONAL_DRILLING_TERM", s_lower)
+
         # --- Determine event type ---
         event_type = EventType.UNKNOWN
         for etype, keywords in EVENT_KEYWORDS.items():
-            if any(kw in s_lower for kw in keywords):
+            if any(kw in s_lower_kw for kw in keywords):
                 event_type = etype
                 break
 
@@ -408,7 +419,7 @@ def extract_drilling_events(text: str) -> List[DrillingEvent]:
         # --- Determine severity ---
         severity = Severity.MEDIUM
         for sev, keywords in SEVERITY_KEYWORDS.items():
-            if any(kw in s_lower for kw in keywords):
+            if any(kw in s_lower_kw for kw in keywords):
                 severity = sev
                 break
 
@@ -456,7 +467,7 @@ def extract_drilling_events(text: str) -> List[DrillingEvent]:
 
         # --- Extract formation ---
         formation = None
-        for fm in ASSAM_ARAKAN_FORMATIONS:
+        for fm in get_active_formations():
             if fm.lower() in s_lower:
                 formation = fm
                 break
@@ -511,15 +522,16 @@ def extract_formation_tops(text: str) -> List[FormationTop]:
     if not text:
         return tops
 
-    # ASSAM_ARAKAN_FORMATIONS lists both full names and their common
-    # abbreviations (e.g. "Tipam Sandstone" AND "TIPAM"). An abbreviation is
-    # a substring of its full name, so a single mention like "Tipam Sandstone
-    # ... 2,980 m" would otherwise match twice — once per list entry — and
-    # produce two FormationTop records for the same physical top. Processing
-    # longer names first and tracking which depth-figure span has already
-    # been attributed prevents that double-count.
+    # The active basin's formation list (get_active_formations() —
+    # NWIS_FORMATION_PROFILE, default ASSAM_ARAKAN) lists both full names and
+    # common abbreviations (e.g. "Tipam Sandstone" AND "TIPAM"). An
+    # abbreviation is a substring of its full name, so a single mention like
+    # "Tipam Sandstone ... 2,980 m" would otherwise match twice — once per
+    # list entry — and produce two FormationTop records for the same physical
+    # top. Processing longer names first and tracking which depth-figure span
+    # has already been attributed prevents that double-count.
     seen_depth_spans: set = set()
-    for fm_name in sorted(ASSAM_ARAKAN_FORMATIONS, key=len, reverse=True):
+    for fm_name in sorted(get_active_formations(), key=len, reverse=True):
         pattern = re.compile(
             rf"{re.escape(fm_name)}[^.]*?(\d{{1,5}}[,.]?\d{{0,3}})\s*(?:m|ft|mD)",
             re.IGNORECASE,

@@ -4,7 +4,8 @@
 
 ## Architecture
 
-6-layer pipeline replicating cloud API methodology (Reducto/LandingAI) **fully locally** with 0 internet required:
+Local-first pipeline, air-gapped by default, with an optional cloud fallback
+for pages the local engines can't confidently read:
 
 ```
 PDF INPUT
@@ -12,9 +13,19 @@ PDF INPUT
    ├─ TIER 1: PyMuPDF (native digital PDFs — instant, 99.9% accuracy)
    │
    ├─ TIER 2: Docling OCR (scanned PDFs — 95%+ accuracy, air-gapped)
+   │           → optional dependency; without it, scanned pages fall back
+   │             to a plain-text extraction (see Tier 2 fallback below)
    │
-   ├─ TIER 3: spaCy NER + Regex (petroleum entity extraction)
+   ├─ TIER 2.5: Cloud Fallback (Reducto → Extend.ai) — OFF unless an API
+   │           key is configured. Only the specific pages that fall below
+   │           the local confidence threshold are sent externally — see
+   │           "Cloud Fallback" below for what this means for the air-gapped
+   │           posture, and pipeline/cloud_fallback.py for the full rationale.
+   │
+   ├─ TIER 3: Petroleum domain Regex/Rules engine (entity extraction)
    │           → Mud Weight, Depth, ROP, WOB, NPT, Events, Formations
+   │           → NOT spaCy/NER-based — pure regex, deterministic, no model
+   │             weights to download
    │
    ├─ LAYER 4: Template Learner (learns DDR coordinates after 3+ docs)
    │           → Sub-50ms processing for repeated form types
@@ -25,6 +36,40 @@ PDF INPUT
    │
    └─ OUTPUT: WITSML-compliant JSON + Visual Bounding Boxes
 ```
+
+### Cloud Fallback (Reducto / Extend.ai)
+
+This project's differentiator is being air-gapped and DGH-sovereignty
+compliant — see `benchmarks/run_benchmark.py`'s comparison table. The cloud
+fallback deliberately trades a slice of that story for real-world accuracy:
+Docling isn't always installed, and a low-confidence/garbled local result is
+worse for a risk-intelligence system than paying for a cloud call on just the
+pages that need it.
+
+**Default behavior with no keys set (the current state of this repo): fully
+inert.** Zero network calls, identical output to before this feature existed.
+It only activates once you set an API key:
+
+```powershell
+$env:NWIS_REDUCTO_API_KEY = "your-reducto-key"     # tried first
+$env:NWIS_EXTEND_API_KEY = "your-extend-key"        # tried if Reducto unset/fails
+$env:NWIS_EXTEND_WORKSPACE_ID = "..."               # only if your Extend key is org-scoped
+$env:NWIS_CLOUD_FALLBACK_CONFIDENCE_THRESHOLD = "0.75"  # pages below this get a fallback attempt
+$env:NWIS_CLOUD_FALLBACK_ENABLED = "false"          # master kill-switch, e.g. for an air-gapped demo
+```
+
+Every page that used a fallback provider is tagged (`extraction_source` on
+that page, plus `cloud_fallback_pages_count` / `cloud_fallback_providers_used`
+on the document result) so it's always auditable whether a document left the
+local boundary — never silent. Check `GET /api/v1/health` to see whether a
+provider is currently configured.
+
+**Before relying on this in a real run:** the request/response shapes in
+`pipeline/cloud_fallback.py` were built from Reducto's and Extend.ai's
+published docs, not exercised against a live key (none was available while
+building this). Run `python -m pipeline.cloud_fallback path/to/test.pdf` once
+you have a real key to confirm it against the live API before trusting it
+unattended.
 
 ## Setup (One-Time)
 

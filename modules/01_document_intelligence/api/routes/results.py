@@ -4,18 +4,24 @@ GET /api/v1/results/{doc_id} — Retrieve full WITSML-compliant extraction outpu
 GET /api/v1/results/{doc_id}/events — Get just drilling events (for NWIS Risk Engine)
 GET /api/v1/results/{doc_id}/formations — Get formation tops (for NWIS Correlation Engine)
 GET /api/v1/results/{doc_id}/npt — Get NPT records (for NWIS Analytics)
+GET /api/v1/documents/{doc_id}/file — Stream back the original uploaded PDF
+    (powers the frontend's "1-click PDF proof" evidence viewer — see
+    PdfEvidenceViewer.tsx. Page-level navigation only: see the docstring on
+    get_document_file() for why no per-field highlight box is served.)
 """
 
 from __future__ import annotations
 import json
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from loguru import logger
 
 router = APIRouter()
 
 # Injected by server.py
 OUTPUT_DIR: Path = Path("data/output")
+UPLOAD_DIR: Path = Path("data/uploads")
 
 
 def _load_result(doc_id: str) -> dict:
@@ -198,3 +204,59 @@ async def list_all_results():
             continue
 
     return {"total_results": len(results), "results": results}
+
+
+@router.get("/documents/{doc_id}/file")
+async def get_document_file(doc_id: str):
+    """
+    Stream back the ORIGINAL uploaded PDF for a processed document — this is
+    the real file on disk, not a re-render — so the frontend's PDF Evidence
+    Viewer can open it and jump to the page a given extracted field/event
+    came from ("1-click PDF proof").
+
+    Resolution path: doc_id -> extraction result JSON (already validated by
+    _load_result, which only globs inside OUTPUT_DIR) -> job_id recorded on
+    that result -> the uploaded file on disk, which ingest.py always saves as
+    "{job_id}_{original_filename}" under UPLOAD_DIR. doc_id itself never
+    touches the filesystem path for the PDF lookup — only the server-authored
+    job_id (read back from our own JSON, not from user input) does — and the
+    resolved path is additionally required to sit inside UPLOAD_DIR before
+    being served, which rules out path traversal even if that assumption is
+    ever violated.
+
+    Known limitation (disclosed, not hidden): this pipeline does not store
+    per-field pixel bounding boxes in practice (models/schemas.py's
+    BoundingBox model exists and pipeline/tier1_native_extractor.py's
+    get_word_bounding_boxes() can compute word-level boxes, but nothing in
+    tier3_entity_extractor.py's _make_field() calls ever passes bbox= — it's
+    always None). So this endpoint + the viewer only support jumping to the
+    correct PAGE, not highlighting the exact value on it.
+    """
+    data = _load_result(doc_id)
+    job_id = data.get("job_id")
+    if not job_id:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No job_id on record for document '{doc_id}' — cannot locate its source PDF.",
+        )
+
+    matches = list(UPLOAD_DIR.glob(f"{job_id}_*"))
+    if not matches:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Original uploaded PDF for document '{doc_id}' (job {job_id}) was not found on disk.",
+        )
+
+    file_path = matches[0].resolve()
+    upload_root = UPLOAD_DIR.resolve()
+    if upload_root != file_path and upload_root not in file_path.parents:
+        # Defensive — should be unreachable given job_id/UPLOAD_DIR are both
+        # server-controlled, but never serve a file outside the upload root.
+        logger.error(f"Refusing to serve file outside UPLOAD_DIR: {file_path}")
+        raise HTTPException(status_code=400, detail="Resolved file path is outside the upload directory.")
+
+    return FileResponse(
+        path=file_path,
+        media_type="application/pdf",
+        filename=data.get("source_filename") or file_path.name,
+    )

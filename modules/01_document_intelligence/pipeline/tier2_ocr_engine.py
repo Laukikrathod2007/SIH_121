@@ -123,6 +123,30 @@ def extract_document_with_docling(pdf_path: Path) -> dict:
         # this degrades gracefully: if it's unavailable, page_markdown stays
         # empty and callers fall back to full_markdown (documented, not silent).
         page_count = len(result.document.pages) if hasattr(result.document, "pages") else 0
+
+        # Real per-page confidence from Docling's own quality scoring, keyed
+        # 0-indexed to match page_markdown below. Confirmed live: this is a
+        # genuine per-page signal (result.confidence.pages[page_no].mean_score)
+        # — NOT a hardcoded placeholder. IMPORTANT CAVEAT, found by testing
+        # against a page whose OCR silently garbled an entire narrative
+        # section while every other section read perfectly: Docling's own
+        # confidence scored that page "excellent" (~0.93) anyway. This score
+        # reflects layout/OCR-engine self-assessment, not whether the
+        # resulting text is semantically correct — it will not catch every
+        # garbled-OCR failure, particularly localized damage to one section
+        # of an otherwise clean page. It is still strictly better than a
+        # fixed constant (it does vary with genuine full-page quality
+        # problems), just not a complete solution on its own.
+        page_ocr_confidence: dict[int, float] = {}
+        try:
+            conf_pages = getattr(result.confidence, "pages", {}) or {}
+            for page_no, page_conf in conf_pages.items():
+                score = getattr(page_conf, "mean_score", None)
+                if score is not None and score == score:  # filters out NaN
+                    page_ocr_confidence[page_no - 1] = float(score)
+        except Exception as ce:
+            logger.debug(f"Could not read Docling confidence scores: {ce}")
+
         page_markdown: dict[int, str] = {}
         if page_count > 0:
             for page_no in range(1, page_count + 1):  # Docling pages are 1-indexed
@@ -166,6 +190,7 @@ def extract_document_with_docling(pdf_path: Path) -> dict:
         return {
             "full_markdown": full_markdown,
             "page_markdown": page_markdown,
+            "page_ocr_confidence": page_ocr_confidence,
             "tables": tables_data,
             "processing_time_ms": round(elapsed, 2),
             "page_count": page_count,
@@ -239,12 +264,24 @@ def create_tier2_page_result(
     falling back, since that fallback text is either the whole document (not
     this page) or empty (no OCR engine installed at all) — both materially
     less trustworthy than an actual per-page OCR result.
+
+    CAVEAT (found by testing, not theoretical): confidence here comes from
+    Docling's own per-page quality score when available, which is a real
+    signal but not a semantic-correctness check — a page can score
+    "excellent" from Docling while OCR has silently garbled one narrative
+    section and left the rest readable. Confidence-based cloud fallback
+    (pipeline/cloud_fallback.py) will not catch that failure mode. Treat a
+    high score here as "the scan was clean," not as "every word is correct."
     """
     page_specific = docling_result.get("page_markdown", {}).get(page_number)
 
     if page_specific is not None:
         plain_text = extract_text_from_markdown(page_specific)
-        confidence = 0.95  # Real per-page Docling OCR result
+        # Real per-page Docling confidence when available; falls back to a
+        # fixed 0.90 estimate only if Docling didn't expose a score for this
+        # page (older docling-core versions, or a parse error on just the
+        # confidence report).
+        confidence = docling_result.get("page_ocr_confidence", {}).get(page_number, 0.90)
     elif docling_result.get("full_markdown"):
         # Docling ran but couldn't be split per-page (older docling-core) —
         # use the whole-document text as a degraded approximation.

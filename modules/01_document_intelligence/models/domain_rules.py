@@ -8,6 +8,7 @@ Reference: OISD-157, IADC Drilling Manual (12th Ed), OIL India Operational Stand
 """
 
 from __future__ import annotations
+import os
 from dataclasses import dataclass, field
 from typing import Optional, Tuple, List
 from models.schemas import ValidationStatus
@@ -266,23 +267,82 @@ IADC_NPT_CODES = {
 
 
 # ---------------------------------------------------------------------------
-# Assam-Arakan Basin Formation Sequence (for validation)
-# OCR-extracted formation names are fuzzy-matched against this list
+# Basin Formation Sequences (for validation and formation-top extraction)
+# OCR-extracted formation names are fuzzy-matched against the ACTIVE profile
+# below. This list was originally hardcoded to Assam-Arakan only — real-data
+# testing against Equinor's Volve field (North Sea) documents found this was
+# a hard ceiling, not a soft degradation: extract_formation_tops() builds its
+# search patterns FROM this list, so a basin outside it produced zero
+# formation tops across 979 real pages, not degraded ones. Made
+# basin-selectable via NWIS_FORMATION_PROFILE (default: unchanged behavior)
+# rather than hardcoding a second basin as the only option.
 # ---------------------------------------------------------------------------
 
-ASSAM_ARAKAN_FORMATIONS = [
-    "Alluvium",
-    "Girujan Clay",
-    "Tipam Sandstone",
-    "Barail Sandstone",
-    "Kopili Shale",
-    "Sylhet Limestone",
-    "Langpar Formation",
-    "Jaintia Group",
-    "Basement",
-    # Common abbreviations seen in OIL DDRs
-    "TIPAM", "BARAIL", "KOPILI", "SYLHET", "LANGPAR",
-]
+FORMATION_PROFILES: dict[str, List[str]] = {
+    # Oil India Limited — Assam, India. Original profile.
+    "ASSAM_ARAKAN": [
+        "Alluvium",
+        "Girujan Clay",
+        "Tipam Sandstone",
+        "Barail Sandstone",
+        "Kopili Shale",
+        "Sylhet Limestone",
+        "Langpar Formation",
+        "Jaintia Group",
+        "Basement",
+        # Common abbreviations seen in OIL DDRs
+        "TIPAM", "BARAIL", "KOPILI", "SYLHET", "LANGPAR",
+    ],
+    # Equinor Volve field — North Sea, Norway (South Viking Graben / Utsira
+    # High). Verified against real published stratigraphy, not guessed:
+    # primary reservoir Hugin Formation (Middle Jurassic), capped by the
+    # Draupne Formation shale; secondary reservoirs Heimdal/Utsira/Skagerrak.
+    "NORTH_SEA_VOLVE": [
+        "Nordland Group",
+        "Utsira Formation",
+        "Hordaland Group",
+        "Skade Formation",
+        "Balder Formation",
+        "Sele Formation",
+        "Lista Formation",
+        "Ty Formation",
+        "Heimdal Formation",
+        "Shetland Group",
+        "Ekofisk Formation",
+        "Tor Formation",
+        "Hod Formation",
+        "Blodoks Formation",
+        "Hidra Formation",
+        "Rodby Formation",
+        "Asgard Formation",
+        "Draupne Formation",
+        "Heather Formation",
+        "Hugin Formation",
+        "Sleipner Formation",
+        "Mime Formation",
+        "Skagerrak Formation",
+        "Smith Bank Formation",
+    ],
+}
+
+DEFAULT_FORMATION_PROFILE = "ASSAM_ARAKAN"
+
+
+def get_active_formations() -> List[str]:
+    """
+    Returns the formation-name list for the basin selected via the
+    NWIS_FORMATION_PROFILE env var (defaults to ASSAM_ARAKAN — existing
+    deployments see no behavior change unless they opt in). Falls back to the
+    default profile with a note if an unknown profile name is set, rather
+    than silently returning an empty list.
+    """
+    profile = os.environ.get("NWIS_FORMATION_PROFILE", DEFAULT_FORMATION_PROFILE)
+    return FORMATION_PROFILES.get(profile, FORMATION_PROFILES[DEFAULT_FORMATION_PROFILE])
+
+
+# Backward-compatible alias — existing imports of ASSAM_ARAKAN_FORMATIONS
+# (the literal Assam list, not the active profile) keep working unchanged.
+ASSAM_ARAKAN_FORMATIONS = FORMATION_PROFILES["ASSAM_ARAKAN"]
 
 
 def validate_field(field_name: str, value) -> Tuple[bool, str, str]:
@@ -328,16 +388,18 @@ def validate_field(field_name: str, value) -> Tuple[bool, str, str]:
 
 def fuzzy_match_formation(raw_name: str) -> Optional[str]:
     """
-    Fuzzy-match an OCR-extracted formation name against the known
-    Assam-Arakan formation sequence. Handles common OCR errors like:
+    Fuzzy-match an OCR-extracted formation name against the active basin's
+    formation sequence (NWIS_FORMATION_PROFILE — see get_active_formations()).
+    Handles common OCR errors like:
     'Tipam Sandsone' → 'Tipam Sandstone'
     'KOPLI' → 'Kopili Shale'
     """
     from difflib import get_close_matches
+    formations = get_active_formations()
     raw_upper = raw_name.upper().strip()
-    candidates = [f.upper() for f in ASSAM_ARAKAN_FORMATIONS]
+    candidates = [f.upper() for f in formations]
     matches = get_close_matches(raw_upper, candidates, n=1, cutoff=0.65)
     if matches:
         idx = candidates.index(matches[0])
-        return ASSAM_ARAKAN_FORMATIONS[idx]
+        return formations[idx]
     return None

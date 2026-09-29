@@ -1,0 +1,42 @@
+# =============================================================================
+# NWIS Module 04: Drilling Physics Digital Twin & ML Data Pipeline
+# Python 3.11
+# =============================================================================
+# Split out of modules/03_physics_engine (this module's original combined
+# location) into its own deployable unit -- data_pipeline/, simulation/,
+# models/. Module 05 (predictive_analytics) depends on this module's
+# data_pipeline.feature_engine at runtime via an explicit sys.path insert
+# (see modules/05_predictive_analytics/predictive/realtime_inference.py) --
+# it is not vendored or duplicated.
+
+# --- Telemetry Models & API-Shaped Types ---
+fastapi==0.115.0
+pydantic==2.13.5
+
+# --- HTTP/WebSocket Server (api/server.py, run_server.py) ---
+uvicorn[standard]==0.30.6
+websockets==13.1
+python-dotenv==1.0.1
+
+# --- Logging ---
+loguru==0.7.2
+
+# --- ML Data Pipeline (numeric only -- no scikit-learn/xgboost here; those
+#     are Module 05's) ---
+numpy==1.26.4
+
+# NOTE: api/server.py imports modules/05_predictive_analytics/predictive/
+# (RealTimeRiskInferenceService) via the same sibling sys.path pattern
+# Module 05 already uses to reach back into this module. That pulls in
+# scikit-learn/xgboost/joblib at runtime -- see
+# modules/05_predictive_analytics/requirements.txt. Both modules'
+# requirements must be installed into the same environment to run
+# api/server.py; they are listed separately per module because each module
+# still deploys independently for its own tests/standalone use.
+
+# --- Tests ---
+# pytest==8.0.0 + pytest-asyncio==0.23.3 is a broken combination (see
+# modules/05_predictive_analytics/requirements.txt for the reproduced error);
+# pinned to the verified-working pair below.
+pytest==8.3.5
+pytest-asyncio==0.24.0

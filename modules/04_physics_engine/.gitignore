@@ -1,0 +1,11 @@
+# Generated at runtime / test time
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Trained model artifacts (predictive/realtime_inference.py loads these if present)
+predictive/data/models/*.joblib
+
+# api/server.py runtime log + API key — mirrors modules/01 and modules/02
+data/logs/
+.env

@@ -115,6 +115,9 @@ class NWISOrchestrator:
                 recent_telemetry=recent_telemetry,
                 mud_weight_ppg=mud_weight_ppg,
                 pore_pressure_ppg=pore_pp,
+                formation_tops=active_tops,
+                trajectory=active_traj,
+                well_type=active_well.well_type.value,
             )
             hazard_assessments.append(assessment)
             if assessment.active_corridor:
@@ -135,21 +138,67 @@ class NWISOrchestrator:
         overall_risk = max(hazard_assessments, key=lambda h: risk_order[h.risk_level]).risk_level
 
         # ---------------------------------------------------------------
-        # 5. Alert message (for lead-time corridor)
+        # 5. Alert message
         # ---------------------------------------------------------------
+        # Prefer a specific lead-time corridor alert (bit is genuinely
+        # approaching or inside a historical hazard corridor for this
+        # hazard type).
+        #
+        # IMPORTANT: this gates on active_corridor.proximity_risk_level (the
+        # corridor's own Safe/Early-Warning/Critical proximity state — see
+        # logger/02_MATHEMATICAL_AND_ALGORITHMIC_FORMULATIONS.md §3), NOT on
+        # h.risk_level (the full R_H(t) composite, §4). Found by testing: a
+        # corridor with 5 analog wells and CRITICAL historical severity, only
+        # 38m ahead, scored proximity_risk_level=HIGH but the blended
+        # composite (which also folds in quiet real-time sensor/ML terms)
+        # diluted it to risk_level=MODERATE — so gating on the composite
+        # meant the alert never fired for what is precisely the scenario
+        # this corridor mechanism exists to catch. The composite score is
+        # still what drives overall_risk_level; this is specifically about
+        # not suppressing a proximity warning the corridor itself is
+        # confident about.
         alert_msg = None
-        critical_assessment = next(
+        corridor_assessment = next(
             (h for h in hazard_assessments
-             if h.risk_level in (RiskLevel.HIGH, RiskLevel.CRITICAL)
+             if h.active_corridor is not None
+             and h.active_corridor.proximity_risk_level in (RiskLevel.HIGH, RiskLevel.CRITICAL)
              and h.lead_time_meters is not None and h.lead_time_meters <= 50),
             None,
         )
-        if critical_assessment:
-            top_well = rankings[0].well_name if rankings else "analog well"
+        if corridor_assessment:
+            # Attribute evidence to the well(s) that actually contributed to
+            # THIS corridor — not the overall #1 DORS-ranked well, which may
+            # have nothing to do with this specific hazard cluster. Previously
+            # this always cited rankings[0], which could misattribute the
+            # evidence to an unrelated well.
+            contributing = (corridor_assessment.active_corridor.contributing_wells
+                             if corridor_assessment.active_corridor else [])
+            well_names = [
+                store.wells_by_id[wid].well_name
+                for wid in contributing if wid in store.wells_by_id
+            ]
+            if well_names:
+                analog_label = well_names[0] if len(well_names) == 1 else f"{well_names[0]} +{len(well_names) - 1} more"
+            else:
+                analog_label = "analog well"
             alert_msg = (
-                f"{critical_assessment.lead_time_meters:.0f}m to historical "
-                f"{critical_assessment.hazard_type.value.replace('_', ' ')} zone "
-                f"({top_well} analog) — {critical_assessment.recommended_action[:80]}"
+                f"{corridor_assessment.lead_time_meters:.0f}m to historical "
+                f"{corridor_assessment.hazard_type.value.replace('_', ' ')} zone "
+                f"({analog_label} analog) — {corridor_assessment.recommended_action[:80]}"
+            )
+        elif overall_risk in (RiskLevel.HIGH, RiskLevel.CRITICAL):
+            # No corridor was close enough to trigger a lead-time-specific
+            # alert, but the composite R_H(t) score (which also folds in
+            # live sensor anomaly and the ML term, not just corridor
+            # proximity) still says this is HIGH/CRITICAL overall. Without
+            # this branch, overall_risk_level could show CRITICAL while
+            # alert_message stayed None — a real dashboard would show a red
+            # risk badge with no explanation for it.
+            worst = max(hazard_assessments, key=lambda h: risk_order[h.risk_level])
+            alert_msg = (
+                f"{worst.risk_level.value} {worst.hazard_type.value.replace('_', ' ')} risk "
+                f"(composite={worst.composite_score:.2f}, no corridor within lead-time window) "
+                f"— {worst.recommended_action[:80]}"
             )
 
         return NWISAnalysisResponse(

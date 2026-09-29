@@ -61,7 +61,52 @@ if "--test" in sys.argv:
 # ---------------------------------------------------------------------------
 import uvicorn
 
+
+def _ensure_api_key() -> str:
+    """
+    Secure-by-default: if NWIS_API_KEY isn't set anywhere (shell env or
+    .env), generate one now and persist it to .env so every subsequent run
+    keeps using the same key instead of silently running wide open. This
+    means a fresh checkout that's never had auth configured still starts
+    authenticated, with zero setup burden — the alternative (refusing to
+    start, or defaulting to no-auth) either breaks a first run or leaves the
+    ingest endpoint open to anyone who can reach the port, which can also
+    burn cloud-fallback API credits (see api/auth.py, pipeline/cloud_fallback.py).
+    """
+    from dotenv import load_dotenv, set_key
+    env_path = MODULE_ROOT / ".env"
+    load_dotenv(env_path, override=False)
+
+    existing = os.environ.get("NWIS_API_KEY", "").strip()
+    if existing:
+        return existing
+
+    # IMPORTANT: generate the key with stdlib `secrets` directly rather than
+    # importing api.auth.generate_api_key(). Importing api.auth executes its
+    # module-level `API_KEY = os.environ.get("NWIS_API_KEY", ...)` — if that
+    # happens here, BEFORE os.environ is populated below, api.auth's API_KEY
+    # constant freezes empty for this process's entire lifetime (Python
+    # caches modules; a later os.environ assignment doesn't retroactively
+    # re-run it). This bug was real and reproduced: the very first run after
+    # generating a fresh key started the server with auth silently disabled,
+    # working correctly only after a second restart.
+    import secrets
+    new_key = secrets.token_urlsafe(32)
+    env_path.touch(exist_ok=True)
+    set_key(str(env_path), "NWIS_API_KEY", new_key)
+    os.environ["NWIS_API_KEY"] = new_key
+    print("=" * 60)
+    print("  No NWIS_API_KEY found — generated one and saved it to .env")
+    print(f"  API key: {new_key}")
+    print("  Send it as header: X-API-Key: <key above>")
+    print("  (Delete NWIS_API_KEY from .env to disable auth entirely.)")
+    print("=" * 60)
+    return new_key
+
+
 if __name__ == "__main__":
+    sys.path.insert(0, str(MODULE_ROOT))  # api.auth import below needs this
+    _ensure_api_key()
     # NWIS_ENV controls dev vs. production behavior:
     #   dev (default)  -> auto-reload on code changes, single process
     #   production     -> no reload, configurable workers, bind host/port via env

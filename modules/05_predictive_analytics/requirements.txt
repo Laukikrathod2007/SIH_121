@@ -1,0 +1,27 @@
+# =============================================================================
+# NWIS Module 05: Predictive Risk Analytics (Rules + Isolation Forest +
+#                  XGBoost Fusion Engine)
+# Python 3.11
+# =============================================================================
+# Depends on Module 04 (modules/04_physics_engine) at runtime for feature
+# engineering -- see predictive/realtime_inference.py's sys.path insert. Both
+# modules must be checked out side by side under modules/ for that import to
+# resolve; there is no installed shared package.
+
+pydantic==2.13.5
+
+# --- Predictive Risk Models ---
+numpy==1.26.4
+scikit-learn==1.5.2   # predictive/anomaly_detector.py: IsolationForest
+xgboost==2.1.1         # predictive/xgboost_classifier.py: XGBClassifier
+joblib==1.4.2          # model artifact (de)serialization (.joblib)
+
+# --- Tests ---
+# The source branch pinned pytest==8.0.0 with pytest-asyncio==0.23.3, which
+# is a broken combination: pytest_asyncio.plugin.pytest_collectstart accesses
+# `collector.obj` on a pytest.Package collector, which raises
+# `AttributeError: 'Package' object has no attribute 'obj'` on collection
+# before a single test runs (reproduced locally). pytest==8.3.5 with
+# pytest-asyncio==0.24.0 collects and runs cleanly instead.
+pytest==8.3.5
+pytest-asyncio==0.24.0

@@ -186,6 +186,16 @@ class DORSComponentScores(BaseModel):
     hazard: float = Field(ge=0.0, le=1.0)
     total: float = Field(ge=0.0, le=1.0)
     distance_km: float
+    # Structural fault-boundary heuristic gating (new, additive — see
+    # engines/dors_engine.py's check_structural_fault_heuristic and
+    # compute_dors). "POSSIBLE_FAULT_BOUNDARY" / "SAME_FAULT_BLOCK", or None
+    # when there wasn't enough formation-top data on both wells to evaluate
+    # it. This is applied as a multiplicative penalty AFTER the weighted
+    # 5-factor sum (spatial/formation/depth/trajectory/hazard), not as a 6th
+    # weighted factor — so the documented 0.20/0.30/0.20/0.15/0.15 weighting
+    # contract is unchanged. Exposed here (rather than silently folded into
+    # `total`) so callers/UI can show WHY a well's score dropped.
+    structural_fault_status: Optional[str] = None
 
 
 class OffsetWellRanking(BaseModel):
@@ -217,7 +227,18 @@ class RiskCorridor(BaseModel):
     max_severity: str
     historical_frequency: float     # P_history [0,1]
     lead_distance_m: Optional[float] = None  # Δ from current bit depth
-    risk_level: RiskLevel = RiskLevel.LOW
+    # NOTE: this is deliberately a DIFFERENT measure from
+    # HazardRiskAssessment.risk_level (which is derived from the full
+    # R_H(t) composite score). This one reflects purely how close/inside the
+    # bit is to this specific corridor (see logger/02_MATHEMATICAL_AND_
+    # ALGORITHMIC_FORMULATIONS.md §3's Safe/Early-Warning/Critical states) —
+    # it does not factor in sensor anomaly or the ML term. It is named
+    # differently from HazardRiskAssessment.risk_level (rather than reusing
+    # "risk_level") specifically so the two are never mistaken for the same
+    # number: a corridor can legitimately show CRITICAL proximity while its
+    # parent hazard assessment shows LOW overall risk, if the historical
+    # frequency here is low and sensor/ML signals are quiet.
+    proximity_risk_level: RiskLevel = RiskLevel.LOW
     recommended_action: str = ""
     formation: Optional[str] = None
 
@@ -246,11 +267,60 @@ class HazardRiskAssessment(BaseModel):
     p_history: float                 # Historical frequency weight (α=0.45)
     a_sensor: float                  # Sensor anomaly score (β=0.35)
     m_ml: float                      # ML prediction (γ=0.20)
+    # "trained_model" (a real classifier trained on historical events — see
+    # ml/train_hazard_models.py) or "heuristic_fallback" (too few historical
+    # examples exist yet for this hazard type to train one — see
+    # ml/feature_engineering.py's MIN_POSITIVE_SAMPLES). Exposed so the API
+    # never presents a hand-coded heuristic and a real model as the same
+    # kind of number — consistent with 4-Pillar Confidence's whole point.
+    m_ml_source: str = "heuristic_fallback"
     confidence: FourPillarConfidence
     active_corridor: Optional[RiskCorridor] = None
     lead_time_meters: Optional[float] = None
     recommended_action: str = ""
     evidence_events: List[str] = Field(default_factory=list)  # event_ids
+
+
+# ---------------------------------------------------------------------------
+# Ahead-of-Bit Projected Corridor (new — ported capability, adapted to our
+# data model)
+#
+# Source of the idea: a teammate's (Prasad's) parallel `well_intelligence`
+# module has `compute_ahead_of_bit_corridor` (services/risk_corridor_engine.py),
+# which projects 0-200m ahead of the bit in 10m steps and maps each step into
+# offset wells via HIS TVDSS/xi-normalized stratigraphic coordinate system
+# (services/xi_correlator.py). We don't have that xi/TVDSS-coordinate system
+# (our FormationTop has no top_tvdss_m field, and our formation-position
+# representation is `stratigraphic_depth` / d_strat, not a normalized
+# 0..1 xi), so these schemas and engines/risk_corridor_engine.py's
+# compute_ahead_of_bit_corridor were written fresh against OUR existing
+# stratigraphic_correlator.py functions rather than porting his xi machinery
+# wholesale — same externally-visible capability (forward-looking per-hazard
+# risk density along the trajectory), built on our own data shapes.
+# ---------------------------------------------------------------------------
+
+class AheadOfBitCorridorPoint(BaseModel):
+    depth_ahead_m: float             # 0..max_lookahead_m, step_m apart
+    md_m: float
+    tvd_m: float
+    tvdss_m: float
+    formation: Optional[str] = None
+    window_tier: str = "LOOKAHEAD_50_200M"  # IMMEDIATE_0_20M / SHORT_TERM_20_50M / LOOKAHEAD_50_200M
+    # hazard_type.value -> Gaussian-smoothed severity density [0,1], same
+    # SIGMA_D-style smoothing as engines/dors_engine.py's score_hazard, so
+    # the numbers are on a familiar scale to anything already reading S_hazard.
+    hazard_risk: Dict[str, float] = Field(default_factory=dict)
+    evidence_count: int = 0
+    evidence_event_ids: List[str] = Field(default_factory=list)
+
+
+class AheadOfBitCorridor(BaseModel):
+    active_well_id: str
+    current_md_m: float
+    current_tvd_m: float
+    current_tvdss_m: float
+    current_formation: Optional[str] = None
+    points: List[AheadOfBitCorridorPoint] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
