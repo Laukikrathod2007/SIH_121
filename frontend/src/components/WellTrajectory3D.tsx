@@ -3,38 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { SurveyStation, WellTrajectory, FormationTop, DrillingEvent } from '../types';
-
-// Real subsurface geometry -> Three.js scene units. Three.js is Y-up, so
-// depth (TVD, positive downward in the real data) maps to -Y. Horizontal
-// displacement (NS/EW, real meters from the real minimum-curvature
-// computation) maps to X/Z directly. SCALE only rescales for a workable
-// camera distance -- it does not distort relative proportions between
-// wells, so true elevation/offset relationships are preserved.
-const SCALE = 0.02;
-
-function stationToVec3(s: SurveyStation): THREE.Vector3 {
-  return new THREE.Vector3(s.ew_m * SCALE, -s.tvd_m * SCALE, s.ns_m * SCALE);
-}
-
-// Interpolate a real position along the trajectory at an arbitrary MD (used
-// to place event markers, since events are logged at depth_start_md_m, not
-// necessarily at an exact survey station).
-function positionAtMD(stations: SurveyStation[], md: number): THREE.Vector3 | null {
-  if (stations.length === 0) return null;
-  if (md <= stations[0].md_m) return stationToVec3(stations[0]);
-  for (let i = 0; i < stations.length - 1; i++) {
-    const a = stations[i];
-    const b = stations[i + 1];
-    if (md >= a.md_m && md <= b.md_m) {
-      const span = b.md_m - a.md_m;
-      const t = span > 0 ? (md - a.md_m) / span : 0;
-      const va = stationToVec3(a);
-      const vb = stationToVec3(b);
-      return va.lerp(vb, t);
-    }
-  }
-  return stationToVec3(stations[stations.length - 1]);
-}
+import { stationToVec3, positionAtMD, TRAJECTORY_SCALE as SCALE } from '../lib/trajectoryGeometry';
 
 const FORMATION_PALETTE = [
   '#b45309', '#a16207', '#64748b', '#7c2d12', '#78350f', '#57534e', '#065f46', '#374151',

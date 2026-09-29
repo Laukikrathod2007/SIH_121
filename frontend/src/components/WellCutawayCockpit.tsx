@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Radio } from 'lucide-react';
 import { api } from '../services/api';
 import { FormationTop, SurveyStation, TelemetryData, RiskEvaluation } from '../types';
+import { stationAtMD as interpolateAtMD } from '../lib/trajectoryGeometry';
 
 interface WellCutawayCockpitProps {
   wellId: string;
@@ -18,29 +19,6 @@ const FORMATION_PALETTE = ['#78350f', '#92400e', '#57534e', '#3f3f46', '#1c1917'
 // J-type, horizontal), not an artistic guess.
 function departureM(s: SurveyStation): number {
   return Math.sqrt(s.ns_m ** 2 + s.ew_m ** 2);
-}
-
-function interpolateAtMD(stations: SurveyStation[], md: number): SurveyStation | null {
-  if (stations.length === 0) return null;
-  if (md <= stations[0].md_m) return stations[0];
-  for (let i = 0; i < stations.length - 1; i++) {
-    const a = stations[i];
-    const b = stations[i + 1];
-    if (md >= a.md_m && md <= b.md_m) {
-      const span = b.md_m - a.md_m;
-      const t = span > 0 ? (md - a.md_m) / span : 0;
-      return {
-        md_m: md,
-        inclination_deg: a.inclination_deg + (b.inclination_deg - a.inclination_deg) * t,
-        azimuth_deg: a.azimuth_deg,
-        tvd_m: a.tvd_m + (b.tvd_m - a.tvd_m) * t,
-        ns_m: a.ns_m + (b.ns_m - a.ns_m) * t,
-        ew_m: a.ew_m + (b.ew_m - a.ew_m) * t,
-        tvdss_m: a.tvdss_m + (b.tvdss_m - a.tvdss_m) * t,
-      };
-    }
-  }
-  return stations[stations.length - 1];
 }
 
 const VB_W = 520;

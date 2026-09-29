@@ -4,32 +4,9 @@ import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { SurveyStation, WellTrajectory, FormationTop, TelemetryData } from '../types';
 import { Radio, Compass, Layers, Eye } from 'lucide-react';
+import { stationToVec3, positionAtMD, TRAJECTORY_SCALE as SCALE } from '../lib/trajectoryGeometry';
 
-// Same real-data-to-scene-units convention as WellTrajectory3D.tsx: Three.js
-// is Y-up, TVD (positive downward in the real data) maps to -Y, real NS/EW
-// horizontal displacement maps to X/Z directly. SCALE only rescales for a
-// workable camera distance, it does not distort real proportions.
-const SCALE = 0.02;
 const RIG_HEIGHT = 3.2; // scene units above the surface (derrick mast height)
-
-function stationToVec3(s: SurveyStation): THREE.Vector3 {
-  return new THREE.Vector3(s.ew_m * SCALE, -s.tvd_m * SCALE, s.ns_m * SCALE);
-}
-
-function positionAtMD(stations: SurveyStation[], md: number): THREE.Vector3 | null {
-  if (stations.length === 0) return null;
-  if (md <= stations[0].md_m) return stationToVec3(stations[0]);
-  for (let i = 0; i < stations.length - 1; i++) {
-    const a = stations[i];
-    const b = stations[i + 1];
-    if (md >= a.md_m && md <= b.md_m) {
-      const span = b.md_m - a.md_m;
-      const t = span > 0 ? (md - a.md_m) / span : 0;
-      return stationToVec3(a).lerp(stationToVec3(b), t);
-    }
-  }
-  return stationToVec3(stations[stations.length - 1]);
-}
 
 const FORMATION_PALETTE = ['#78350f', '#92400e', '#57534e', '#3f3f46', '#1c1917', '#44403c', '#065f46', '#374151'];
 
