@@ -1,14 +1,14 @@
-﻿"""
-NWIS Module 01 â€” Layer 4: Template Learner
+"""
+NWIS Module 01 — Layer 4: Template Learner
 The hidden weapon that makes our system achieve 99% accuracy on repeated DDRs.
 
 How it works:
 1. First 5 documents of the same type are "training documents"
 2. We learn the exact pixel coordinates of each key field on each page
 3. For all subsequent documents, we skip Tier 1/2 layout detection entirely
-4. We jump directly to the learned coordinates â†’ extract in <50ms per page
+4. We jump directly to the learned coordinates → extract in <50ms per page
 
-This is exactly what enterprise cloud APIs do internally â€” they learn
+This is exactly what enterprise cloud APIs do internally — they learn
 operator-specific document templates and cache the coordinates.
 
 We implement the same mechanism, locally, air-gapped, for free.
@@ -246,7 +246,7 @@ def learn_from_document(
     After successfully extracting a document, feed the layout fingerprint
     back into the template registry to improve future extractions.
 
-    This is the core "template learning" step â€” equivalent to what
+    This is the core "template learning" step — equivalent to what
     LandingAI's "Active Learning" does after human correction.
     """
     conf = confidence if confidence is not None else extraction_confidence

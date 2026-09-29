@@ -1,5 +1,5 @@
-﻿"""
-NWIS Module 01 â€” Benchmark Runner
+"""
+NWIS Module 01 — Benchmark Runner
 Measures extraction accuracy against ground truth data.
 
 For demo: runs on the Utah FORGE PDF and reports metrics.
@@ -92,7 +92,7 @@ def print_benchmark_report(metrics: dict):
     """Print a rich benchmark comparison table."""
 
     console.print(Panel.fit(
-        "[bold green]NWIS Document Intelligence â€” Benchmark Report[/bold green]\n"
+        "[bold green]NWIS Document Intelligence — Benchmark Report[/bold green]\n"
         "[dim]Methodology: Replicates Reducto/LandingAI pipeline architecture locally[/dim]",
         border_style="green"
     ))
@@ -136,29 +136,29 @@ def print_benchmark_report(metrics: dict):
     compare_table.add_column("Legacy\n(Tesseract+PyMuPDF)", style="yellow", justify="center")
     compare_table.add_column("Our Pipeline\n(Docling+NER+Physics)", style="green", justify="center")
 
-    compare_table.add_row("Table Extraction Accuracy", "98%+", "80â€“88%", f"[green]{metrics['overall_confidence']:.0%}[/green]")
-    compare_table.add_row("Bounding Box Support", "âœ“ Native", "âœ— No", "âœ“ Native")
-    compare_table.add_row("Air-Gapped / Offline", "âœ— FATAL", "âœ“ Yes", "âœ“ [green]Yes[/green]")
-    compare_table.add_row("DGH Data Sovereignty", "âœ— Violated", "âœ“ Compliant", "âœ“ [green]Compliant[/green]")
-    compare_table.add_row("Physics Validation", "âœ— None", "âœ— None", "âœ“ [green]OISD-157[/green]")
-    compare_table.add_row("WITSML Output", "âœ— No", "âœ— No", "âœ“ [green]Compliant[/green]")
-    compare_table.add_row("IADC NPT Taxonomy", "âœ— No", "âœ— No", "âœ“ [green]12th Ed.[/green]")
-    compare_table.add_row("Template Learning", "âœ“ Proprietary", "âœ— No", "âœ“ [green]Open[/green]")
+    compare_table.add_row("Table Extraction Accuracy", "98%+", "80–88%", f"[green]{metrics['overall_confidence']:.0%}[/green]")
+    compare_table.add_row("Bounding Box Support", "✓ Native", "✗ No", "✓ Native")
+    compare_table.add_row("Air-Gapped / Offline", "✗ FATAL", "✓ Yes", "✓ [green]Yes[/green]")
+    compare_table.add_row("DGH Data Sovereignty", "✗ Violated", "✓ Compliant", "✓ [green]Compliant[/green]")
+    compare_table.add_row("Physics Validation", "✗ None", "✗ None", "✓ [green]OISD-157[/green]")
+    compare_table.add_row("WITSML Output", "✗ No", "✗ No", "✓ [green]Compliant[/green]")
+    compare_table.add_row("IADC NPT Taxonomy", "✗ No", "✗ No", "✓ [green]12th Ed.[/green]")
+    compare_table.add_row("Template Learning", "✓ Proprietary", "✗ No", "✓ [green]Open[/green]")
     compare_table.add_row("API Cost", "$0.10/page", "Free", "[green]Free[/green]")
-    compare_table.add_row("Processing Speed", "1â€“3s/page", "0.1s/page", f"{metrics['ms_per_page']}ms/page")
-    compare_table.add_row("Demo Fails if Wifi Down", "YES âœ—", "No", "[green]No[/green]")
+    compare_table.add_row("Processing Speed", "1–3s/page", "0.1s/page", f"{metrics['ms_per_page']}ms/page")
+    compare_table.add_row("Demo Fails if Wifi Down", "YES ✗", "No", "[green]No[/green]")
 
     console.print(compare_table)
 
     console.print(Panel(
         "[bold white]Evaluator Statement:[/bold white]\n\n"
-        "\"We studied the exact methodology used by Reducto and LandingAI â€” their "
+        "\"We studied the exact methodology used by Reducto and LandingAI — their "
         "6-layer architecture of layout detection, table structure recognition, "
         "per-region OCR, template learning, confidence scoring, and post-processing. "
         "We replicated every layer using open-source equivalents (Docling, PyMuPDF, "
         "and a petroleum-domain regex/rules engine in place of generic NER) "
         "and added a petroleum domain physics validation layer that no commercial tool has. "
-        "Our pipeline runs 100% offline, sovereign, and free â€” the only viable approach "
+        "Our pipeline runs 100% offline, sovereign, and free — the only viable approach "
         "for Oil India Limited's classified subsurface data under DGH NDR regulations.\"",
         border_style="green",
         title="For Evaluators"

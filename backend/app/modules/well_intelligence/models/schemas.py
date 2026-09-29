@@ -365,6 +365,24 @@ class HazardRiskAssessment(BaseModel):
 # risk density along the trajectory), built on our own data shapes.
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Ahead-of-Bit Projected Corridor (new — ported capability, adapted to our
+# data model)
+#
+# Source of the idea: a teammate's (Prasad's) parallel `well_intelligence`
+# module has `compute_ahead_of_bit_corridor` (services/risk_corridor_engine.py),
+# which projects 0-200m ahead of the bit in 10m steps and maps each step into
+# offset wells via HIS TVDSS/xi-normalized stratigraphic coordinate system
+# (services/xi_correlator.py). We don't have that xi/TVDSS-coordinate system
+# (our FormationTop has no top_tvdss_m field, and our formation-position
+# representation is `stratigraphic_depth` / d_strat, not a normalized
+# 0..1 xi), so these schemas and engines/risk_corridor_engine.py's
+# compute_ahead_of_bit_corridor were written fresh against OUR existing
+# stratigraphic_correlator.py functions rather than porting his xi machinery
+# wholesale — same externally-visible capability (forward-looking per-hazard
+# risk density along the trajectory), built on our own data shapes.
+# ---------------------------------------------------------------------------
+
 class AheadOfBitCorridorPoint(BaseModel):
     depth_ahead_m: float             # 0..max_lookahead_m, step_m apart
     md_m: float

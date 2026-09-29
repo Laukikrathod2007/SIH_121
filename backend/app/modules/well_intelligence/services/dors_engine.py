@@ -129,6 +129,7 @@ def calculate_omega_score(
     )
     return round(total, 4), comp
 
+from app.modules.well_intelligence.services.stratigraphic_correlator import inclination_at_md, azimuth_at_md
 
 # Legacy DORS 5-factor weights (for backward compatibility)
 DORS_WEIGHTS = {
@@ -147,6 +148,12 @@ SEVERITY_WEIGHTS = {
 }
 
 SIGMA_D = 25.0  # meters depth smoothing bandwidth
+
+# Structural fault-boundary heuristic gating (new, additive — see
+# check_structural_fault_heuristic and its use in compute_dors below).
+FAULT_DIP_DEG = 6.0          # assumed regional structural dip, degrees
+FAULT_THROW_MARGIN_M = 150.0 # extra vertical throw tolerated before flagging a fault
+FAULT_PENALTY_FACTOR = 0.20  # multiplicative penalty applied to DORS total when POSSIBLE_FAULT_BOUNDARY
 
 
 # ---------------------------------------------------------------------------
@@ -388,19 +395,75 @@ def score_depth(
     return round(min(1.0, overlap / window_size), 4)
 
 
-def score_trajectory(
-    offset_traj: Optional[WellTrajectory],
-    active_well_type: str,
-    active_avg_incl: float,
-) -> float:
-    if not offset_traj or not offset_traj.stations:
-        return 0.3
-    offset_type = offset_traj.well_type.value
-    offset_avg_incl = offset_traj.avg_inclination
-    type_penalty = 0.0 if active_well_type == offset_type else 0.5
-    incl_penalty = abs(active_avg_incl - offset_avg_incl) / 90.0 * 0.5
-    return round(max(0.0, 1.0 - type_penalty - incl_penalty), 4)
+# ---------------------------------------------------------------------------
+# Sub-score: S_trajectory
+# ---------------------------------------------------------------------------
 
+TRAJECTORY_TYPE_ORDER = {"Vertical": 0, "J-Type": 1, "S-Type": 2, "Horizontal": 3}
+
+TRAJECTORY_PROFILE_SAMPLES = 10
+
+
+def _angular_diff(a: float, b: float) -> float:
+    """Smallest difference between two compass headings, handling 0/360 wraparound."""
+    d = abs(a - b) % 360
+    return min(d, 360 - d)
+
+
+def score_trajectory(
+    offset_traj: WellTrajectory,
+    active_traj: Optional[WellTrajectory],
+    active_well_type: str,
+) -> float:
+    """
+    Trajectory similarity via a modified-Hausdorff-style comparison of the
+    full inclination/azimuth PROFILE across the two wells' overlapping
+    measured-depth range — not a single average-inclination scalar.
+
+    This replaces the original |avg_incl_active - avg_incl_offset| approach,
+    which could score two very differently-SHAPED wells as identical (one
+    building angle early and holding it, one building late) as long as their
+    averages happened to match. Follows the approach in Schlumberger's
+    "Offset Well Analysis Using Well Trajectory Similarity" patent
+    (WO2021029996A1): compare vertical (inclination) and angular (azimuth)
+    components at matched points along the trajectory, then aggregate with a
+    blend of mean and max distance (the patent aggregates via "average,
+    minimum, maximum, or weighted average" across segment comparisons — mean
+    captures typical similarity, max penalizes any single point where the
+    trajectories diverge sharply even if they're close everywhere else).
+    """
+    offset_type = offset_traj.well_type.value
+    type_penalty = 0.0 if active_well_type == offset_type else 0.5
+
+    if active_traj is None or not active_traj.stations or not offset_traj.stations:
+        # No trajectory to compare against — fall back to type match only
+        return round(max(0.0, 1.0 - type_penalty), 4)
+
+    md_lo = max(active_traj.stations[0].md_m, offset_traj.stations[0].md_m)
+    md_hi = min(active_traj.stations[-1].md_m, offset_traj.stations[-1].md_m)
+    if md_hi <= md_lo:
+        # No overlapping measured-depth interval to compare — type match only
+        return round(max(0.0, 1.0 - type_penalty), 4)
+
+    incl_diffs, azi_diffs = [], []
+    for i in range(TRAJECTORY_PROFILE_SAMPLES):
+        md = md_lo + (md_hi - md_lo) * i / (TRAJECTORY_PROFILE_SAMPLES - 1)
+        incl_diffs.append(abs(inclination_at_md(active_traj, md) - inclination_at_md(offset_traj, md)))
+        azi_diffs.append(_angular_diff(azimuth_at_md(active_traj, md), azimuth_at_md(offset_traj, md)))
+
+    incl_distance = 0.6 * (sum(incl_diffs) / len(incl_diffs)) + 0.4 * max(incl_diffs)
+    azi_distance = 0.6 * (sum(azi_diffs) / len(azi_diffs)) + 0.4 * max(azi_diffs)
+
+    incl_penalty = min(0.5, incl_distance / 90.0 * 0.5)
+    azi_penalty = min(0.3, azi_distance / 180.0 * 0.3)
+
+    score = max(0.0, 1.0 - type_penalty - incl_penalty - azi_penalty)
+    return round(score, 4)
+
+
+# ---------------------------------------------------------------------------
+# Sub-score: S_hazard
+# ---------------------------------------------------------------------------
 
 def score_hazard(
     offset_events: List[DrillingEvent],
@@ -418,16 +481,58 @@ def score_hazard(
     return round(min(1.0, score), 4)
 
 
+# ---------------------------------------------------------------------------
+# Structural Fault-Boundary Heuristic Gating (new)
+#
+# Ported from a teammate's (Prasad's) parallel `well_intelligence` module
+# (services/xi_correlator.py's check_structural_fault_heuristic, confirmed by
+# the prior audit as a genuinely new capability we lacked). Penalizes offset
+# relevance when the SAME formation's top sits at a vertical position in the
+# offset well that a normal regional dip could not explain over that lateral
+# distance — a strong hint the two wells are separated by a structural fault,
+# across which offset data (pressure regime, hazard history) often does NOT
+# transfer even if the wells are geographically close and formation names
+# match. Deliberately heuristic-only: never claims a CONFIRMED fault (that
+# needs seismic interpretation this system doesn't have), only
+# POSSIBLE_FAULT_BOUNDARY / SAME_FAULT_BLOCK.
+# ---------------------------------------------------------------------------
+
+def check_structural_fault_heuristic(
+    active_top_tvdss: float,
+    offset_top_tvdss: float,
+    distance_km: float,
+    max_normal_dip_deg: float = FAULT_DIP_DEG,
+) -> str:
+    """
+    Heuristic check for a possible structural fault boundary between two
+    wells. If the vertical offset between the same formation's top exceeds
+    what a normal regional dip would project over that lateral distance
+    (plus a throw margin), flags POSSIBLE_FAULT_BOUNDARY.
+    """
+    dist_m = distance_km * 1000.0
+    expected_elevation_diff = dist_m * math.tan(math.radians(max_normal_dip_deg))
+    actual_diff = abs(active_top_tvdss - offset_top_tvdss)
+
+    if actual_diff > expected_elevation_diff + FAULT_THROW_MARGIN_M:
+        return "POSSIBLE_FAULT_BOUNDARY"
+    return "SAME_FAULT_BLOCK"
+
+
+# ---------------------------------------------------------------------------
+# Main DORS Scoring Function
+# ---------------------------------------------------------------------------
+
 def compute_dors(
     active_well: Well,
     active_depth_m: float,
     active_formation: Optional[str],
     active_well_type: str,
-    active_avg_incl: float,
+    active_traj: Optional[WellTrajectory],
     offset_well: Well,
     offset_traj: Optional[WellTrajectory],
     offset_tops: List[FormationTop],
     offset_events: List[DrillingEvent],
+    active_tops: Optional[List[FormationTop]] = None,
     r_max_km: float = 25.0,
     weights: Optional[dict] = None,
 ) -> DORSComponentScores:
@@ -435,7 +540,7 @@ def compute_dors(
     s_spatial, dist_km = score_spatial(offset_well, active_well, r_max_km)
     s_formation = score_formation(offset_tops, active_formation, active_depth_m)
     s_depth = score_depth(offset_traj, active_depth_m)
-    s_trajectory = score_trajectory(offset_traj, active_well_type, active_avg_incl)
+    s_trajectory = score_trajectory(offset_traj, active_traj, active_well_type)
     s_hazard = score_hazard(offset_events, active_depth_m)
 
     total = (
@@ -446,6 +551,19 @@ def compute_dors(
         w["hazard"] * s_hazard
     )
 
+    fault_status: Optional[str] = None
+    if active_tops and active_formation:
+        active_top = next((t for t in active_tops if t.formation_name == active_formation), None)
+        offset_top = next((t for t in offset_tops if t.formation_name == active_formation), None)
+        if active_top is not None and offset_top is not None:
+            active_top_tvdss = active_top.top_tvd_m - active_well.kb_elevation_m
+            offset_top_tvdss = offset_top.top_tvd_m - offset_well.kb_elevation_m
+            fault_status = check_structural_fault_heuristic(
+                active_top_tvdss, offset_top_tvdss, dist_km
+            )
+            if fault_status == "POSSIBLE_FAULT_BOUNDARY":
+                total = total * FAULT_PENALTY_FACTOR
+
     return DORSComponentScores(
         spatial=s_spatial,
         formation=s_formation,
@@ -454,6 +572,7 @@ def compute_dors(
         hazard=s_hazard,
         total=round(total, 4),
         distance_km=dist_km,
+        structural_fault_status=fault_status,
     )
 
 
@@ -479,7 +598,12 @@ def rank_offset_wells(
     Dynamic re-ranking occurs whenever depth or formation changes.
     """
     active_traj = all_trajectories.get(active_well.well_id)
-    active_avg_incl = active_traj.avg_inclination if active_traj else 0.0
+    # Active well's own formation tops — needed for the structural
+    # fault-boundary gate (compares the SAME formation's top TVDSS in the
+    # active well vs. each offset well). `all_formation_tops` already
+    # indexes every well's tops by well_id, including the active well's, so
+    # no new parameter/signature change is needed here.
+    active_tops = all_formation_tops.get(active_well.well_id, [])
 
     rankings: List[OffsetWellRanking] = []
     for offset in all_wells:
@@ -496,11 +620,12 @@ def rank_offset_wells(
             active_depth_m=active_depth_m,
             active_formation=active_formation,
             active_well_type=active_well.well_type.value,
-            active_avg_incl=active_avg_incl,
+            active_traj=active_traj,
             offset_well=offset,
             offset_traj=offset_traj,
             offset_tops=offset_tops,
             offset_events=offset_events,
+            active_tops=active_tops,
             r_max_km=r_max_km,
         )
 

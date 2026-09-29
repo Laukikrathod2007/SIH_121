@@ -1,11 +1,11 @@
 """
-NWIS Module 02 â€” Master Data Store
+NWIS Module 02 — Master Data Store
 In-memory singleton that loads and indexes all synthetic testbed data.
 Provides fast lookup dicts for all engines.
 
 Usage:
-    from data_store import NWISDataStore
-    store = NWISDataStore()  # Singleton â€” loads once
+    from app.modules.well_intelligence.services.data_store import NWISDataStore
+    store = NWISDataStore()  # Singleton — loads once
     wells = store.all_wells
 """
 
@@ -179,7 +179,7 @@ class NWISDataStore:
     @staticmethod
     def _read_json(path: Path, default):
         if not path.exists():
-            logger.warning(f"Data file missing: {path} â€” run generate_testbed.py first")
+            logger.warning(f"Data file missing: {path} — run generate_testbed.py first")
             return default
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)

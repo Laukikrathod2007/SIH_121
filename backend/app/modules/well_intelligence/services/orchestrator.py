@@ -1,15 +1,15 @@
 """
-NWIS Module 02 â€” Master Analysis Orchestrator
+NWIS Module 02 — Master Analysis Orchestrator
 Single entry point for the entire backend intelligence pipeline.
 
 Call:
     result = NWISOrchestrator(store).analyze(active_well_id, current_depth_m)
 
 Pipeline:
-    1. DORS Engine â€” rank all offset wells
-    2. Stratigraphic Correlator â€” align at equivalent geological horizon
-    3. Risk Corridor Engine â€” cluster historical hazards into depth windows
-    4. 4-Pillar Confidence â€” evidence + sensor + quality + audit
+    1. DORS Engine — rank all offset wells
+    2. Stratigraphic Correlator — align at equivalent geological horizon
+    3. Risk Corridor Engine — cluster historical hazards into depth windows
+    4. 4-Pillar Confidence — evidence + sensor + quality + audit
     5. Assemble NWISAnalysisResponse
 """
 
@@ -81,7 +81,7 @@ class NWISOrchestrator:
         )
 
         # ---------------------------------------------------------------
-        # 1. DORS â€” rank offset wells
+        # 1. DORS — rank offset wells
         # ---------------------------------------------------------------
         rankings = rank_offset_wells(
             active_well=active_well,

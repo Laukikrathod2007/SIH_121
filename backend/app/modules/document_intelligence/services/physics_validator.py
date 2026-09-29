@@ -1,5 +1,5 @@
-﻿"""
-NWIS Module 01 â€” Layer 5: Domain Physics Validator
+"""
+NWIS Module 01 — Layer 5: Domain Physics Validator
 Enforces physical drilling laws and petroleum engineering boundary checks.
 
 Why this layer is our unfair advantage over all competitors:
@@ -191,14 +191,14 @@ class PhysicsValidator:
         Per-event range check/repair on DrillingEvent.npt_hours, where present
         (negative -> repaired to 0.0, single event > 24h -> flagged).
 
-        NOTE: this does NOT return the document's total NPT hours â€” see
+        NOTE: this does NOT return the document's total NPT hours — see
         validate_npt_total() for that, and why it deliberately does not sum
         from these narrative-derived events. In real DDR narrative text, the
         event's classifying keyword ("Stuck Pipe", "Lost Circulation", ...)
         and its "X.X hrs NPT" figure routinely land in different sentences
         once the text is split on periods/semicolons (extract_drilling_events
         classifies per-sentence), so event.npt_hours is `None` far more often
-        than not â€” summing it here would silently under-report, often to 0.0,
+        than not — summing it here would silently under-report, often to 0.0,
         exactly the kind of false-confidence number this system exists to
         catch in OTHER tools.
         """
@@ -228,7 +228,7 @@ class PhysicsValidator:
     def validate_npt_total(self, npt_records: List[NPTRecord]) -> Tuple[float, List[Dict[str, Any]]]:
         """
         Computes the document's authoritative total NPT hours from the
-        structured NPTRecord list â€” each derived directly from an explicit
+        structured NPTRecord list — each derived directly from an explicit
         HH:MM-HH:MM time range in the DDR (calculate_npt_from_times), not
         from narrative sentence parsing. See validate_time_balance's
         docstring for why that narrative path is not used for this rollup.
@@ -279,12 +279,12 @@ class PhysicsValidator:
             report.violations.extend(fmt_v)
 
         # 3a. Per-event npt_hours range check/repair (see validate_time_balance's
-        #     docstring â€” this rarely finds anything on narrative text, but
+        #     docstring — this rarely finds anything on narrative text, but
         #     it's a free additional check whenever it does).
         if result.drilling_events:
             report.violations.extend(self.validate_time_balance(result.drilling_events))
 
-        # 3b. Document-level total NPT hours â€” authoritative source is the
+        # 3b. Document-level total NPT hours — authoritative source is the
         #     structured, time-range-derived NPT records, not drilling_events.
         total_npt, npt_total_v = self.validate_npt_total(result.npt_records)
         result.total_npt_hours = total_npt

@@ -1,17 +1,17 @@
-﻿"""
-NWIS Module 01 â€” Master Pipeline Orchestrator
+"""
+NWIS Module 01 — Master Pipeline Orchestrator
 Coordinates all 6 layers of the Document Intelligence Pipeline.
 
 This is the single entry point for all document processing.
-Call: process_document(pdf_path) â†’ DocumentExtractionResult
+Call: process_document(pdf_path) → DocumentExtractionResult
 
 Layer execution:
   1. PyMuPDF scan detection + native extraction (Tier 1)
   2. Docling OCR for scanned pages (Tier 2) 
   3. spaCy NER + regex entity extraction (Tier 3)
-  4. Template learning â€” feeds learned layout back for future docs (Layer 4)
-  5. Physics domain validation â€” validates every extracted value (Layer 5)
-  6. Result aggregation â†’ WITSML-compliant JSON output
+  4. Template learning — feeds learned layout back for future docs (Layer 4)
+  5. Physics domain validation — validates every extracted value (Layer 5)
+  6. Result aggregation → WITSML-compliant JSON output
 """
 
 from __future__ import annotations
@@ -54,10 +54,10 @@ from app.modules.document_intelligence.services.template_learner import (
     learn_from_document,
     get_template_for_document,
 )
-from models.domain_rules import validate_field
-from models.schemas import ValidationStatus as VS
-from pipeline.layer5_physics_validator import run_physics_validation
-from pipeline.cloud_fallback import (
+from app.modules.document_intelligence.models.domain_rules import validate_field
+from app.modules.document_intelligence.models.schemas import ValidationStatus as VS
+from app.modules.document_intelligence.services.physics_validator import run_physics_validation
+from app.modules.document_intelligence.services.cloud_fallback import (
     should_use_cloud_fallback,
     get_cloud_parse_for_document,
 )
@@ -96,7 +96,7 @@ def process_document(
         progress_cb: Optional callback (current_page, total_pages, message)
 
     Returns:
-        DocumentExtractionResult â€” fully structured, WITSML-compliant output
+        DocumentExtractionResult — fully structured, WITSML-compliant output
     """
     total_start = time.time() * 1000
     job_id = job_id or f"JOB-{uuid.uuid4().hex[:8].upper()}"
@@ -112,7 +112,7 @@ def process_document(
         extraction_started_at=datetime.utcnow().isoformat(),
     )
 
-    # These are hard failures, not "0 events found" outcomes â€” raise so the
+    # These are hard failures, not "0 events found" outcomes — raise so the
     # caller (API background task, CLI demo) can tell a genuinely broken/
     # missing input apart from a document that simply has no drilling
     # entities in it. Silently returning an empty result here previously
@@ -133,13 +133,13 @@ def process_document(
     except Exception as exc:
         logger.error(f"[{job_id}] Cannot open PDF: {exc}")
         raise RuntimeError(
-            f"Cannot open '{pdf_path.name}' as a PDF â€” it may be corrupt, "
+            f"Cannot open '{pdf_path.name}' as a PDF — it may be corrupt, "
             f"password-protected, or not a valid PDF file ({exc})"
         ) from exc
 
     if len(doc) == 0:
         doc.close()
-        raise RuntimeError(f"'{pdf_path.name}' has zero pages â€” nothing to process")
+        raise RuntimeError(f"'{pdf_path.name}' has zero pages — nothing to process")
 
     total_pages = len(doc)
     result.total_pages = total_pages
@@ -169,12 +169,12 @@ def process_document(
     )
     if existing_template:
         result.template_used = existing_template.template_id
-        logger.info(f"[{job_id}] Template found: {existing_template.template_id} â€” using fast path")
+        logger.info(f"[{job_id}] Template found: {existing_template.template_id} — using fast path")
 
     # -----------------------------------------------------------------------
     # LAYER 2 (PRE): Run Docling on entire document (if not all native)
     # -----------------------------------------------------------------------
-    # Check every page (not just the first) â€” a text cover/title page
+    # Check every page (not just the first) — a text cover/title page
     # followed by scanned body pages is common in real DDR/WCR bundles, and
     # sampling only page 0 previously meant the whole rest of the document
     # would silently get zero OCR. is_page_scanned() is a cheap text/image
@@ -188,7 +188,7 @@ def process_document(
     if needs_docling:
         logger.info(
             f"[{job_id}] {len(scanned_page_numbers)}/{total_pages} scanned page(s) "
-            f"detected â€” running Docling OCR"
+            f"detected — running Docling OCR"
         )
         if progress_cb:
             progress_cb(0, total_pages, "Running layout-aware OCR (Docling)...")
@@ -233,7 +233,7 @@ def process_document(
         page_result = extract_page_native(page, page_num, is_scanned=page_num in scanned_page_numbers)
 
         if page_result is None:
-            logger.warning(f"[{job_id}] Page {page_num}: Tier 1 returned None â€” skipping")
+            logger.warning(f"[{job_id}] Page {page_num}: Tier 1 returned None — skipping")
             continue
 
         # -------------------------------------------------------------------
@@ -243,8 +243,8 @@ def process_document(
             scanned_count += 1
             # create_tier2_page_result prefers this page's own OCR text
             # (docling_result["page_markdown"][page_num]) and only falls
-            # back to whole-document text â€” or an explicit "no OCR engine"
-            # marker â€” when a real per-page result isn't available.
+            # back to whole-document text — or an explicit "no OCR engine"
+            # marker — when a real per-page result isn't available.
             page_result = create_tier2_page_result(page_num, docling_result)
             page_text = page_result.raw_text_preview
         else:
@@ -298,7 +298,7 @@ def process_document(
         all_npt.extend(page_result.npt_records)
         if page_result.mud_properties is not None:
             # Without this, Layer 5's OCR-slip auto-repair (e.g. "3.2 ppg"
-            # -> "13.2 ppg") never runs on any real document â€” it validates
+            # -> "13.2 ppg") never runs on any real document — it validates
             # result.mud_properties (the document-level list), which nothing
             # was ever populating from the per-page extraction.
             all_mud_properties.append(page_result.mud_properties)
@@ -315,7 +315,7 @@ def process_document(
                 elif field_obj.validation_status == VS.FLAGGED:
                     flagged_count += 1
 
-        # Page confidence â€” NOTE: this must not be `page_confidence or 0.90`.
+        # Page confidence — NOTE: this must not be `page_confidence or 0.90`.
         # page_confidence is a float that can be a legitimate 0.0 (e.g. a
         # scanned page with no OCR engine available), and `0.0 or 0.90`
         # evaluates to 0.90 in Python, silently erasing that low-confidence
@@ -456,7 +456,7 @@ def process_document(
 def run_demo(pdf_path: str) -> None:
     """
     Run the pipeline on a single PDF and print a rich summary to the terminal.
-    Usage: python -c "from pipeline.orchestrator import run_demo; run_demo('path/to/file.pdf')"
+    Usage: python -c "from app.modules.document_intelligence.services.pipeline_orchestrator import run_demo; run_demo('path/to/file.pdf')"
     """
     from rich.console import Console
     from rich.table import Table
@@ -502,7 +502,7 @@ def run_demo(pdf_path: str) -> None:
     table.add_row("Overall Confidence", f"{result.overall_confidence:.1%}")
     table.add_row("Processing Time", f"{result.total_processing_time_ms:.0f} ms")
     table.add_row("Template Used", result.template_used or "None (first run)")
-    table.add_row("WITSML Compliant", "YES âœ“")
+    table.add_row("WITSML Compliant", "YES ✓")
 
     console.print(table)
 
@@ -510,7 +510,7 @@ def run_demo(pdf_path: str) -> None:
         console.print("\n[bold green]Drilling Events Extracted:[/bold green]")
         for evt in result.all_drilling_events[:5]:
             console.print(
-                f"  â€¢ [yellow]{evt.event_type.value}[/yellow] | "
+                f"  • [yellow]{evt.event_type.value}[/yellow] | "
                 f"Severity: {evt.severity.value} | "
                 f"Conf: {evt.confidence:.0%} | "
                 f"{evt.raw_narrative[:80]}..."

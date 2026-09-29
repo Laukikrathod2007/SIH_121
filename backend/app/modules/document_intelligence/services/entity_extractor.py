@@ -1,12 +1,12 @@
-﻿"""
-NWIS Module 01 â€” Tier 3: Petroleum Domain Entity Extractor
+"""
+NWIS Module 01 — Tier 3: Petroleum Domain Entity Extractor
 Extracts structured drilling entities from raw OCR text using:
   1. Compiled regex patterns for structured fields (fast, deterministic)
   2. Domain keyword matching for event classification
   3. Fuzzy formation name matching
   4. NPT hour calculation from time ranges
 
-This layer handles the narrative "Operational Remarks" section of DDRs â€”
+This layer handles the narrative "Operational Remarks" section of DDRs —
 the part that contains the most valuable knowledge for NWIS risk intelligence.
 
 Target accuracy: >90% F1 on petroleum NER (aligned with SPE-204112 benchmark)
@@ -60,7 +60,7 @@ RE_MUD_WEIGHT = re.compile(
 # --- Volume ---
 # Matches: "40 bbl", "25 bbl", "200 m3"
 RE_VOLUME = re.compile(
-    r"(\d{1,5}\.?\d{0,2})\s*(bbl|barrel[s]?|m3|mÂ³|ltr|litre[s]?)",
+    r"(\d{1,5}\.?\d{0,2})\s*(bbl|barrel[s]?|m3|m³|ltr|litre[s]?)",
     re.IGNORECASE,
 )
 
@@ -87,7 +87,7 @@ RE_PRESSURE = re.compile(
 
 # --- Temperature ---
 RE_TEMP = re.compile(
-    r"(\d{2,3}\.?\d{0,1})\s*(Â°?C|Â°?F|deg[.\s]?[CF])",
+    r"(\d{2,3}\.?\d{0,1})\s*(°?C|°?F|deg[.\s]?[CF])",
     re.IGNORECASE,
 )
 
@@ -371,7 +371,7 @@ def extract_drilling_parameters(text: str) -> Optional[DrillingParameters]:
 def extract_drilling_events(text: str) -> List[DrillingEvent]:
     """
     Extract hazard events from the 'REMARKS' or 'OPERATIONS' section of a DDR.
-    This is the most intellectually challenging extraction â€” narrative text.
+    This is the most intellectually challenging extraction — narrative text.
 
     Example input:
     "Total fluid loss of 40 bbl at 3,248 m; mixed 25 bbl nut-plug pill.
@@ -431,7 +431,7 @@ def extract_drilling_events(text: str) -> List[DrillingEvent]:
             unit = depth_m.group(2).lower()
             if val:
                 if "ft" in unit:
-                    val = round(val * 0.3048, 1)  # Convert ft â†’ m
+                    val = round(val * 0.3048, 1)  # Convert ft → m
                 depth_field = _make_field("depth_md_m", depth_m.group(0), val, "m")
 
         # --- Extract loss rate / volume ---
@@ -516,7 +516,7 @@ def extract_drilling_events(text: str) -> List[DrillingEvent]:
 def extract_formation_tops(text: str) -> List[FormationTop]:
     """
     Extract formation top depths from WCR / Mud Log text sections.
-    Looks for patterns like: "Tipam Sandstone â€” Top: 2,980 m"
+    Looks for patterns like: "Tipam Sandstone — Top: 2,980 m"
     """
     tops: List[FormationTop] = []
     if not text:
@@ -567,7 +567,7 @@ def calculate_npt_from_times(text: str) -> List[NPTRecord]:
     """
     Calculate NPT hours from time range entries in DDR.
     DDRs often have tables like:
-    "0600â€“1130 : Stuck Pipe â€” Worked to free string. (5.5 hrs NPT)"
+    "0600–1130 : Stuck Pipe — Worked to free string. (5.5 hrs NPT)"
     """
     npt_records: List[NPTRecord] = []
     if not text:
@@ -575,7 +575,7 @@ def calculate_npt_from_times(text: str) -> List[NPTRecord]:
 
     # Pattern: TIME1 - TIME2 : description
     time_range_pattern = re.compile(
-        r"(\d{4})\s*[-â€“â€”to]+\s*(\d{4})\s*[:\-]?\s*(.+?)(?=\d{4}\s*[-â€“]|\Z)",
+        r"(\d{4})\s*[-–—to]+\s*(\d{4})\s*[:\-]?\s*(.+?)(?=\d{4}\s*[-–]|\Z)",
         re.IGNORECASE | re.DOTALL,
     )
 
