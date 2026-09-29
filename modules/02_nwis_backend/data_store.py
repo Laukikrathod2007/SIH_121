@@ -31,6 +31,29 @@ DATA_DIR = Path(__file__).parent / "data" / "synthetic"
 # correlatable across whichever wells actually have real casing data (2
 # real Volve wells currently), not fabricated for the synthetic ones.
 REAL_CASING_DATA_PATH = Path(__file__).parent.parent.parent / "real_data" / "real_casing_records_all.json"
+REAL_FORMATIONS_PATH = Path(__file__).parent.parent.parent / "real_data" / "real_formations_fresh.json"
+REAL_EVENTS_PATH = Path(__file__).parent.parent.parent / "real_data" / "real_events_depth_tagged_fresh.json"
+
+# Real Volve well 15/9-F-12 is added to the live analyze()-able well set
+# (additive, alongside the synthetic Assam-Arakan testbed) so at least one
+# well in the store is genuinely real end-to-end: real formation tops, real
+# events, real casing (loaded separately below). No real trajectory exists
+# for it (module 01 extracts formation/NPT/event/casing tables but was never
+# built to parse the fixed-column MD/Inc/Azi survey table -- the raw OCR text
+# has the numbers but no structured extractor exists for it yet), so this
+# well's trajectory-dependent features (inclination, DORS trajectory
+# similarity) use the same disclosed 0.0-inclination fallback already
+# established for 15/9-19B elsewhere in this codebase -- not fabricated.
+# Surface position and KB elevation below are the real values read off the
+# well's own WITSML/EDM survey report header (module 01 extraction,
+# document DOC-D867EDB4466A): lat 58 26' 29.8068" N, lon 1 53' 14.9285" E,
+# Rotary Table @ 54.90m.
+REAL_WELL_F12 = Well(
+    well_id="15/9-F-12", well_name="15/9-F-12", field="Volve",
+    field_code="VOLVE", operator="Equinor", surface_lat=58.441613,
+    surface_lon=1.887480, kb_elevation_m=54.90, total_depth_md_m=4552.0,
+    well_type=WellType.VERTICAL, status=WellStatus.COMPLETED, witsml_uid="",
+)
 
 
 class NWISDataStore:
@@ -167,6 +190,60 @@ class NWISDataStore:
                 self.casing_records_by_well.setdefault(record.well_id, []).append(record)
             except Exception as e:
                 logger.warning(f"Skipping casing record: {e}")
+
+        # Real Volve well 15/9-F-12 -- additive to the synthetic set (see
+        # REAL_WELL_F12 comment above for why trajectory is intentionally
+        # absent, not fabricated).
+        self.all_wells.append(REAL_WELL_F12)
+        self.wells_by_id[REAL_WELL_F12.well_id] = REAL_WELL_F12
+
+        # Real formation tops. Sanity-filtered: module 01's COMPLETION.pdf
+        # table parser has a real, previously-undetected bug that produces
+        # 6-digit garbage depths (e.g. "285220.0" m for a ~4500m TD well) for
+        # some rows -- likely column/page-number bleed-through in that
+        # specific document type. Rather than inject known-wrong depths into
+        # a live demo, rows deeper than the well's own real total depth are
+        # dropped and logged, not silently kept.
+        real_tops_raw = self._read_json(REAL_FORMATIONS_PATH, [])
+        n_tops_dropped = 0
+        for t in real_tops_raw:
+            if t.get("well_id") != REAL_WELL_F12.well_id:
+                continue
+            if t["top_md_m"] is None or t["top_md_m"] > REAL_WELL_F12.total_depth_md_m:
+                n_tops_dropped += 1
+                continue
+            fm = FormationTop(
+                well_id=t["well_id"], well_name=t["well_id"],
+                formation_name=t["formation_name"], top_md_m=t["top_md_m"],
+                top_tvd_m=t["top_md_m"], base_md_m=t["top_md_m"] + 50,
+                thickness_m=50.0,
+            )
+            self.formation_tops_by_well.setdefault(fm.well_id, []).append(fm)
+        if n_tops_dropped:
+            logger.warning(
+                f"Dropped {n_tops_dropped} real formation tops for {REAL_WELL_F12.well_id} "
+                f"with depths exceeding the well's real TD (module 01 COMPLETION.pdf "
+                f"table-parsing bug, not fabricated data being hidden)"
+            )
+
+        # Real drilling events. Only rows with a resolved hazard_type are
+        # usable (module 01 tags some real events, e.g. EQUIPMENT_FAILURE,
+        # as hazard_type=null because they don't map to a PS 26121 hazard
+        # family -- correctly excluded here, not coerced into one).
+        real_events_raw = self._read_json(REAL_EVENTS_PATH, [])
+        for i, e in enumerate(real_events_raw):
+            if e.get("well_id") != REAL_WELL_F12.well_id or e.get("hazard_type") is None:
+                continue
+            event = DrillingEvent(
+                event_id=f"EVT-REAL-F12-{i:03d}",
+                well_id=e["well_id"],
+                event_type=HazardType(e["hazard_type"]),
+                severity=e.get("severity", "MEDIUM"),
+                depth_start_md_m=e["depth_start_md_m"],
+                source_document=e.get("source_file"),
+            )
+            self.events_by_well.setdefault(event.well_id, []).append(event)
+            self.all_events.append(event)
 
         self._loaded = True
 

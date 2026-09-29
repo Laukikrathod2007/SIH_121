@@ -130,7 +130,7 @@ async def list_wells(
     }
 
 
-@app.get("/api/v2/wells/{well_id}", tags=["Wells"])
+@app.get("/api/v2/wells/{well_id:path}", tags=["Wells"])
 async def get_well(well_id: str):
     """Get full details for a single well."""
     _require_store()
@@ -154,7 +154,7 @@ async def get_well(well_id: str):
 # Formations
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/formations/{well_id}", tags=["Stratigraphy"])
+@app.get("/api/v2/formations/{well_id:path}", tags=["Stratigraphy"])
 async def get_formations(well_id: str):
     """Get formation tops for a well — feed for the Stratigraphic Track."""
     _require_store()
@@ -234,7 +234,7 @@ async def get_all_formations(
 # Drilling Events
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/events/{well_id}", tags=["Drilling Events"])
+@app.get("/api/v2/events/{well_id:path}", tags=["Drilling Events"])
 async def get_well_events(well_id: str):
     """Get all drilling events for a well (for the Evidence Proof Modal)."""
     _require_store()
@@ -286,7 +286,7 @@ async def search_events(
 # Telemetry
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/telemetry/{well_id}", tags=["Telemetry"])
+@app.get("/api/v2/telemetry/{well_id:path}", tags=["Telemetry"])
 async def get_telemetry(
     well_id: str,
     depth: float = Query(..., description="Current drill bit depth (m MD)"),
@@ -313,7 +313,7 @@ async def get_telemetry(
 # DORS Offset Ranking
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/offset_rank/{well_id}", tags=["DORS Engine"])
+@app.get("/api/v2/offset_rank/{well_id:path}", tags=["DORS Engine"])
 async def rank_offsets(
     well_id: str,
     depth: float = Query(..., description="Current bit depth (m MD)"),
@@ -362,7 +362,7 @@ async def rank_offsets(
 # Full Intelligence Analysis
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/analyze/{well_id}", tags=["NWIS Intelligence"])
+@app.get("/api/v2/analyze/{well_id:path}", tags=["NWIS Intelligence"])
 async def analyze_well(
     well_id: str,
     depth: float = Query(..., description="Current bit depth (m MD)"),
@@ -396,7 +396,7 @@ async def analyze_well(
 # Risk Corridors
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/corridors/{well_id}", tags=["Risk Corridors"])
+@app.get("/api/v2/corridors/{well_id:path}", tags=["Risk Corridors"])
 async def get_risk_corridors(
     well_id: str,
     depth: float = Query(..., description="Current bit depth (m MD)"),
