@@ -557,11 +557,30 @@ def extract_formation_tops(text: str) -> List[FormationTop]:
         if val:
             seen_depth_spans.add(depth_span)
             top_field = _make_field("depth_md_m", m.group(0), val, "m", confidence=0.85)
+            # Real bug found (logger Step 25): this regex's `[^.]*?` gap
+            # between the formation name and its depth number has no upper
+            # bound on how far it can range across a page's raw text, so on
+            # some COMPLETION.pdf documents it pairs a formation name with an
+            # unrelated number elsewhere on the page (observed: 6-figure
+            # values like 285220m on a well with a true TD under 5,000m).
+            # validate_field() (via _make_field above) already catches this
+            # as ValidationStatus.FAILED against domain_rules' depth range --
+            # it was just never actually checked here, so the FAILED record
+            # still made it into the returned list with only a lowered
+            # confidence, not excluded. A formation top off by 2+ orders of
+            # magnitude isn't "low confidence," it's wrong; drop it rather
+            # than ship it with an asterisk a downstream consumer could miss.
+            if top_field.validation_status == ValidationStatus.FAILED:
+                logger.warning(
+                    f"Dropping formation top '{fm_name}' = {val}m: failed physics "
+                    f"validation (likely a mis-paired depth from elsewhere on the page)"
+                )
+                continue
             tops.append(
                 FormationTop(
                     formation_name=fm_name,
                     top_md_m=top_field,
-                    confidence=0.85,
+                    confidence=top_field.confidence,
                 )
             )
 
