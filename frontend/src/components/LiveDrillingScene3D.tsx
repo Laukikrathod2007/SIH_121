@@ -1,10 +1,11 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { SurveyStation, WellTrajectory, FormationTop, TelemetryData } from '../types';
 import { Radio, Compass, Layers, Eye } from 'lucide-react';
 import { stationToVec3, positionAtMD, TRAJECTORY_SCALE as SCALE } from '../lib/trajectoryGeometry';
+import { CameraRig, CameraPreset } from './three/CameraRig';
 
 const RIG_HEIGHT = 3.2; // scene units above the surface (derrick mast height)
 
@@ -130,49 +131,6 @@ function LiveBit({ stations, measuredDepthM }: { stations: SurveyStation[]; meas
 // cutting instantly, so switching feels like moving through the same live
 // scene, not loading a different one.
 // ---------------------------------------------------------------------------
-export type CameraPreset = 'RIG_FLOOR' | 'CROSS_SECTION' | 'DOWNHOLE_FOLLOW' | 'ORBIT';
-
-function CameraRig({
-  preset,
-  bitPosition,
-  extent,
-  orbitEnabled,
-}: {
-  preset: CameraPreset;
-  bitPosition: React.MutableRefObject<THREE.Vector3>;
-  extent: number;
-  orbitEnabled: boolean;
-}) {
-  const { camera } = useThree();
-  const targetLookAt = useRef(new THREE.Vector3());
-
-  useFrame((_, delta) => {
-    if (preset === 'ORBIT') return; // OrbitControls owns the camera in this mode
-
-    let desiredPos: THREE.Vector3;
-    let desiredLookAt: THREE.Vector3;
-
-    if (preset === 'RIG_FLOOR') {
-      desiredPos = new THREE.Vector3(extent * 0.9, RIG_HEIGHT * 0.6, extent * 0.9);
-      desiredLookAt = new THREE.Vector3(0, RIG_HEIGHT * 0.4, 0);
-    } else if (preset === 'CROSS_SECTION') {
-      desiredPos = new THREE.Vector3(extent * 2.2, 0, 0.01);
-      desiredLookAt = new THREE.Vector3(0, -extent * 0.6, 0);
-    } else {
-      // DOWNHOLE_FOLLOW -- tracks the real live bit position
-      const bit = bitPosition.current;
-      desiredPos = new THREE.Vector3(bit.x + extent * 0.4, bit.y + extent * 0.25, bit.z + extent * 0.4);
-      desiredLookAt = bit.clone();
-    }
-
-    camera.position.lerp(desiredPos, Math.min(1, delta * 2.5));
-    targetLookAt.current.lerp(desiredLookAt, Math.min(1, delta * 2.5));
-    camera.lookAt(targetLookAt.current);
-  });
-
-  return null;
-}
-
 interface LiveDrillingScene3DProps {
   trajectory: WellTrajectory | null;
   formations: FormationTop[];
@@ -220,7 +178,7 @@ export const LiveDrillingScene3D: React.FC<LiveDrillingScene3DProps> = ({
         {stations.length > 1 && <WellboreTube stations={stations} />}
         {stations.length > 1 && <LiveBit stations={stations} measuredDepthM={measuredDepthM} />}
 
-        <CameraRig preset={preset} bitPosition={bitPositionRef} extent={extent} orbitEnabled={preset === 'ORBIT'} />
+        <CameraRig preset={preset} bitPosition={bitPositionRef} extent={extent} rigHeight={RIG_HEIGHT} />
         {preset === 'ORBIT' && OrbitControlsComp && <OrbitControlsComp enableDamping dampingFactor={0.08} />}
 
         {/* Grid floor for spatial reference */}
