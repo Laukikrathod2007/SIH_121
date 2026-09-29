@@ -12,7 +12,6 @@ import {
   Cpu,
   FileSpreadsheet,
   Activity,
-  Flame,
   Radio,
   Bot,
   Radar,
@@ -43,17 +42,13 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="w-64 bg-[#0e121a] border-r border-slate-800/80 flex flex-col h-screen select-none z-20 shrink-0">
       {/* Brand Header */}
-      <div className="p-4 border-b border-slate-800/80 flex items-center space-x-3 bg-[#0a0d13]">
-        <div className="w-8 h-8 rounded bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-          <Flame className="w-5 h-5 text-slate-950 stroke-[2.5]" />
-        </div>
-        <div>
-          <div className="font-bold text-sm tracking-wider text-slate-100 flex items-center gap-1.5">
-            eRTMAC-NWIS
-            <span className="text-[10px] bg-amber-500/20 text-amber-400 font-mono px-1 rounded border border-amber-500/30">v1.0</span>
-          </div>
-          <div className="text-[11px] text-slate-400 font-mono tracking-tight">OIL INDIA LIMITED</div>
-        </div>
+      <div className="p-4 border-b border-slate-800/80 bg-[#0a0d13]">
+        <img
+          src="/brand/drillwise-logo-horizontal.png"
+          alt="DrillWise — Powered by eWIS"
+          className="w-full h-auto max-h-9 object-contain object-left"
+        />
+        <div className="text-[11px] text-slate-400 font-mono tracking-tight mt-1.5">OIL INDIA LIMITED</div>
       </div>
 
       {/* Navigation List */}
