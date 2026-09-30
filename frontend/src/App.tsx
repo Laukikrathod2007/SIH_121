@@ -18,26 +18,31 @@ import { SimulatorPage } from './pages/SimulatorPage';
 import { ReportsAnalyticsPage } from './pages/ReportsAnalyticsPage';
 import { SystemStatusPage } from './pages/SystemStatusPage';
 
+// "/" itself is intercepted before it ever reaches React (see vite.config.ts's
+// landingPageAtRoot plugin, which serves the static marketing page for that
+// exact path). Everything the app actually does lives under /app, so a
+// direct visit to "/" only ever happens via the static page's own CTAs
+// navigating to /app -- this router never needs to render a "/" route.
 const RoutedContent: React.FC = () => {
   const location = useLocation();
   return (
     <main key={location.pathname} className="flex-1 overflow-y-auto bg-grid-scada page-transition">
       <Routes>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/command-center" element={<CommandCenterPage />} />
-        <Route path="/drilling" element={<LiveDrillingPage />} />
-        <Route path="/wells" element={<NearbyWellsPage />} />
-        <Route path="/offset-map" element={<NwisMapPage />} />
-        <Route path="/correlation" element={<GeologicalCorrelationPage />} />
-        <Route path="/risk" element={<RiskPredictionPage />} />
-        <Route path="/alerts" element={<AlertsAdvisoryPage />} />
-        <Route path="/knowledge" element={<HistoricalIntelligencePage />} />
-        <Route path="/copilot" element={<CopilotPage />} />
-        <Route path="/documents" element={<DocumentIngestionPage />} />
-        <Route path="/simulator" element={<SimulatorPage />} />
-        <Route path="/reports" element={<ReportsAnalyticsPage />} />
-        <Route path="/status" element={<SystemStatusPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/app" element={<DashboardPage />} />
+        <Route path="/app/command-center" element={<CommandCenterPage />} />
+        <Route path="/app/drilling" element={<LiveDrillingPage />} />
+        <Route path="/app/wells" element={<NearbyWellsPage />} />
+        <Route path="/app/offset-map" element={<NwisMapPage />} />
+        <Route path="/app/correlation" element={<GeologicalCorrelationPage />} />
+        <Route path="/app/risk" element={<RiskPredictionPage />} />
+        <Route path="/app/alerts" element={<AlertsAdvisoryPage />} />
+        <Route path="/app/knowledge" element={<HistoricalIntelligencePage />} />
+        <Route path="/app/copilot" element={<CopilotPage />} />
+        <Route path="/app/documents" element={<DocumentIngestionPage />} />
+        <Route path="/app/simulator" element={<SimulatorPage />} />
+        <Route path="/app/reports" element={<ReportsAnalyticsPage />} />
+        <Route path="/app/status" element={<SystemStatusPage />} />
+        <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>
     </main>
   );

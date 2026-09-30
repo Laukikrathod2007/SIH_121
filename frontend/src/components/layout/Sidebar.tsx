@@ -29,20 +29,20 @@ export const Sidebar: React.FC = () => {
   const activeAlertsCount = alerts.filter(a => a.severity === 'CRITICAL' || a.severity === 'WARNING').length;
 
   const navItems = [
-    { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/command-center', label: 'Command Center', icon: Radar, badge: 'NEW' },
-    { to: '/drilling', label: 'Live Drilling', icon: Gauge, badge: isWsConnected ? 'LIVE' : undefined },
-    { to: '/wells', label: 'Nearby Wells', icon: Compass },
-    { to: '/offset-map', label: 'Offset Map', icon: MapPin, badge: 'NEW' },
-    { to: '/correlation', label: 'Geological Correlation', icon: Layers },
-    { to: '/risk', label: 'Risk & Prediction', icon: ShieldAlert },
-    { to: '/alerts', label: 'Alerts & Advisory', icon: BellRing, alertCount: activeAlertsCount },
-    { to: '/knowledge', label: 'Historical Search', icon: BookOpen },
-    { to: '/copilot', label: 'Knowledge Copilot', icon: Bot },
-    { to: '/documents', label: 'Document Ingestion', icon: FileUp },
-    { to: '/simulator', label: 'Scenario Simulator', icon: Cpu, isSimActive: simStatus?.is_running },
-    { to: '/reports', label: 'Reports & Analytics', icon: FileSpreadsheet },
-    { to: '/status', label: 'System Architecture', icon: Activity },
+    { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/app/command-center', label: 'Command Center', icon: Radar, badge: 'NEW' },
+    { to: '/app/drilling', label: 'Live Drilling', icon: Gauge, badge: isWsConnected ? 'LIVE' : undefined },
+    { to: '/app/wells', label: 'Nearby Wells', icon: Compass },
+    { to: '/app/offset-map', label: 'Offset Map', icon: MapPin, badge: 'NEW' },
+    { to: '/app/correlation', label: 'Geological Correlation', icon: Layers },
+    { to: '/app/risk', label: 'Risk & Prediction', icon: ShieldAlert },
+    { to: '/app/alerts', label: 'Alerts & Advisory', icon: BellRing, alertCount: activeAlertsCount },
+    { to: '/app/knowledge', label: 'Historical Search', icon: BookOpen },
+    { to: '/app/copilot', label: 'Knowledge Copilot', icon: Bot },
+    { to: '/app/documents', label: 'Document Ingestion', icon: FileUp },
+    { to: '/app/simulator', label: 'Scenario Simulator', icon: Cpu, isSimActive: simStatus?.is_running },
+    { to: '/app/reports', label: 'Reports & Analytics', icon: FileSpreadsheet },
+    { to: '/app/status', label: 'System Architecture', icon: Activity },
   ];
 
   return (
@@ -68,7 +68,7 @@ export const Sidebar: React.FC = () => {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === '/'}
+              end={item.to === '/app'}
               className={({ isActive }) =>
                 `flex items-center justify-between px-3 py-2 rounded text-xs font-medium transition-all ${
                   isActive

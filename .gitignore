@@ -10,3 +10,10 @@ research/competitor_repos/
 # tracked separately.
 nwis-map-package/
 evidence-server/node_modules/
+
+# Original, UNSANITIZED landing-page source drop. Its useful, sanitized
+# content lives in frontend/public/landing/ (see that commit's message for
+# what was changed and why -- real company identity data removed, real
+# design/copy untouched). This raw folder still contains the unmodified
+# version and must never be committed.
+DrillWise-Frontend/

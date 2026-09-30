@@ -1,5 +1,7 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import fs from 'node:fs';
+import path from 'node:path';
 
 // https://vitejs.dev/config/
 //
@@ -11,8 +13,36 @@ import react from '@vitejs/plugin-react';
 // modules/02_nwis_backend/server.py already allow CORS from
 // http://localhost:5173 by default (see their `_default_origins`), so no
 // proxy is needed for local dev.
+
+// Serves the static marketing landing page (public/landing/index.html) at
+// the exact root path "/", while leaving every other path -- including
+// "/app" and all its sub-routes -- to Vite's normal SPA fallback (which
+// serves the React app's own index.html). Vite only has one built-in HTML
+// entry, so without this the root path would always show the React shell
+// instead of the static page. Only intercepts the exact "/" request; the
+// React Router app itself is untouched.
+function landingPageAtRoot(): Plugin {
+  return {
+    name: 'landing-page-at-root',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url === '/') {
+          const landingHtml = fs.readFileSync(
+            path.resolve(__dirname, 'public/landing/index.html'),
+            'utf-8',
+          );
+          res.setHeader('Content-Type', 'text/html');
+          res.end(landingHtml);
+          return;
+        }
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), landingPageAtRoot()],
   server: {
     port: 5173,
     strictPort: true,
