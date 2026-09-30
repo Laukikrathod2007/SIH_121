@@ -15,11 +15,15 @@ import {
   Radio,
   Bot,
   Radar,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../hooks/useTheme';
 
 export const Sidebar: React.FC = () => {
   const { alerts, simStatus, isWsConnected } = useApp();
+  const { theme, setTheme } = useTheme();
 
   const activeAlertsCount = alerts.filter(a => a.severity === 'CRITICAL' || a.severity === 'WARNING').length;
 
@@ -112,6 +116,28 @@ export const Sidebar: React.FC = () => {
           <span className={simStatus?.is_running ? 'text-amber-400' : 'text-slate-400'}>
             {simStatus?.is_running ? `RUNNING (${simStatus.speed_multiplier}x)` : 'PAUSED'}
           </span>
+        </div>
+
+        {/* Theme toggle -- moved here from the top header bar, which was
+            already packed enough that this got silently pushed off-screen
+            there with no overflow handling. Guaranteed visible here. */}
+        <div className="flex items-center bg-slate-900 border border-slate-700 rounded p-0.5 mt-1">
+          <button
+            onClick={() => setTheme('light')}
+            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded transition ${
+              theme === 'light' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Sun className="w-3 h-3" /> Light
+          </button>
+          <button
+            onClick={() => setTheme('dark')}
+            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded transition ${
+              theme === 'dark' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Moon className="w-3 h-3" /> Dark
+          </button>
         </div>
       </div>
     </aside>
