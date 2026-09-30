@@ -17,14 +17,14 @@ Module 5 implements a **4-pillar hybrid risk prediction system** integrating phy
 
 ## 2. Multi-Architecture Comparative Benchmark (Part E)
 
-| Architecture | Precision | Recall | F1 Score | PR-AUC | False Alerts / Hr | Lead Time (s) |
+| Architecture | Precision | Recall | F1 Score | Episodes detected | False-alarm episodes / hr | Mean detection delay |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `RULES` | 0.843 | 0.925 | 0.882 | 0.884 | 1.8 | 120s |
-| `RULES_PLUS_ISOLATION_FOREST` | 0.833 | 1.000 | 0.909 | 0.917 | 1.1 | 120s |
-| `XGBOOST` | 1.000 | 0.898 | 0.946 | 0.949 | 0.6 | 120s |
-| `RULES_PLUS_ISOLATION_FOREST_PLUS_XGBOOST` | 0.997 | 0.535 | 0.696 | 0.766 | 0.2 | 60s |
+| `RULES` | 0.817 | 0.757 | 0.785 | 6/6 | 0.0 | 24.3 s |
+| `RULES_PLUS_ISOLATION_FOREST` | 0.833 | 1.000 | 0.909 | 6/6 | 0.0 | 0.0 s |
+| `XGBOOST` | 1.000 | 0.908 | 0.952 | 6/6 | 0.0 | 0.0 s |
+| `RULES_PLUS_ISOLATION_FOREST_PLUS_XGBOOST` | 0.959 | 0.473 | 0.634 | 6/6 | 30.0 | 22.5 s |
 
-> **Key Architectural Finding:** While XGBoost alone provides high recall, combining it with Deterministic Rules and Isolation Forest in the **Full Fusion** engine reduces False Alerts from 1.8/hr down to **0.2/hr** while maintaining a precursor lead time of **120 seconds** before event onset.
+> **Measured finding:** highest F1 = `XGBOOST` (0.952); fewest false-alarm episodes = `RULES`. All values computed on held-out synthetic test runs (1 Hz).
 
 ---
 
@@ -32,16 +32,16 @@ Module 5 implements a **4-pillar hybrid risk prediction system** integrating phy
 
 | Rank | Feature | Importance | Domain |
 | :--- | :--- | :--- | :--- |
-| 1 | `fg_margin_bar` | 0.1492 | Geology |
-| 2 | `overpull_kn` | 0.1155 | Geology |
-| 3 | `d_exponent_slope` | 0.0904 | Geology |
-| 4 | `stick_slip_index` | 0.0882 | Geology |
-| 5 | `d_exponent_deviation` | 0.0814 | Geology |
-| 6 | `xi` | 0.0593 | Geology |
-| 7 | `pp_margin_bar` | 0.0488 | Geology |
-| 8 | `flow_imbalance_duration_s` | 0.0487 | Hydraulics |
-| 9 | `delta_flow` | 0.0476 | Hydraulics |
-| 10 | `standpipe_pressure_bar` | 0.0421 | Hydraulics |
+| 1 | `fg_margin_bar` | 0.1447 | Geology |
+| 2 | `stick_slip_index` | 0.1269 | Geology |
+| 3 | `d_exponent_deviation` | 0.1246 | Geology |
+| 4 | `overpull_kn` | 0.1032 | Geology |
+| 5 | `d_exponent_slope` | 0.0814 | Geology |
+| 6 | `delta_flow` | 0.0485 | Hydraulics |
+| 7 | `flow_imbalance_duration_s` | 0.0435 | Hydraulics |
+| 8 | `standpipe_pressure_bar` | 0.0407 | Hydraulics |
+| 9 | `torque_kn_m` | 0.0381 | Mechanics |
+| 10 | `pp_margin_bar` | 0.0362 | Geology |
 
 ---
 
@@ -50,20 +50,20 @@ Module 5 implements a **4-pillar hybrid risk prediction system** integrating phy
 | Experiment | Test Dataset | Precision | Recall | F1 Score | Generalization Diagnosis |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Synthetic Only** | Observed Logs (`W043`, `W039`) | 0.720 | 1.000 | 0.837 | Solid zero-shot generalization; slight noise variance |
-| **Synthetic + Observed** | Observed Logs (`W043`, `W039`) | 0.881 | 0.867 | 0.874 | Optimal calibration; combines physical priors + field telemetry |
+| **Synthetic + Observed** | Observed Logs (`W043`, `W039`) | 0.877 | 0.872 | 0.875 | Optimal calibration; combines physical priors + field telemetry |
 
 ### Robustness Stress Tests
-- **Sensor Noise Robustness:** Injected $\pm 10\%$ Gaussian perturbation yielded F1 = `0.862` (`98.6%` retention).
-- **Missing Data Robustness:** Random $15\%$ sensor dropout with forward-fill/median imputation yielded F1 = `0.850` (`97.3%` retention).
+- **Sensor Noise Robustness:** Injected $\pm 10\%$ Gaussian perturbation yielded F1 = `0.861` (`98.4%` retention).
+- **Missing Data Robustness:** Random $15\%$ sensor dropout with forward-fill/median imputation yielded F1 = `0.856` (`97.8%` retention).
 
 ---
 
 ## 5. Real-Time End-to-End Latency Benchmark (Part M)
 
 - **Feature Extraction Latency:** `0.29 ms`
-- **Model Inference Latency (Isolation Forest + XGBoost):** `24.53 ms`
-- **Risk Fusion & Contributor Assembly:** `26.09 ms`
-- **Total Alert Latency:** `50.9 ms` (Target: $< 1000$ ms -> **PASSED** by over $20\times$ margin!)
+- **Model Inference Latency (Isolation Forest + XGBoost):** `21.49 ms`
+- **Risk Fusion & Contributor Assembly:** `20.37 ms`
+- **Total Alert Latency:** `42.15 ms` (Target: $< 1000$ ms -> **PASSED** by over $20\times$ margin!)
 
 ---
 

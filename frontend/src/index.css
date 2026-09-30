@@ -25,6 +25,22 @@
   --sev-high: #c4560f;
   --sev-medium: #a87a05;
   --sev-low: #3d7a4c;
+  /* RGB channels so Tailwind opacity modifiers (bg-surface/95 ...) work */
+  --paper-rgb: 244 243 239;
+  --surface-rgb: 255 255 255;
+  --sunken-rgb: 239 237 231;
+  --line-rgb: 227 224 216;
+  --line-strong-rgb: 207 203 192;
+  --ink-rgb: 23 25 29;
+  --ink-2-rgb: 74 78 86;
+  --ink-3-rgb: 134 138 145;
+  --accent-rgb: 14 90 105;
+  --accent-soft-rgb: 226 239 240;
+  --accent-ink-rgb: 10 68 80;
+  --sev-critical-rgb: 180 35 24;
+  --sev-high-rgb: 196 86 15;
+  --sev-medium-rgb: 168 122 5;
+  --sev-low-rgb: 61 122 76;
   color-scheme: light;
 }
 

@@ -33,13 +33,18 @@ async def lifespan(app: FastAPI):
     logger.info("  2. Well Intelligence Core (DORS + Stratigraphy + Risk Corridors + 4-Pillar Confidence)")
 
     # Load synthetic testbed data into memory
+    from app.core.bootstrap import ensure_demo_data, run_startup_pipeline
+    try:
+        ensure_demo_data()
+    except Exception as exc:
+        logger.error(f"Demo data generation failed: {exc}")
+
     store = NWISDataStore()
     try:
         store.load()
         logger.success(f"NWIS Data Store loaded successfully: {store.status()}")
-        from app.modules.well_intelligence.services.document_bridge import ingest_all_outputs
-        bridged = ingest_all_outputs()
-        logger.info(f"Document bridge: {bridged} extracted events merged into the knowledge repository")
+        # Run the pipeline (bundled reports -> extraction -> knowledge repository -> alert scan)
+        run_startup_pipeline()
     except Exception as exc:
         logger.error(f"Failed to load testbed data store: {exc}")
 

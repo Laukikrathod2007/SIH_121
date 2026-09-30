@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-09-30T02:40:17.264674",
+  "method": "Logistic regression per hazard on depth/formation/trajectory features; leave-one-well-out cross-validation (each fold holds out one entire well).",
+  "chance_auc": 0.5,
+  "min_positive_samples": 8,
+  "trained": {
+    "STUCK_PIPE": {
+      "n_positive": 14,
+      "n_total": 194,
+      "leave_one_well_out_auc": 0.622,
+      "cv_folds_evaluated": 7
+    },
+    "KICK": {
+      "n_positive": 10,
+      "n_total": 190,
+      "leave_one_well_out_auc": 0.825,
+      "cv_folds_evaluated": 8
+    },
+    "WELLBORE_INSTABILITY": {
+      "n_positive": 12,
+      "n_total": 192,
+      "leave_one_well_out_auc": 0.597,
+      "cv_folds_evaluated": 8
+    }
+  },
+  "skipped": {
+    "MUD_LOSS": "only 6 historical example(s), need >= 8",
+    "TORQUE_SPIKE": "only 3 historical example(s), need >= 8",
+    "CEMENTING_FAILURE": "only 3 historical example(s), need >= 8"
+  }
+}

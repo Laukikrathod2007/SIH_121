@@ -7,5 +7,6 @@ from app.modules.well_intelligence.routes.intelligence_routes import router as i
 from app.modules.well_intelligence.routes.telemetry_routes import router as telemetry_router
 from app.modules.well_intelligence.routes.knowledge_routes import router as knowledge_router
 from app.modules.well_intelligence.routes.decision_routes import router as decision_router
+from app.modules.well_intelligence.routes.benchmark_routes import router as benchmark_router
 
-__all__ = ["well_router", "intelligence_router", "telemetry_router", "knowledge_router", "decision_router"]
+__all__ = ["well_router", "intelligence_router", "telemetry_router", "knowledge_router", "decision_router", "benchmark_router"]

@@ -168,7 +168,7 @@ export const MapView: React.FC = () => {
             <Circle
               center={center}
               radius={debounced * 1000}
-              pathOptions={{ color: '#0e5a69', weight: 1.5, dashArray: '6 6', fillColor: '#0e5a69', fillOpacity: basemap === 'satellite' ? 0.08 : 0.05 }}
+              pathOptions={{ color: basemap === 'satellite' ? '#ffffff' : '#0e5a69', weight: basemap === 'satellite' ? 2.5 : 1.5, dashArray: '6 6', fillColor: basemap === 'satellite' ? '#ffffff' : '#0e5a69', fillOpacity: basemap === 'satellite' ? 0.1 : 0.05 }}
             />
             {/* ring labels */}
             {[0.5, 1].map((f) => (

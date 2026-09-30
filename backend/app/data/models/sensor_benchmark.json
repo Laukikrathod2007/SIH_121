@@ -1,0 +1,125 @@
+{
+  "generated_at": "2026-09-30T02:40:59.302850",
+  "setup": {
+    "train_runs": [
+      "NHK-TRAIN-NORM-01",
+      "NHK-TRAIN-NORM-02",
+      "NHK-TRAIN-LC-01",
+      "NHK-TRAIN-LC-02",
+      "NHK-TRAIN-KICK-01",
+      "NHK-TRAIN-KICK-02",
+      "NHK-TRAIN-SP-01",
+      "NHK-TRAIN-SP-02",
+      "NHK-TRAIN-SS-01",
+      "NHK-TRAIN-SS-02",
+      "NHK-TRAIN-WO-01",
+      "NHK-TRAIN-PHC-01"
+    ],
+    "validation_runs": [
+      "NHK-VAL-NORM-03",
+      "NHK-VAL-WO-02",
+      "NHK-VAL-PHC-02"
+    ],
+    "test_runs": [
+      "NHK-TEST-LC-03",
+      "NHK-TEST-KICK-03",
+      "NHK-TEST-SP-03",
+      "NHK-TEST-SS-03",
+      "NHK-TEST-WO-03",
+      "NHK-TEST-PHC-03"
+    ],
+    "sample_rate_hz": 1.0,
+    "steps_per_run": 120,
+    "fault_window": "steps 45-100"
+  },
+  "architectures": {
+    "RULES": {
+      "precision": 0.817,
+      "recall": 0.757,
+      "f1": 0.785,
+      "false_alert_episodes_per_hour": 0.0,
+      "hazard_episodes": 6,
+      "episodes_detected": 6,
+      "mean_detection_delay_s": 24.3,
+      "test_samples": 720
+    },
+    "RULES_PLUS_ISOLATION_FOREST": {
+      "precision": 0.833,
+      "recall": 1.0,
+      "f1": 0.909,
+      "false_alert_episodes_per_hour": 0.0,
+      "hazard_episodes": 6,
+      "episodes_detected": 6,
+      "mean_detection_delay_s": 0.0,
+      "test_samples": 720
+    },
+    "XGBOOST": {
+      "precision": 1.0,
+      "recall": 0.908,
+      "f1": 0.952,
+      "false_alert_episodes_per_hour": 0.0,
+      "hazard_episodes": 6,
+      "episodes_detected": 6,
+      "mean_detection_delay_s": 0.0,
+      "test_samples": 720
+    },
+    "RULES_PLUS_ISOLATION_FOREST_PLUS_XGBOOST": {
+      "precision": 0.959,
+      "recall": 0.473,
+      "f1": 0.634,
+      "false_alert_episodes_per_hour": 30.0,
+      "hazard_episodes": 6,
+      "episodes_detected": 6,
+      "mean_detection_delay_s": 22.5,
+      "test_samples": 720
+    }
+  },
+  "latency": {
+    "feature_extraction_ms": 0.29,
+    "model_inference_ms": 21.49,
+    "risk_fusion_ms": 20.37,
+    "total_alert_latency_ms": 42.15
+  },
+  "top_features": [
+    [
+      "fg_margin_bar",
+      0.1447
+    ],
+    [
+      "stick_slip_index",
+      0.1269
+    ],
+    [
+      "d_exponent_deviation",
+      0.1246
+    ],
+    [
+      "overpull_kn",
+      0.1032
+    ],
+    [
+      "d_exponent_slope",
+      0.0814
+    ],
+    [
+      "delta_flow",
+      0.0485
+    ],
+    [
+      "flow_imbalance_duration_s",
+      0.0435
+    ],
+    [
+      "standpipe_pressure_bar",
+      0.0407
+    ],
+    [
+      "torque_kn_m",
+      0.0381
+    ],
+    [
+      "pp_margin_bar",
+      0.0362
+    ]
+  ]
+}

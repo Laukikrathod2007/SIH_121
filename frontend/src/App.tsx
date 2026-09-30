@@ -10,6 +10,7 @@ import { AskView } from './views/AskView';
 import { AlertsView } from './views/AlertsView';
 import { DocumentsView } from './views/DocumentsView';
 import { SensorsView } from './views/SensorsView';
+import { ModelsView } from './views/ModelsView';
 
 export const App: React.FC = () => (
   <NwisProvider>
@@ -24,6 +25,7 @@ export const App: React.FC = () => (
           <Route path="/alerts" element={<AlertsView />} />
           <Route path="/documents" element={<DocumentsView />} />
           <Route path="/sensors" element={<SensorsView />} />
+          <Route path="/models" element={<ModelsView />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Shell>

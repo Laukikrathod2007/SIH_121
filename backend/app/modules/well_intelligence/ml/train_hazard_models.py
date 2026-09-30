@@ -125,6 +125,19 @@ def train_all_models() -> dict:
             f"Leave-one-well-out AUC: {auc_str} ({n_folds} well-folds evaluated)."
         )
 
+    # Persist the measured metrics so the app can show them (Models & benchmarks screen).
+    import json
+    from datetime import datetime
+    metrics = {
+        "generated_at": datetime.utcnow().isoformat(),
+        "method": "Logistic regression per hazard on depth/formation/trajectory features; "
+                  "leave-one-well-out cross-validation (each fold holds out one entire well).",
+        "chance_auc": 0.5,
+        "min_positive_samples": MIN_POSITIVE_SAMPLES,
+        "trained": {k: {kk: vv for kk, vv in v.items() if kk != "saved_to"} for k, v in report["trained"].items()},
+        "skipped": report["skipped"],
+    }
+    (MODELS_DIR / "hazard_model_metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     return report
 
 

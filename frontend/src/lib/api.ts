@@ -328,4 +328,5 @@ export const api = {
   predictiveAlerts: (wellId: string) => req<any[]>(`/predictive/alerts/${wellId}`),
   mitigate: (well_id: string, alert_id: string) => req<any>('/predictive/alerts/mitigate', { method: 'POST', body: JSON.stringify({ well_id, alert_id }) }),
   models: () => req<any[]>('/predictive/models'),
+  benchmarks: () => req<any>('/models/benchmarks'),
 };

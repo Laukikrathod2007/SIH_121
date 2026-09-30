@@ -8,7 +8,7 @@ Implements Parts D, E, F, K, M:
   2. RULES + ISOLATION FOREST
   3. XGBOOST
   4. RULES + ISOLATION FOREST + XGBOOST (FULL FUSION)
-- Comprehensive metrics: Precision, Recall, F1, PR-AUC, False alerts/hr, Lead time, Latency.
+- Metrics computed from predictions: precision, recall, F1, episodes detected, false-alarm episodes per hour of normal drilling, mean detection delay, latency.
 - Synthetic-to-Real generalization analysis (Synthetic Only vs Synthetic + Observed).
 - Sensor noise robustness and missing-data robustness evaluations.
 - Generates docs/ML_MODEL_REPORT.md.
@@ -217,6 +217,18 @@ class ModelBenchmarkPipeline:
             output_report_path=output_report_path,
         )
 
+        # Persist the measured results for the app's Models & benchmarks screen.
+        import json as _json
+        from datetime import datetime as _dt
+        (models_dir / "sensor_benchmark.json").write_text(_json.dumps({
+            "generated_at": _dt.utcnow().isoformat(),
+            "setup": {"train_runs": train_wells, "validation_runs": val_wells, "test_runs": test_wells,
+                      "sample_rate_hz": 1.0, "steps_per_run": 120, "fault_window": "steps 45-100"},
+            "architectures": benchmarks,
+            "latency": latency_stats,
+            "top_features": fit_meta["top_features"],
+        }, indent=2, default=str), encoding="utf-8")
+
         return {
             "status": "success",
             "report_file": report_file,
@@ -318,30 +330,58 @@ class ModelBenchmarkPipeline:
 
         return results
 
-    def _compute_metrics(self, preds: List[str], ground_truth: List[str], false_alert_baseline: float) -> Dict[str, float]:
-        n = len(preds)
+    def _compute_metrics(self, preds: List[str], ground_truth: List[str], false_alert_baseline: float = 0.0) -> Dict[str, float]:
+        """
+        Sample-level and episode-level metrics, all computed from the
+        predictions (test runs are 1 Hz, dt = 1 s per sample, concatenated in
+        time order). `false_alert_baseline` is accepted for backward
+        compatibility and ignored — it used to be returned verbatim as the
+        false-alert rate, which was not a measurement.
+        """
         binary_pred = [0 if p == "NORMAL" else 1 for p in preds]
         binary_true = [0 if y == "NORMAL" else 1 for y in ground_truth]
 
         tp = sum(1 for p, y in zip(binary_pred, binary_true) if p == 1 and y == 1)
         fp = sum(1 for p, y in zip(binary_pred, binary_true) if p == 1 and y == 0)
-        tn = sum(1 for p, y in zip(binary_pred, binary_true) if p == 0 and y == 0)
         fn = sum(1 for p, y in zip(binary_pred, binary_true) if p == 0 and y == 1)
+        n_normal = sum(1 for y in binary_true if y == 0)
 
         prec = tp / max(1, tp + fp)
         rec = tp / max(1, tp + fn)
         f1 = (2 * prec * rec) / max(1e-4, prec + rec)
-        pr_auc = min(1.0, (prec + rec) / 2.0)
-        fa_per_hour = false_alert_baseline
+
+        # False-alarm EPISODES: a new run of positive predictions that starts
+        # while the ground truth is normal. Normalised by hours of normal drilling.
+        fa_episodes = sum(
+            1 for i, (p, y) in enumerate(zip(binary_pred, binary_true))
+            if p == 1 and y == 0 and (i == 0 or binary_pred[i - 1] == 0)
+        )
+        fa_per_hour = fa_episodes / max(n_normal / 3600.0, 1e-9)
+
+        # Detection delay: for each true hazard episode, seconds from its first
+        # sample to the first positive prediction inside it (missed if none).
+        delays, detected, episodes, i = [], 0, 0, 0
+        while i < len(binary_true):
+            if binary_true[i] == 1 and (i == 0 or binary_true[i - 1] == 0):
+                episodes += 1
+                j = i
+                while j < len(binary_true) and binary_true[j] == 1:
+                    if binary_pred[j] == 1:
+                        delays.append(j - i)
+                        detected += 1
+                        break
+                    j += 1
+            i += 1
 
         return {
             "precision": round(prec, 3),
             "recall": round(rec, 3),
             "f1": round(f1, 3),
-            "pr_auc": round(pr_auc, 3),
-            "false_alerts_per_hour": round(fa_per_hour, 2),
-            "lead_time_seconds": 120.0 if rec > 0.8 else 60.0,
-            "event_recall": round(rec, 3),
+            "false_alert_episodes_per_hour": round(fa_per_hour, 2),
+            "hazard_episodes": episodes,
+            "episodes_detected": detected,
+            "mean_detection_delay_s": round(sum(delays) / len(delays), 1) if delays else None,
+            "test_samples": len(binary_true),
         }
 
     def _evaluate_synthetic_to_real(
@@ -553,18 +593,20 @@ class ModelBenchmarkPipeline:
             "",
             "## 2. Multi-Architecture Comparative Benchmark (Part E)",
             "",
-            "| Architecture | Precision | Recall | F1 Score | PR-AUC | False Alerts / Hr | Lead Time (s) |",
+            "| Architecture | Precision | Recall | F1 Score | Episodes detected | False-alarm episodes / hr | Mean detection delay |",
             "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |",
         ]
 
         for arch_name, m in benchmarks.items():
             lines.append(
-                f"| `{arch_name}` | {m['precision']:.3f} | {m['recall']:.3f} | {m['f1']:.3f} | {m['pr_auc']:.3f} | {m['false_alerts_per_hour']:.1f} | {m['lead_time_seconds']:.0f}s |"
+                f"| `{arch_name}` | {m['precision']:.3f} | {m['recall']:.3f} | {m['f1']:.3f} | {m['episodes_detected']}/{m['hazard_episodes']} | {m['false_alert_episodes_per_hour']:.1f} | {m['mean_detection_delay_s'] if m['mean_detection_delay_s'] is not None else '—'} s |"
             )
 
         lines.extend([
             "",
-            "> **Key Architectural Finding:** While XGBoost alone provides high recall, combining it with Deterministic Rules and Isolation Forest in the **Full Fusion** engine reduces False Alerts from 1.8/hr down to **0.2/hr** while maintaining a precursor lead time of **120 seconds** before event onset.",
+            "> **Measured finding:** " + (lambda best: f"highest F1 = `{best[0]}` ({best[1]['f1']:.3f}); "
+                f"fewest false-alarm episodes = `{min(benchmarks.items(), key=lambda kv: kv[1]['false_alert_episodes_per_hour'])[0]}`. "
+                "All values computed on held-out synthetic test runs (1 Hz).")(max(benchmarks.items(), key=lambda kv: kv[1]['f1'])),
             "",
             "---",
             "",

@@ -1,0 +1,56 @@
+[
+  {
+    "model_id": "ERTMAC-NWIS-XGB-FUSION-V1",
+    "model_name": "eRTMAC-NWIS Ensemble Hazard Predictor",
+    "version": "1.0.0",
+    "hazard": "MULTI_HAZARD",
+    "architecture": "RULES + ISOLATION_FOREST + XGBOOST",
+    "dataset_version": "1.0.0",
+    "feature_version": "1.0.0",
+    "preprocessor_version": "1.0.0",
+    "physics_version": "1.0.0",
+    "created_at": "2026-09-30T02:40:59.186156+00:00",
+    "training_wells": [
+      "NHK-TRAIN-NORM-01",
+      "NHK-TRAIN-NORM-02",
+      "NHK-TRAIN-LC-01",
+      "NHK-TRAIN-LC-02",
+      "NHK-TRAIN-KICK-01",
+      "NHK-TRAIN-KICK-02",
+      "NHK-TRAIN-SP-01",
+      "NHK-TRAIN-SP-02",
+      "NHK-TRAIN-SS-01",
+      "NHK-TRAIN-SS-02",
+      "NHK-TRAIN-WO-01",
+      "NHK-TRAIN-PHC-01"
+    ],
+    "validation_wells": [
+      "NHK-VAL-NORM-03",
+      "NHK-VAL-WO-02",
+      "NHK-VAL-PHC-02"
+    ],
+    "test_wells": [
+      "NHK-TEST-LC-03",
+      "NHK-TEST-KICK-03",
+      "NHK-TEST-SP-03",
+      "NHK-TEST-SS-03",
+      "NHK-TEST-WO-03",
+      "NHK-TEST-PHC-03"
+    ],
+    "metrics": {
+      "precision": 0.959,
+      "recall": 0.473,
+      "f1": 0.634,
+      "false_alert_episodes_per_hour": 30.0,
+      "hazard_episodes": 6.0,
+      "episodes_detected": 6.0,
+      "mean_detection_delay_s": 22.5,
+      "test_samples": 720.0
+    },
+    "calibration": {
+      "brier_score": 0.038,
+      "reliability_slope": 0.97
+    },
+    "is_active": true
+  }
+]

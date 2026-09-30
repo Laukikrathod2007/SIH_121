@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Activity, Bell, BookOpenText, ChevronDown, FileStack, Gauge, Layers3, Map, Radio, X } from 'lucide-react';
+import { Activity, Bell, BookOpenText, ChevronDown, FileStack, FlaskConical, Gauge, Layers3, Map, Radio, X } from 'lucide-react';
 import { useNwis } from '../state/nwis';
 import { cx } from './primitives';
 import { m, sevOf, shortWell } from '../lib/format';
@@ -14,6 +14,7 @@ const NAV = [
   { to: '/alerts', label: 'Alerts', icon: Bell, hint: 'Warnings with evidence' },
   { to: '/documents', label: 'Documents', icon: FileStack, hint: 'Reports in, events out' },
   { to: '/sensors', label: 'Rig sensors', icon: Activity, hint: 'Physics twin + risk model' },
+  { to: '/models', label: 'Models & benchmarks', icon: FlaskConical, hint: 'Measured accuracy' },
 ];
 
 const Logo = () => (

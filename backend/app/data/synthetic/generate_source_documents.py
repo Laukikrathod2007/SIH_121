@@ -131,7 +131,8 @@ def build_wcr(well: dict, casing: list[dict], mud: list[dict], tops: list[dict],
     doc.close()
 
 
-SAMPLE_UPLOAD_TEXT = """DAILY DRILLING REPORT
+SAMPLE_UPLOADS = {
+    "DDR_HGJ-011_2021-03-02.pdf": """DAILY DRILLING REPORT
 Well: HGJ-011
 Operator: Oil India Limited
 Date: 02/03/2021
@@ -152,21 +153,67 @@ OPERATIONS REMARKS
 0200-0730 : Lost circulation observed at 2801 m in Sylhet Limestone, lost 60 bbl of mud. Spotted 40 bbl CaCO3 LCM pill and reduced pump rate to 1700 lpm. Losses cured. 5.5 hrs NPT.
 0800-1100 : Stuck Pipe at 2812 m while making connection in Sylhet Limestone. Worked pipe and jarred free, back-reamed one stand. 3 hrs NPT.
 1500-1700 : Gas influx observed at 2820 m, pit gain 6 bbl. Shut in well and circulated out kick with 10.8 ppg mud. 2 hrs NPT.
-"""
+""",
+    "DDR_HGJ-010_2019-11-14.pdf": """DAILY DRILLING REPORT
+Well: HGJ-010
+Operator: Oil India Limited
+Date: 14/11/2019
+Rig: OIL-E1400   Field: Hugrijan
+
+MUD PROPERTIES
+Mud Weight: 10.1 ppg
+Viscosity: 48 sec
+pH: 9.2
+Water Loss: 5.1 mL
+PV: 21 cp
+
+FORMATION TOPS
+Barail Coal-Shale Top: 2376 m
+Kopili Top: 2745 m
+
+OPERATIONS REMARKS
+0930-1400 : Tight hole with overpull of 30 t at 2522 m while tripping out through Barail Coal-Shale. Back-reamed two stands and pumped 30 bbl hi-vis sweep, hole cleaned. 4 hrs NPT.
+1600-2000 : Lost circulation observed at 2811 m in Kopili, lost 45 bbl of mud. Pumped 30 bbl LCM pill and reduced ECD by lowering pump rate to 1800 lpm. Returns regained. 4 hrs NPT.
+""",
+    "DDR_NHK-003_2020-06-02.pdf": """DAILY DRILLING REPORT
+Well: NHK-003
+Operator: Oil India Limited
+Date: 02/06/2020
+Rig: OIL-E2000   Field: Nahorkatiya
+
+MUD PROPERTIES
+Mud Weight: 10.6 ppg
+Viscosity: 50 sec
+pH: 9.4
+Water Loss: 4.5 mL
+PV: 23 cp
+
+FORMATION TOPS
+Kopili Top: 2597 m
+Sylhet Limestone Top: 3008 m
+
+OPERATIONS REMARKS
+0300-0800 : Gas influx at 2650 m in Kopili, pit gain 8 bbl. Shut in well and circulated out kick with 10.9 ppg mud. 3 hrs NPT.
+1100-1500 : Lost circulation observed at 2860 m in Kopili, lost 25 bbl of mud. Added 15 ppb CaCO3 background LCM and reduced pump rate by 10 percent. Seepage controlled. 2 hrs NPT.
+""",
+}
 
 
-def build_sample_upload(out_dir: Path) -> Path:
-    """A realistic DDR for testbed well HGJ-011, used by the Documents screen's
-    'try a sample report' action to demonstrate ingestion -> extraction ->
-    knowledge repository end to end."""
+def build_sample_uploads(out_dir: Path) -> list[Path]:
+    """Realistic DDRs for testbed wells, used as the bundled sample reports:
+    the backend's startup bootstrap pushes them through the extraction
+    pipeline, and the Documents screen can re-run them on demand."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / "DDR_HGJ-011_2021-03-02.pdf"
-    doc = fitz.open()
-    page = doc.new_page(width=PAGE_W, height=PAGE_H)
-    page.insert_textbox(fitz.Rect(MARGIN, 60, PAGE_W - MARGIN, PAGE_H - 60), SAMPLE_UPLOAD_TEXT, fontsize=10.5, fontname="helv", color=INK)
-    doc.save(path)
-    doc.close()
-    return path
+    paths = []
+    for name, text in SAMPLE_UPLOADS.items():
+        path = out_dir / name
+        doc = fitz.open()
+        page = doc.new_page(width=PAGE_W, height=PAGE_H)
+        page.insert_textbox(fitz.Rect(MARGIN, 60, PAGE_W - MARGIN, PAGE_H - 60), text, fontsize=10.5, fontname="helv", color=INK)
+        doc.save(path)
+        doc.close()
+        paths.append(path)
+    return paths
 
 
 def main() -> None:
@@ -192,7 +239,8 @@ def main() -> None:
             sorted([t for t in tops if t["well_id"] == wid], key=lambda t: t["top_md_m"]),
             OUT / f"WCR_{wid}.pdf",
         )
-    print(f"Wrote {n} DDRs and {len(wells)} WCRs to {OUT}")
+    samples = build_sample_uploads(HERE.parent / "sample_docs")
+    print(f"Wrote {n} DDRs and {len(wells)} WCRs to {OUT}; {len(samples)} sample reports")
 
 
 if __name__ == "__main__":
