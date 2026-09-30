@@ -155,7 +155,7 @@ export const MapView: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex min-h-0">
+    <div className="h-full flex min-h-0 min-w-0">
       {/* Map column */}
       <div className="relative flex-1 min-w-0">
         {error && <div className="absolute z-[500] top-3 left-3 right-3"><ErrorNote message={error} onRetry={reload} className="m-0 bg-white" /></div>}

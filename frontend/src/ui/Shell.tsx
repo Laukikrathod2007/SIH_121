@@ -161,7 +161,7 @@ export const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => 
             <span className="num">{now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} IST</span>
           </div>
         </header>
-        <main className="flex-1 min-h-0 overflow-y-auto">
+        <main className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
           {online === false ? (
             <div className="p-10 max-w-xl">
               <h1 className="text-lg font-semibold">The NWIS backend is not reachable</h1>
