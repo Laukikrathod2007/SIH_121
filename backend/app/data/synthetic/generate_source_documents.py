@@ -131,6 +131,44 @@ def build_wcr(well: dict, casing: list[dict], mud: list[dict], tops: list[dict],
     doc.close()
 
 
+SAMPLE_UPLOAD_TEXT = """DAILY DRILLING REPORT
+Well: HGJ-011
+Operator: Oil India Limited
+Date: 02/03/2021
+Rig: OIL-E2000   Field: Hugrijan
+
+MUD PROPERTIES
+Mud Weight: 10.4 ppg
+Viscosity: 52 sec
+pH: 9.5
+Water Loss: 4.8 mL
+PV: 24 cp
+
+FORMATION TOPS
+Kopili Top: 2632 m
+Sylhet Limestone Top: 2759 m
+
+OPERATIONS REMARKS
+0200-0730 : Lost circulation observed at 2801 m in Sylhet Limestone, lost 60 bbl of mud. Spotted 40 bbl CaCO3 LCM pill and reduced pump rate to 1700 lpm. Losses cured. 5.5 hrs NPT.
+0800-1100 : Stuck Pipe at 2812 m while making connection in Sylhet Limestone. Worked pipe and jarred free, back-reamed one stand. 3 hrs NPT.
+1500-1700 : Gas influx observed at 2820 m, pit gain 6 bbl. Shut in well and circulated out kick with 10.8 ppg mud. 2 hrs NPT.
+"""
+
+
+def build_sample_upload(out_dir: Path) -> Path:
+    """A realistic DDR for testbed well HGJ-011, used by the Documents screen's
+    'try a sample report' action to demonstrate ingestion -> extraction ->
+    knowledge repository end to end."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / "DDR_HGJ-011_2021-03-02.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=PAGE_W, height=PAGE_H)
+    page.insert_textbox(fitz.Rect(MARGIN, 60, PAGE_W - MARGIN, PAGE_H - 60), SAMPLE_UPLOAD_TEXT, fontsize=10.5, fontname="helv", color=INK)
+    doc.save(path)
+    doc.close()
+    return path
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     wells = {w["well_id"]: w for w in json.loads((HERE / "wells.json").read_text(encoding="utf-8"))}

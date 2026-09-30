@@ -234,6 +234,29 @@ class DocumentController:
             "templates": templates,
         }
 
+    def list_samples(self) -> dict:
+        samples = []
+        for f in sorted(settings.SAMPLE_DOCS_DIR.glob("*.pdf")):
+            samples.append({"name": f.name, "size_kb": round(f.stat().st_size / 1024, 1)})
+        return {"samples": samples}
+
+    async def ingest_sample(self, name: str, background_tasks: BackgroundTasks) -> IngestJobResponse:
+        src = (settings.SAMPLE_DOCS_DIR / name).resolve()
+        if src.parent != settings.SAMPLE_DOCS_DIR.resolve() or not src.exists() or src.suffix.lower() != ".pdf":
+            raise HTTPException(status_code=404, detail=f"Sample '{name}' not found")
+        job_id = f"JOB-{uuid.uuid4().hex[:10].upper()}"
+        upload_path = self.upload_dir / f"{job_id}_{src.name}"
+        upload_path.write_bytes(src.read_bytes())
+        self.job_store.create(job_id, {
+            "job_id": job_id, "filename": src.name, "upload_path": str(upload_path),
+            "status": IngestJobStatus.QUEUED, "progress_percent": 0, "current_page": 0, "total_pages": 0,
+            "message": "Sample queued for processing", "document_id": None, "error": None,
+            "submitted_at": datetime.utcnow().isoformat(),
+        })
+        background_tasks.add_task(self._run_pipeline_background, job_id, upload_path)
+        return IngestJobResponse(job_id=job_id, filename=src.name, status=IngestJobStatus.QUEUED,
+                                 message=f"Sample queued. Poll /api/v1/documents/jobs/{job_id} for progress.")
+
     def list_results(self) -> dict:
         results = []
         for f in sorted(self.output_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True):

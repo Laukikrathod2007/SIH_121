@@ -1,9 +1,94 @@
 [
  {
-  "alert_id": "ALT-4985EA12",
-  "key": "WELL-HGJ-012|MUD_LOSS|2758.3",
+  "alert_id": "ALT-0C8035FC",
+  "key": "WELL-HGJ-012|TORQUE_SPIKE|2431.8",
   "status": "ACTIVE",
-  "created_at": "2026-09-29T23:37:37.226714",
+  "created_at": "2026-09-30T00:01:44.087478",
+  "acknowledged_by": null,
+  "acknowledged_at": null,
+  "ack_note": null,
+  "well_id": "WELL-HGJ-012",
+  "hazard_type": "TORQUE_SPIKE",
+  "severity": "HIGH",
+  "title": "Inside historical torque spike zone",
+  "message": "Bit is within the 2432\u20132599 m interval where offset wells recorded torque spike.",
+  "depth_m": 2603.7,
+  "formation_at_bit": "Barail Coal-Shale",
+  "zone": {
+   "from_m": 2431.8,
+   "to_m": 2598.6
+  },
+  "lead_distance_m": 0.0,
+  "risk_score": 0.306,
+  "score_breakdown": {
+   "offset_history": 0.2,
+   "live_sensors": 0.2455,
+   "model": 0.65,
+   "model_source": "heuristic_fallback"
+  },
+  "offset_wells": [
+   "HGJ-010",
+   "HGJ-011"
+  ],
+  "evidence": [
+   {
+    "event_id": "EVT-DEMO004",
+    "well_id": "WELL-HGJ-010",
+    "well_name": "HGJ-010",
+    "event_type": "TORQUE_SPIKE",
+    "severity": "MEDIUM",
+    "depth_m": 2461.8,
+    "formation": "Barail Coal-Shale",
+    "narrative": "Erratic surface torque spikes 18-26 kNm (baseline 12 kNm) and stick-slip while drilling Barail coal stringers; string stalled twice. Depth 2461.8 m MD.",
+    "mitigation": "Reduced WOB 20%, increased RPM to 140, added 2% lubricant; worked pipe and back-reamed stand",
+    "outcome": "Torque stabilised at 13-15 kNm",
+    "npt_hours": 3.5,
+    "source_document": "DDR_WELL-HGJ-010_2461m.pdf",
+    "source_page": 2
+   },
+   {
+    "event_id": "EVT-DEMO005",
+    "well_id": "WELL-HGJ-011",
+    "well_name": "HGJ-011",
+    "event_type": "TORQUE_SPIKE",
+    "severity": "HIGH",
+    "depth_m": 2556.6,
+    "formation": "Barail Coal-Shale",
+    "narrative": "Torque spikes to 29 kNm with overpull 25 t on connection in Barail coal; cavings of blocky coal on shakers. Depth 2556.6 m MD.",
+    "mitigation": "Raised mud weight 0.3 ppg for coal stability, pumped hi-vis sweep, back-reamed out of hole to casing shoe",
+    "outcome": "Hole cleaned; torque back to normal after wiper trip",
+    "npt_hours": 6.0,
+    "source_document": "DDR_WELL-HGJ-011_2556m.pdf",
+    "source_page": 3
+   }
+  ],
+  "recommendation": {
+   "summary": "Reduce WOB by 30%; check top-drive parameters; prepare for string reciprocation",
+   "offset_well_practice": [
+    {
+     "action": "Reduced WOB 20%, increased RPM to 140, added 2% lubricant; worked pipe and back-reamed stand",
+     "from_well": "HGJ-010",
+     "outcome": "Torque stabilised at 13-15 kNm",
+     "source_document": "DDR_WELL-HGJ-010_2461m.pdf",
+     "source_page": 2
+    },
+    {
+     "action": "Raised mud weight 0.3 ppg for coal stability, pumped hi-vis sweep, back-reamed out of hole to casing shoe",
+     "from_well": "HGJ-011",
+     "outcome": "Hole cleaned; torque back to normal after wiper trip",
+     "source_document": "DDR_WELL-HGJ-011_2556m.pdf",
+     "source_page": 3
+    }
+   ]
+  },
+  "updated_at": "2026-09-30T00:02:11.343017",
+  "source": "live_replay"
+ },
+ {
+  "alert_id": "ALT-EEB1FA20",
+  "key": "WELL-HGJ-012|MUD_LOSS|2628.5",
+  "status": "ACTIVE",
+  "created_at": "2026-09-30T00:02:07.322881",
   "acknowledged_by": null,
   "acknowledged_at": null,
   "ack_note": null,
@@ -11,14 +96,14 @@
   "hazard_type": "MUD_LOSS",
   "severity": "HIGH",
   "title": "Approaching historical mud loss zone",
-  "message": "18 m to the 2758\u20132885 m interval where 5 offset well(s) had mud loss.",
-  "depth_m": 2740.0,
+  "message": "4 m to the 2628\u20132718 m interval where 1 offset well(s) had mud loss.",
+  "depth_m": 2625.0,
   "formation_at_bit": "Kopili",
   "zone": {
-   "from_m": 2758.3,
-   "to_m": 2884.9
+   "from_m": 2628.5,
+   "to_m": 2717.9
   },
-  "lead_distance_m": 18.3,
+  "lead_distance_m": 3.5,
   "risk_score": 0.699,
   "score_breakdown": {
    "offset_history": 0.65,
@@ -27,43 +112,9 @@
    "model_source": "heuristic_fallback"
   },
   "offset_wells": [
-   "HGJ-010",
-   "HGJ-011",
-   "MRN-006",
-   "NHK-001",
-   "NHK-003"
+   "NHK-001"
   ],
   "evidence": [
-   {
-    "event_id": "EVT-DEMO001",
-    "well_id": "WELL-HGJ-010",
-    "well_name": "HGJ-010",
-    "event_type": "MUD_LOSS",
-    "severity": "HIGH",
-    "depth_m": 2806.5,
-    "formation": "Kopili",
-    "narrative": "Partial losses of 38 bbl/hr while drilling Kopili shale-limestone interbeds; ECD 10.9 ppg against 10.26 ppg pore pressure. Pit volume down 55 bbl over 90 min. Depth 2806.5 m MD.",
-    "mitigation": "Reduced flow rate from 2200 to 1800 lpm, spotted 40 bbl medium/fine CaCO3 + nut-plug LCM pill, cut mud weight 0.2 ppg",
-    "outcome": "Losses cured after second pill; resumed drilling with reduced ROP",
-    "npt_hours": 14.5,
-    "source_document": "DDR_WELL-HGJ-010_2806m.pdf",
-    "source_page": 3
-   },
-   {
-    "event_id": "EVT-DEMO002",
-    "well_id": "WELL-HGJ-011",
-    "well_name": "HGJ-011",
-    "event_type": "MUD_LOSS",
-    "severity": "CRITICAL",
-    "depth_m": 2788.3,
-    "formation": "Sylhet Limestone",
-    "narrative": "Total losses at top Sylhet Limestone \u2014 returns dropped from 100% to 0% in fractured, vugular limestone. Annulus level dropped, well monitored on trip tank. Depth 2788.3 m MD.",
-    "mitigation": "Pumped 60 bbl cross-linked LCM pill, squeezed with 50 bbl cement plug, drilled out and continued with 10.6 ppg SBM and managed ECD",
-    "outcome": "Returns regained after cement squeeze; 22 h NPT",
-    "npt_hours": 22.0,
-    "source_document": "DDR_WELL-HGJ-011_2788m.pdf",
-    "source_page": 4
-   },
    {
     "event_id": "EVT-4FD3A896",
     "well_id": "WELL-NHK-001",
@@ -78,186 +129,55 @@
     "npt_hours": 1.6,
     "source_document": "DDR_WELL-NHK-001_2658m.pdf",
     "source_page": 1
-   },
-   {
-    "event_id": "EVT-DEMO003",
-    "well_id": "WELL-NHK-003",
-    "well_name": "NHK-003",
-    "event_type": "MUD_LOSS",
-    "severity": "MEDIUM",
-    "depth_m": 2842.9,
-    "formation": "Kopili",
-    "narrative": "Seepage losses of 18 bbl/hr in lower Kopili while circulating bottoms-up. Depth 2842.9 m MD.",
-    "mitigation": "Added 15 ppb fine CaCO3 background LCM, reduced pump rate by 10%",
-    "outcome": "Seepage reduced to <3 bbl/hr",
-    "npt_hours": 5.0,
-    "source_document": "DDR_WELL-NHK-003_2842m.pdf",
-    "source_page": 5
-   },
-   {
-    "event_id": "EVT-8E95EBDE",
-    "well_id": "WELL-MRN-006",
-    "well_name": "MRN-006",
-    "event_type": "MUD_LOSS",
-    "severity": "HIGH",
-    "depth_m": 1835.5,
-    "formation": "Barail Sandstone",
-    "narrative": "Partial loss of circulation at 1835.5m (Barail Sandstone). Loss rate 76 bbl/hr. Reduced ECD by lowering mud weight from 10.7 to 10.1 ppg. Regained returns in 3.9 hrs.",
-    "mitigation": "Pumped LCM pill; reduced mud weight; staged cementing squeeze",
-    "outcome": "Returns restored; resumed drilling",
-    "npt_hours": 3.9,
-    "source_document": "DDR_WELL-MRN-006_1835m.pdf",
-    "source_page": 1
    }
   ],
   "recommendation": {
    "summary": "Pre-mix 25 bbl medium-nut-plug LCM pill; prepare lost circulation contingency; monitor pit volume continuously",
    "offset_well_practice": [
     {
-     "action": "Reduced flow rate from 2200 to 1800 lpm, spotted 40 bbl medium/fine CaCO3 + nut-plug LCM pill, cut mud weight 0.2 ppg",
-     "from_well": "HGJ-010",
-     "outcome": "Losses cured after second pill; resumed drilling with reduced ROP",
-     "source_document": "DDR_WELL-HGJ-010_2806m.pdf",
-     "source_page": 3
-    },
-    {
-     "action": "Pumped 60 bbl cross-linked LCM pill, squeezed with 50 bbl cement plug, drilled out and continued with 10.6 ppg SBM and managed ECD",
-     "from_well": "HGJ-011",
-     "outcome": "Returns regained after cement squeeze; 22 h NPT",
-     "source_document": "DDR_WELL-HGJ-011_2788m.pdf",
-     "source_page": 4
-    },
-    {
      "action": "Pumped LCM pill; reduced mud weight; staged cementing squeeze",
      "from_well": "NHK-001",
      "outcome": "Returns restored; resumed drilling",
      "source_document": "DDR_WELL-NHK-001_2658m.pdf",
      "source_page": 1
-    },
-    {
-     "action": "Added 15 ppb fine CaCO3 background LCM, reduced pump rate by 10%",
-     "from_well": "NHK-003",
-     "outcome": "Seepage reduced to <3 bbl/hr",
-     "source_document": "DDR_WELL-NHK-003_2842m.pdf",
-     "source_page": 5
     }
    ]
   },
-  "updated_at": "2026-09-29T23:37:37.226714",
-  "source": "on_demand"
+  "updated_at": "2026-09-30T00:02:14.352913",
+  "source": "live_replay"
  },
  {
-  "alert_id": "ALT-FC1E90C2",
+  "alert_id": "ALT-FE297A59",
   "key": "WELL-HGJ-012|KICK|2633.9",
   "status": "ACTIVE",
-  "created_at": "2026-09-29T23:37:37.226714",
+  "created_at": "2026-09-30T00:02:07.322881",
   "acknowledged_by": null,
   "acknowledged_at": null,
   "ack_note": null,
   "well_id": "WELL-HGJ-012",
   "hazard_type": "KICK",
   "severity": "HIGH",
-  "title": "Inside historical kick zone",
-  "message": "Bit is within the 2634\u20132792 m interval where offset wells recorded kick.",
-  "depth_m": 2740.0,
+  "title": "Approaching historical kick zone",
+  "message": "9 m to the 2634\u20132792 m interval where 2 offset well(s) had kick.",
+  "depth_m": 2625.0,
   "formation_at_bit": "Kopili",
   "zone": {
    "from_m": 2633.9,
    "to_m": 2791.8
   },
-  "lead_distance_m": 0.0,
-  "risk_score": 0.589,
+  "lead_distance_m": 8.9,
+  "risk_score": 0.521,
   "score_breakdown": {
-   "offset_history": 0.8,
+   "offset_history": 0.65,
    "live_sensors": 0.0829,
    "model": 1.0,
    "model_source": "trained_model"
   },
   "offset_wells": [
-   "BGJ-007",
-   "HGJ-010",
    "HGJ-011",
-   "MRN-005",
-   "MRN-006",
-   "NHK-002",
    "NHK-003"
   ],
   "evidence": [
-   {
-    "event_id": "EVT-8779C573",
-    "well_id": "WELL-HGJ-010",
-    "well_name": "HGJ-010",
-    "event_type": "KICK",
-    "severity": "HIGH",
-    "depth_m": 2801.5,
-    "formation": "Sylhet Limestone",
-    "narrative": "Unexpected gas show at 2801.5m in Sylhet Limestone. Fingerprinting confirmed formation gas. Weight up mud to 11.9 ppg. NPT 3.8 hrs.",
-    "mitigation": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
-    "outcome": "Well killed successfully; drilling resumed",
-    "npt_hours": 3.8,
-    "source_document": "DDR_WELL-HGJ-010_2801m.pdf",
-    "source_page": 5
-   },
-   {
-    "event_id": "EVT-A506B185",
-    "well_id": "WELL-HGJ-010",
-    "well_name": "HGJ-010",
-    "event_type": "KICK",
-    "severity": "HIGH",
-    "depth_m": 1571.9,
-    "formation": "Barail Sandstone",
-    "narrative": "Unexpected gas show at 1571.9m in Barail Sandstone. Fingerprinting confirmed formation gas. Weight up mud to 10.5 ppg. NPT 3.0 hrs.",
-    "mitigation": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
-    "outcome": "Well killed successfully; drilling resumed",
-    "npt_hours": 3.0,
-    "source_document": "DDR_WELL-HGJ-010_1571m.pdf",
-    "source_page": 4
-   },
-   {
-    "event_id": "EVT-695F1835",
-    "well_id": "WELL-HGJ-011",
-    "well_name": "HGJ-011",
-    "event_type": "KICK",
-    "severity": "HIGH",
-    "depth_m": 2742.7,
-    "formation": "Kopili",
-    "narrative": "Pit gain of 7 bbls observed at 2742.7m while drilling Kopili. Shut in BOP. SICP=540 psi, SIDPP=473 psi. Killed using Driller's Method in 1.9 hrs.",
-    "mitigation": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
-    "outcome": "Well killed successfully; drilling resumed",
-    "npt_hours": 1.9,
-    "source_document": "DDR_WELL-HGJ-011_2742m.pdf",
-    "source_page": 8
-   },
-   {
-    "event_id": "EVT-926FC89D",
-    "well_id": "WELL-NHK-002",
-    "well_name": "NHK-002",
-    "event_type": "KICK",
-    "severity": "HIGH",
-    "depth_m": 1620.3,
-    "formation": "Barail Sandstone",
-    "narrative": "Unexpected gas show at 1620.3m in Barail Sandstone. Fingerprinting confirmed formation gas. Weight up mud to 10.7 ppg. NPT 2.0 hrs.",
-    "mitigation": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
-    "outcome": "Well killed successfully; drilling resumed",
-    "npt_hours": 2.0,
-    "source_document": "DDR_WELL-NHK-002_1620m.pdf",
-    "source_page": 8
-   },
-   {
-    "event_id": "EVT-9BFCF927",
-    "well_id": "WELL-MRN-005",
-    "well_name": "MRN-005",
-    "event_type": "KICK",
-    "severity": "CRITICAL",
-    "depth_m": 3069.8,
-    "formation": "Sylhet Limestone",
-    "narrative": "Gas kick detected at 3069.8m. Flow check positive. Shut in well. Kill mud density 11.6 ppg required. NPT: 2.4 hrs.",
-    "mitigation": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
-    "outcome": "Well killed successfully; drilling resumed",
-    "npt_hours": 2.4,
-    "source_document": "DDR_WELL-MRN-005_3069m.pdf",
-    "source_page": 1
-   },
    {
     "event_id": "EVT-B4236127",
     "well_id": "WELL-NHK-003",
@@ -274,49 +194,19 @@
     "source_page": 8
    },
    {
-    "event_id": "EVT-A092A410",
-    "well_id": "WELL-NHK-003",
-    "well_name": "NHK-003",
-    "event_type": "KICK",
-    "severity": "CRITICAL",
-    "depth_m": 3061.5,
-    "formation": "Sylhet Limestone",
-    "narrative": "Pit gain of 14 bbls observed at 3061.5m while drilling Sylhet Limestone. Shut in BOP. SICP=506 psi, SIDPP=477 psi. Killed using Driller's Method in 6.0 hrs.",
-    "mitigation": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
-    "outcome": "Well killed successfully; drilling resumed",
-    "npt_hours": 6.0,
-    "source_document": "DDR_WELL-NHK-003_3061m.pdf",
-    "source_page": 5
-   },
-   {
-    "event_id": "EVT-60A3E4FF",
-    "well_id": "WELL-MRN-006",
-    "well_name": "MRN-006",
+    "event_id": "EVT-695F1835",
+    "well_id": "WELL-HGJ-011",
+    "well_name": "HGJ-011",
     "event_type": "KICK",
     "severity": "HIGH",
-    "depth_m": 2902.1,
+    "depth_m": 2742.7,
     "formation": "Kopili",
-    "narrative": "Gas kick detected at 2902.1m. Flow check positive. Shut in well. Kill mud density 11.2 ppg required. NPT: 4.8 hrs.",
+    "narrative": "Pit gain of 7 bbls observed at 2742.7m while drilling Kopili. Shut in BOP. SICP=540 psi, SIDPP=473 psi. Killed using Driller's Method in 1.9 hrs.",
     "mitigation": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
     "outcome": "Well killed successfully; drilling resumed",
-    "npt_hours": 4.8,
-    "source_document": "DDR_WELL-MRN-006_2902m.pdf",
-    "source_page": 4
-   },
-   {
-    "event_id": "EVT-018270CF",
-    "well_id": "WELL-BGJ-007",
-    "well_name": "BGJ-007",
-    "event_type": "KICK",
-    "severity": "HIGH",
-    "depth_m": 2905.3,
-    "formation": "Kopili",
-    "narrative": "Pit gain of 25 bbls observed at 2905.3m while drilling Kopili. Shut in BOP. SICP=249 psi, SIDPP=541 psi. Killed using Driller's Method in 2.7 hrs.",
-    "mitigation": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
-    "outcome": "Well killed successfully; drilling resumed",
-    "npt_hours": 2.7,
-    "source_document": "DDR_WELL-BGJ-007_2905m.pdf",
-    "source_page": 2
+    "npt_hours": 1.9,
+    "source_document": "DDR_WELL-HGJ-011_2742m.pdf",
+    "source_page": 8
    }
   ],
   "recommendation": {
@@ -324,14 +214,76 @@
    "offset_well_practice": [
     {
      "action": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
-     "from_well": "HGJ-010",
+     "from_well": "NHK-003",
      "outcome": "Well killed successfully; drilling resumed",
-     "source_document": "DDR_WELL-HGJ-010_2801m.pdf",
-     "source_page": 5
+     "source_document": "DDR_WELL-NHK-003_2663m.pdf",
+     "source_page": 8
     }
    ]
   },
-  "updated_at": "2026-09-29T23:37:37.226714",
-  "source": "on_demand"
+  "updated_at": "2026-09-30T00:02:14.352913",
+  "source": "live_replay"
+ },
+ {
+  "alert_id": "ALT-AB30D1FA",
+  "key": "WELL-HGJ-012|TORQUE_SPIKE|2526.6",
+  "status": "ACTIVE",
+  "created_at": "2026-09-30T00:02:12.358829",
+  "acknowledged_by": null,
+  "acknowledged_at": null,
+  "ack_note": null,
+  "well_id": "WELL-HGJ-012",
+  "hazard_type": "TORQUE_SPIKE",
+  "severity": "HIGH",
+  "title": "Inside historical torque spike zone",
+  "message": "Bit is within the 2527\u20132599 m interval where offset wells recorded torque spike.",
+  "depth_m": 2617.9,
+  "formation_at_bit": "Kopili",
+  "zone": {
+   "from_m": 2526.6,
+   "to_m": 2598.6
+  },
+  "lead_distance_m": 0.0,
+  "risk_score": 0.261,
+  "score_breakdown": {
+   "offset_history": 0.1,
+   "live_sensors": 0.2455,
+   "model": 0.65,
+   "model_source": "heuristic_fallback"
+  },
+  "offset_wells": [
+   "HGJ-011"
+  ],
+  "evidence": [
+   {
+    "event_id": "EVT-DEMO005",
+    "well_id": "WELL-HGJ-011",
+    "well_name": "HGJ-011",
+    "event_type": "TORQUE_SPIKE",
+    "severity": "HIGH",
+    "depth_m": 2556.6,
+    "formation": "Barail Coal-Shale",
+    "narrative": "Torque spikes to 29 kNm with overpull 25 t on connection in Barail coal; cavings of blocky coal on shakers. Depth 2556.6 m MD.",
+    "mitigation": "Raised mud weight 0.3 ppg for coal stability, pumped hi-vis sweep, back-reamed out of hole to casing shoe",
+    "outcome": "Hole cleaned; torque back to normal after wiper trip",
+    "npt_hours": 6.0,
+    "source_document": "DDR_WELL-HGJ-011_2556m.pdf",
+    "source_page": 3
+   }
+  ],
+  "recommendation": {
+   "summary": "Reduce WOB by 30%; check top-drive parameters; prepare for string reciprocation",
+   "offset_well_practice": [
+    {
+     "action": "Raised mud weight 0.3 ppg for coal stability, pumped hi-vis sweep, back-reamed out of hole to casing shoe",
+     "from_well": "HGJ-011",
+     "outcome": "Hole cleaned; torque back to normal after wiper trip",
+     "source_document": "DDR_WELL-HGJ-011_2556m.pdf",
+     "source_page": 3
+    }
+   ]
+  },
+  "updated_at": "2026-09-30T00:02:13.353288",
+  "source": "live_replay"
  }
 ]

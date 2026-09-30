@@ -236,6 +236,13 @@ def extract_document_metadata(doc: "fitz.Document", filename: str) -> dict:
     )
     extracted_well = _valid_well_candidate(strict_match.group(1) if strict_match else None)
 
+    # 1b. A line-leading "Well:" label (colon required) — the common DDR
+    #     header form ("Well: HGJ-011"). Checked before the filename so a
+    #     report's own header wins over whatever the file happened to be named.
+    if not extracted_well:
+        label_match = re.search(r"^\s*WELL\s*:\s*([A-Z0-9][A-Z0-9\-_/]{1,30})\s*$", first_page_text, re.IGNORECASE | re.MULTILINE)
+        extracted_well = _valid_well_candidate(label_match.group(1) if label_match else None)
+
     # 2. Filename: this project's own convention (and Volve's real filenames,
     #    e.g. "WELL-15_9-F-1C_DRILLING_REPORT.pdf") often names the well
     #    directly — a good source once the strict label isn't found.

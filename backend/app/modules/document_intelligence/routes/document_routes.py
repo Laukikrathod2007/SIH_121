@@ -109,6 +109,18 @@ class FieldAnnotation(BaseModel):
     note: str
 
 
+@router.get("/samples")
+async def list_samples():
+    """Sample reports shipped with the demo (for a one-click ingestion demo)."""
+    return document_controller.list_samples()
+
+
+@router.post("/samples/{name}/ingest", response_model=IngestJobResponse, status_code=202)
+async def ingest_sample(name: str, background_tasks: BackgroundTasks):
+    """Queue a bundled sample report through the same pipeline as an upload."""
+    return await document_controller.ingest_sample(name, background_tasks)
+
+
 @router.get("/review/queue")
 async def review_queue():
     """Documents whose validation status needs a human (worst first)."""

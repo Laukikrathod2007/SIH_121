@@ -27,3 +27,11 @@ dist-ssr/
 
 # Logs
 *.log
+
+# NWIS runtime state (created when the app runs)
+backend/app/data/output/
+backend/app/data/uploads/
+backend/app/data/logs/
+backend/app/data/templates/
+backend/app/data/alerts.json
+backend/app/data/*.db

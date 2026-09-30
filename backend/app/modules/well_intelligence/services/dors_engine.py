@@ -660,15 +660,16 @@ def rank_offset_wells(
                 component_scores=dors_scores,
                 omega_score=omega_scores.total_omega,
                 omega_components=omega_scores,
-                structural_status=omega_scores.structural_status,
+                structural_status=getattr(dors_scores, "structural_fault_status", None) or omega_scores.structural_status,
                 formation_match=active_formation or "N/A",
                 events_in_lookahead=events_in_window,
                 distance_km=omega_scores.distance_km,
             )
         )
 
-    # Sort primarily by Omega score descending (or DORS if identical)
-    rankings.sort(key=lambda r: (r.omega_score or r.dors_score), reverse=True)
+    # Rank by the 5-factor DORS score (the documented relevance model, with
+    # its fault-boundary gate); Omega is kept on each row as a secondary view.
+    rankings.sort(key=lambda r: (r.dors_score, r.omega_score or 0.0), reverse=True)
 
     for i, r in enumerate(rankings[:top_n]):
         r.rank = i + 1

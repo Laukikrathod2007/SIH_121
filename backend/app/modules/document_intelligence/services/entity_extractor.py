@@ -46,7 +46,8 @@ from app.modules.document_intelligence.models.domain_rules import (
 # --- Depth patterns ---
 # Matches: "3,248 m", "3248m", "3248.5 mD", "10,650 ft"
 RE_DEPTH = re.compile(
-    r"(\d{1,5}[,.]?\d{0,3})\s*(m(?:D|TVD)?|ft|feet|meter[s]?)",
+    # Trailing lookahead stops "4.8 mL" / "10 min" being read as a depth in metres.
+    r"(\d{1,5}[,.]?\d{0,3})\s*(m(?:D|TVD)?|ft|feet|meter[s]?)(?![a-zA-Z])",
     re.IGNORECASE,
 )
 
@@ -385,8 +386,23 @@ def extract_drilling_events(text: str) -> List[DrillingEvent]:
     events: List[DrillingEvent] = []
     text_lower = text.lower()
 
-    # Split into sentences for per-sentence analysis
-    sentences = re.split(r"[.;\n]+", text)
+    # DDR operations remarks are time-stamped entries ("0600-1130 : ...") that
+    # PDF text extraction wraps across several lines. Treating every line or
+    # sentence separately split one incident into an event with no action and
+    # an "action" with no depth. When time-stamped entries exist, analyse each
+    # whole entry as one unit (hazard sentence + the remedial sentences that
+    # follow it); otherwise fall back to sentence-level analysis.
+    # The page text arrives with extracted lines joined by " | "; treat that
+    # separator as a line break for block detection.
+    lined = re.sub(r"[ \t]*\|[ \t]*", "\n", text)
+    remark_blocks = [
+        re.sub(r"\s*\n\s*", " ", b).strip()
+        for b in re.findall(
+            r"(\d{4}\s*-\s*\d{4}\s*:.*?)(?=\n\s*\d{4}\s*-\s*\d{4}\s*:|\n\s*[A-Z][A-Z /&]{4,}\s*(?:\n|$)|\Z)",
+            lined, flags=re.DOTALL,
+        )
+    ]
+    sentences = remark_blocks if remark_blocks else re.split(r"[.;\n]+", text)
 
     for sentence in sentences:
         sentence = sentence.strip()
@@ -394,6 +410,10 @@ def extract_drilling_events(text: str) -> List[DrillingEvent]:
             continue
 
         s_lower = sentence.lower()
+        # Mud-property lines ("Water Loss: 4.8 mL", "API fluid loss 5 ml")
+        # describe filtrate, not a lost-circulation incident.
+        if re.search(r"(water|fluid|filtrate|api)\s+loss\s*[:\d]", s_lower) and not re.search(r"lost|losses|bbl", s_lower):
+            continue
 
         # "Kick off"/"kicked off"/"kick-off" is directional-drilling jargon
         # (starting to build inclination) with no relation to a well-control
@@ -408,10 +428,21 @@ def extract_drilling_events(text: str) -> List[DrillingEvent]:
 
         # --- Determine event type ---
         event_type = EventType.UNKNOWN
-        for etype, keywords in EVENT_KEYWORDS.items():
-            if any(kw in s_lower_kw for kw in keywords):
-                event_type = etype
-                break
+        if remark_blocks:
+            # Whole remark: the hazard named FIRST is the incident; later
+            # keywords usually describe the remedy ("stuck pipe ... pumped LCM pill").
+            first_pos = {
+                etype: min((s_lower_kw.find(kw) for kw in keywords if kw in s_lower_kw), default=-1)
+                for etype, keywords in EVENT_KEYWORDS.items()
+            }
+            hits = {k: v for k, v in first_pos.items() if v >= 0}
+            if hits:
+                event_type = min(hits, key=hits.get)
+        else:
+            for etype, keywords in EVENT_KEYWORDS.items():
+                if any(kw in s_lower_kw for kw in keywords):
+                    event_type = etype
+                    break
 
         if event_type == EventType.UNKNOWN:
             continue  # Not an event sentence
@@ -458,7 +489,14 @@ def extract_drilling_events(text: str) -> List[DrillingEvent]:
 
         # --- Extract mitigation description ---
         mitigation = None
-        for kw in MITIGATION_KEYWORDS:
+        if remark_blocks:
+            # Everything after the incident sentence is the crew's response.
+            body = re.sub(r"^\d{4}\s*-\s*\d{4}\s*:\s*", "", sentence)
+            rest = re.split(r"(?<=[.;])\s+", body, maxsplit=1)
+            if len(rest) == 2:
+                action = re.sub(r"\s*\d+(?:\.\d+)?\s*(?:hrs?|hours?)\s*(?:of\s*)?NPT\.?", "", rest[1], flags=re.IGNORECASE).strip(" .;")
+                mitigation = action or None
+        for kw in ([] if mitigation else MITIGATION_KEYWORDS):
             if kw in s_lower:
                 # Take the rest of the sentence after the mitigation keyword
                 idx = s_lower.find(kw)

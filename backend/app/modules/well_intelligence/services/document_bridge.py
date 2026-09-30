@@ -55,6 +55,11 @@ def _resolve_well_id(store: NWISDataStore, well_name: Optional[str]) -> Optional
     for w in store.all_wells:
         if key in (_norm(w.well_id), _norm(w.well_name)):
             return w.well_id
+    # Labels such as "DDR_HGJ-011" or "WELL HGJ-011 A": accept the longest
+    # known well name contained in the label.
+    contained = [w for w in store.all_wells if _norm(w.well_name) and _norm(w.well_name) in key]
+    if contained:
+        return max(contained, key=lambda w: len(w.well_name)).well_id
     return None
 
 
@@ -72,7 +77,8 @@ def ingest_document_result(data: Dict[str, Any], store: Optional[NWISDataStore] 
 
     added = 0
     for page in data.get("pages", []):
-        page_no = page.get("page_number")
+        # Extraction numbers pages from 0; citations (and PDF #page=) are 1-based.
+        page_no = (page.get("page_number") or 0) + 1
         for ev in page.get("drilling_events", []):
             event_id = f"{doc_id}:{ev.get('event_id')}"
             if event_id in existing:
