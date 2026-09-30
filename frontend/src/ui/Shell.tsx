@@ -95,7 +95,9 @@ export const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const loc = useLocation();
   const [now, setNow] = useState(new Date());
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t); }, []);
-  const current = NAV.find((n) => (n.to === '/' ? loc.pathname === '/' : loc.pathname.startsWith(n.to)));
+  const current = loc.pathname.startsWith('/wells/')
+    ? { label: 'Well file', hint: loc.pathname.split('/').pop()?.replace(/^WELL-/, '') }
+    : NAV.find((n) => (n.to === '/' ? loc.pathname === '/' : loc.pathname.startsWith(n.to)));
 
   return (
     <div className="h-full flex bg-paper">

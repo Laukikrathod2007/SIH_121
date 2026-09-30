@@ -129,7 +129,20 @@ class AlertCenter:
                     continue
 
                 key = f"{result.active_well_id}|{hazard}|{corridor.depth_start_m if corridor else 'none'}"
-                existing = next((a for a in self._alerts.values() if a["key"] == key and a["status"] == "ACTIVE"), None)
+                # Corridor bounds shift slightly as the bit advances and the
+                # offset ranking updates, so match an existing alert for the
+                # same well + hazard by OVERLAPPING zone, not an exact key.
+                existing = None
+                for a in self._alerts.values():
+                    if a["status"] != "ACTIVE" or a["well_id"] != result.active_well_id or a["hazard_type"] != hazard:
+                        continue
+                    z = a.get("zone")
+                    if corridor is None and z is None:
+                        existing = a
+                        break
+                    if corridor is not None and z is not None and z["from_m"] <= corridor.depth_end_m and corridor.depth_start_m <= z["to_m"]:
+                        existing = a
+                        break
                 # Evidence = the events that actually form the corridor when one is
                 # driving the alert; otherwise the assessment's own evidence list.
                 evidence_ids = corridor.contributing_events if near_corridor else h.evidence_events

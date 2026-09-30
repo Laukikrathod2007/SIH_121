@@ -87,7 +87,7 @@ const AlertDetail: React.FC<{ a: Alert; onChanged: () => Promise<void> }> = ({ a
   };
 
   return (
-    <div className="flex flex-col gap-5 min-w-0 animate-fade-up" key={a.alert_id}>
+    <div className="flex flex-col gap-5 min-w-0" key={a.alert_id}>
       <Panel className="overflow-hidden">
         <div className="p-5 border-l-4" style={{ borderColor: s.color }}>
           <div className="flex items-center gap-3 flex-wrap">
@@ -108,7 +108,12 @@ const AlertDetail: React.FC<{ a: Alert; onChanged: () => Promise<void> }> = ({ a
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <Panel>
-          <PanelHead title="Why NWIS raised it" hint={`Combined risk score ${a.risk_score.toFixed(2)} from three independent signals.`} />
+          <PanelHead
+            title="Why NWIS raised it"
+            hint={a.zone
+              ? `Trigger: the bit is ${a.lead_distance_m && a.lead_distance_m > 0 ? `${Math.round(a.lead_distance_m)} m above` : 'inside'} a depth interval where ${a.offset_wells.length} offset well(s) had this problem. Supporting signals (combined ${a.risk_score.toFixed(2)}):`
+              : `Trigger: combined risk score ${a.risk_score.toFixed(2)} crossed the high threshold. Its three signals:`}
+          />
           <div className="p-4 space-y-3">
             <Signal label="What nearby wells experienced at this depth" v={b.offset_history} color={hz.color} />
             <Signal label="Live sensor behaviour (flow, torque, pressure)" v={b.live_sensors} color={hz.color} />

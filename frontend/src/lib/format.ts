@@ -46,5 +46,5 @@ export const docLabel = (name?: string | null) => {
   if (!name) return 'No source';
   const m2 = name.match(/^(DDR|WCR)_WELL-([A-Z]+-\d+)(?:_(\d+)m)?\.pdf$/);
   if (m2) return `${m2[1] === 'DDR' ? 'Daily drilling report' : 'Well completion report'} · ${m2[2]}${m2[3] ? ` · ${m2[3]} m` : ''}`;
-  return name.replace(/\s*\[DOC-[A-Z0-9]+\]$/, '');
+  return name.replace(/\s*\[DOC-[A-Z0-9]+\]$/, '').replace(/^JOB-[0-9A-F]+_/i, '');
 };

@@ -1,5 +1,8 @@
 # eRTMAC-NWIS — SIH 26121
 
+> **To run the integrated product (unified `backend/` + `frontend/`), see [NWIS_QUICKSTART.md](NWIS_QUICKSTART.md).**
+> The per-module services under `modules/` below are the original standalone implementations; their engines are merged into `backend/`.
+
 DRILLWISE (internal system name: eWIS — eWell Intelligence System). An
 AI-powered offset-well intelligence platform for Oil India Limited, built
 against Problem Statement 26121.

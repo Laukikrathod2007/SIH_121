@@ -28,7 +28,7 @@ const SCENARIOS = [
 
 const HAZARD_LABEL: Record<string, string> = {
   lost_circulation: 'Lost circulation', kick: 'Kick / influx', stuck_pipe: 'Stuck pipe', torque_drag: 'Torque & drag',
-  washout: 'Washout', pack_off: 'Pack-off', stick_slip: 'Stick-slip', poor_hole_cleaning: 'Hole cleaning',
+  washout: 'Washout', pack_off: 'Pack-off', cementing: 'Cementing', stick_slip: 'Stick-slip', poor_hole_cleaning: 'Hole cleaning',
 };
 
 const wsUrl = () => {

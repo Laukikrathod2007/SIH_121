@@ -36,7 +36,7 @@ export const CorrelationView: React.FC = () => {
   useEffect(() => { setDepth(Math.round((bitDepth ?? td * 0.9))); }, [activeWellId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [hover, setHover] = useState<string | null>(null);
 
-  const track = useLoad(() => api.depthTrack(activeWellId, depth, 4), [activeWellId, depth]);
+  const track = useLoad(() => (activeWellId ? api.depthTrack(activeWellId, depth, 4) : Promise.resolve(null)), [activeWellId, depth]);
   const align = (track.data?.alignment ?? {}) as unknown as Align;
   const ids = useMemo(() => {
     const base = Object.keys(align);
@@ -77,7 +77,7 @@ export const CorrelationView: React.FC = () => {
     return Number.isFinite(lo) ? [lo, hi] : [0, 1];
   }, [data, mode, depth, bitFm]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const H = 620, top = 28, colW = 132, gap = 64, left = 54;
+  const H = 620, top = 28, colW = 116, gap = 46, left = 50;
   const W = left + data.length * colW + Math.max(0, data.length - 1) * gap + 20;
   const y = (v: number) => top + ((v - range[0]) / (range[1] - range[0] || 1)) * (H - top - 20);
   const colX = (i: number) => left + i * (colW + gap);

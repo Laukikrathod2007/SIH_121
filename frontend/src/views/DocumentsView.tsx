@@ -10,6 +10,9 @@ const EVENT_TO_HAZARD: Record<string, string | null> = {
   WELLBORE_INSTABILITY: 'WELLBORE_INSTABILITY', EQUIPMENT_FAILURE: null, DEVIATION_CONTROL: null, NPT_OPERATIONAL: null, UNKNOWN: null,
 };
 const val = (f: any) => (f && typeof f === 'object' ? f.normalized_value : f);
+const cleanName = (name?: string | null) => (name ?? '').replace(/^JOB-[0-9A-F]+_/i, '');
+const prettyType = (t?: string | null) => (t ?? 'report').replace(/_/g, ' ').toLowerCase();
+const dur = (ms?: number) => (!ms ? '—' : ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`);
 
 export const DocumentsView: React.FC = () => {
   const { openEvidence } = useNwis();
@@ -117,7 +120,7 @@ export const DocumentsView: React.FC = () => {
                 {list.map((r) => (
                   <li key={r.document_id}>
                     <button onClick={() => setSelected(r.document_id)} className={cx('w-full text-left px-4 py-2.5', selected === r.document_id ? 'bg-accent-soft/60' : 'hover:bg-sunken/60')}>
-                      <div className="text-[13px] font-medium truncate">{r.source_filename}</div>
+                      <div className="text-[13px] font-medium truncate">{cleanName(r.source_filename)}</div>
                       <div className="text-[11px] text-ink-3">{r.well_name ?? 'well not detected'} · {r.events_count} events · {r.validation_status?.toLowerCase().replace('_', ' ')}{r.reviewed ? ` · ${r.review_decision}` : ''}</div>
                     </button>
                   </li>
@@ -150,13 +153,13 @@ const ResultDetail: React.FC<{ docId: string; onChanged: () => void; openPage: (
   };
 
   return (
-    <div className="flex flex-col gap-5 min-w-0 animate-fade-up">
+    <div className="flex flex-col gap-5 min-w-0">
       <Panel>
         <div className="p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="text-2xs uppercase tracking-[0.08em] text-ink-3">{d.document_type} · {d.total_pages} page{d.total_pages === 1 ? '' : 's'} · {n(d.total_processing_time_ms / 1000, 1)} s</div>
-              <h2 className="text-[18px] font-semibold mt-1">{d.source_filename}</h2>
+              <div className="text-2xs uppercase tracking-[0.08em] text-ink-3">{prettyType(d.document_type)} · {d.total_pages} page{d.total_pages === 1 ? '' : 's'} · read in {dur(d.total_processing_time_ms)}</div>
+              <h2 className="text-[18px] font-semibold mt-1">{cleanName(d.source_filename)}</h2>
               <div className="text-[13px] text-ink-2 mt-0.5">Well <span className="num font-medium text-ink">{d.well_name ?? 'not detected'}</span>{d.operator ? ` · ${d.operator}` : ''}{d.report_date ? ` · ${d.report_date}` : ''}</div>
             </div>
             <div className="flex gap-2">

@@ -41,7 +41,7 @@ export const WellView: React.FC = () => {
             ['Max inclination', `${n(ts.max_inclination_deg, 1)}°`],
             ['Incidents', String(events.length)],
             ['Lost time', `${n(p.data.total_npt_hours, 1)} h`],
-            ['Spud → completion', `${well.spud_date ?? '—'} → ${well.completion_date ?? '—'}`],
+            ['Spud', well.spud_date ?? '—'],
           ].map(([k, v]) => (
             <div key={k} className="px-4 py-3">
               <div className="text-2xs uppercase tracking-[0.08em] text-ink-3">{k}</div>

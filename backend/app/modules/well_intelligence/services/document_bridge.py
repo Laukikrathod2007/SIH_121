@@ -70,7 +70,8 @@ def ingest_document_result(data: Dict[str, Any], store: Optional[NWISDataStore] 
         return 0
 
     doc_id = data.get("document_id") or ""
-    source = data.get("source_filename") or doc_id
+    # Uploads are stored as "JOB-<id>_<original name>"; cite the original name.
+    source = re.sub(r"^JOB-[0-9A-F]+_", "", data.get("source_filename") or doc_id, flags=re.IGNORECASE)
     known_well_id = _resolve_well_id(store, data.get("well_name"))
     well_id = known_well_id or (data.get("well_name") or f"DOC:{doc_id}")
     existing = {e.event_id for e in store.all_events}

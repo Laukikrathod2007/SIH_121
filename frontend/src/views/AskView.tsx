@@ -90,7 +90,7 @@ export const AskView: React.FC = () => {
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(q); } }}
               placeholder="e.g. What did nearby wells do about losses in the Sylhet Limestone?"
-              className="flex-1 resize-none outline-none text-[14px] py-2 bg-transparent placeholder:text-ink-3"
+              className="flex-1 resize-none outline-none focus-visible:outline-none text-[14px] py-2 bg-transparent placeholder:text-ink-3"
               aria-label="Question"
             />
             <button type="submit" disabled={!q.trim() || busy} aria-label="Ask" className="w-9 h-9 rounded-xl bg-accent text-white flex items-center justify-center disabled:opacity-40">
