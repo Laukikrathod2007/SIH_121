@@ -40,9 +40,9 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-64 bg-[#0e121a] border-r border-slate-800/80 flex flex-col h-screen select-none z-20 shrink-0">
+    <aside className="w-64 bg-[var(--bg-card)] border-r border-slate-800/80 flex flex-col h-screen select-none z-20 shrink-0">
       {/* Brand Header */}
-      <div className="p-4 border-b border-slate-800/80 bg-[#0a0d13]">
+      <div className="p-4 border-b border-slate-800/80 bg-[var(--bg-elevated)]">
         <img
           src="/brand/drillwise-logo-horizontal.png"
           alt="DrillWise — Powered by eWIS"
@@ -97,7 +97,7 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* Bottom Rig Status Footnote */}
-      <div className="p-3 border-t border-slate-800/80 bg-[#0a0d13] text-[11px] font-mono space-y-1.5">
+      <div className="p-3 border-t border-slate-800/80 bg-[var(--bg-elevated)] text-[11px] font-mono space-y-1.5">
         <div className="flex items-center justify-between text-slate-400">
           <span className="flex items-center gap-1.5">
             <Radio className="w-3.5 h-3.5 text-cyan-400" />

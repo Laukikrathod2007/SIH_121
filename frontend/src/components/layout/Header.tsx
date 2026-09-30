@@ -9,10 +9,14 @@ import {
   ChevronDown,
   Circle,
   AlertTriangle,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../hooks/useTheme';
 
 export const Header: React.FC = () => {
+  const { theme, setTheme } = useTheme();
   const {
     activeWellId,
     setActiveWellId,
@@ -48,7 +52,7 @@ export const Header: React.FC = () => {
     'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
 
   return (
-    <header className="h-14 bg-[#0e121a] border-b border-slate-800/80 px-4 flex items-center justify-between z-10 shrink-0">
+    <header className="h-14 bg-[var(--bg-card)] border-b border-slate-800/80 px-4 flex items-center justify-between z-10 shrink-0">
       {/* Left: Active Well Selector & Geological Coordinates */}
       <div className="flex items-center space-x-4">
         {/* Well Dropdown */}
@@ -167,6 +171,26 @@ export const Header: React.FC = () => {
             <Circle className="w-2 h-2 fill-current text-cyan-400" />
             ML
           </div>
+        </div>
+
+        {/* Light / Dark toggle */}
+        <div className="flex items-center bg-slate-900 border border-slate-700 rounded p-0.5 text-[10px] font-mono">
+          <button
+            onClick={() => setTheme('light')}
+            className={`flex items-center gap-1 px-2 py-1 rounded transition ${
+              theme === 'light' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Sun className="w-3 h-3" /> Light
+          </button>
+          <button
+            onClick={() => setTheme('dark')}
+            className={`flex items-center gap-1 px-2 py-1 rounded transition ${
+              theme === 'dark' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Moon className="w-3 h-3" /> Dark
+          </button>
         </div>
       </div>
     </header>

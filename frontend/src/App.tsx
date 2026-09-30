@@ -45,7 +45,7 @@ export const App: React.FC = () => {
   return (
     <AppProvider>
       <BrowserRouter>
-        <div className="flex h-screen w-screen overflow-hidden bg-[#0b0e14] text-slate-100 font-sans">
+        <div className="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] text-slate-100 font-sans">
           {/* Left Navigation Sidebar */}
           <Sidebar />
 
