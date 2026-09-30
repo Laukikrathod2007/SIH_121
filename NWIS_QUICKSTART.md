@@ -16,6 +16,8 @@ cd backend  && python run.py          # http://127.0.0.1:8008  (API docs at /doc
 cd frontend && npm install && npm run dev   # http://localhost:5173
 ```
 
+On every start the backend runs the pipeline itself: it generates any missing demo data, pushes the bundled sample reports through extraction into the knowledge archive, trains/benchmarks models whose metrics are missing, and runs the alert engine for the active well — so every screen is populated on first load. It is idempotent (nothing is duplicated on restart).
+
 No accounts or API keys are needed. Everything runs locally; the only outbound calls are map tiles (OpenStreetMap / Esri).
 
 ## Demo walkthrough (about 5 minutes)
@@ -27,6 +29,7 @@ No accounts or API keys are needed. Everything runs locally; the only outbound c
 5. **Documents** — *Run a sample report* (`DDR_HGJ-011_2021-03-02.pdf`). Three incidents are extracted with depth, formation and crew action, and immediately become searchable and part of HGJ-011's record.
 6. **Alerts** — why each alert fired, the offset-well evidence, what worked there, and acknowledgement with a note.
 7. **Rig sensors** — inject *Lost circulation*; within seconds the sensor risk engine raises its own alert from flow-out, pit and pressure-window behaviour.
+8. **Models & benchmarks** — measured accuracy of the three model families (offset-history hazard models, sensor risk engine, report extraction), including where the data is still too thin.
 
 ## What is real and what is simulated
 
@@ -49,6 +52,8 @@ To connect OIL data: replace the JSON files in `backend/app/data/synthetic/` (sa
 | Nearby-radius map, semantic search, trajectory, live replay | `backend/app/modules/well_intelligence/routes/knowledge_routes.py` |
 | Well profile, evidence PDFs, grounded Q&A, alert center API | `backend/app/modules/well_intelligence/routes/decision_routes.py` |
 | Alert engine | `backend/app/modules/well_intelligence/services/alert_center.py` |
+| Startup pipeline | `backend/app/core/bootstrap.py` |
+| Benchmarks API | `backend/app/modules/well_intelligence/routes/benchmark_routes.py` |
 | Document → archive bridge | `backend/app/modules/well_intelligence/services/document_bridge.py` |
 | DORS / corridors / correlation | `backend/app/modules/well_intelligence/services/` |
 | Extraction pipeline | `backend/app/modules/document_intelligence/services/` |
