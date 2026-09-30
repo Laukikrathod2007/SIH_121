@@ -1,0 +1,248 @@
+- generic [ref=f10e3]:
+  - complementary [ref=f10e4]:
+    - generic [ref=f10e13]:
+      - generic [ref=f10e14]: NWIS
+      - generic [ref=f10e15]: Nearby Wells Intelligence
+    - navigation [ref=f10e16]:
+      - link "Live well What is ahead of the bit" [ref=f10e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f10e21]:
+          - generic [ref=f10e22]: Live well
+          - generic [ref=f10e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f10e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f10e27]:
+          - generic [ref=f10e28]: Nearby wells
+          - generic [ref=f10e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f10e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f10e35]:
+          - generic [ref=f10e36]: Depth correlation
+          - generic [ref=f10e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f10e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f10e41]:
+          - generic [ref=f10e42]: Ask the archive
+          - generic [ref=f10e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=f10e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f10e48]:
+          - generic [ref=f10e49]: Alerts
+          - generic [ref=f10e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=f10e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f10e57]:
+          - generic [ref=f10e58]: Documents
+          - generic [ref=f10e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f10e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f10e63]:
+          - generic [ref=f10e64]: Rig sensors
+          - generic [ref=f10e65]: Physics twin + risk model
+    - generic [ref=f10e66]:
+      - generic [ref=f10e67]: Backend connected
+      - generic [ref=f10e69]: Demo data · Upper Assam testbed
+      - generic [ref=f10e70]: Oil India Limited · PS 26121
+  - generic [ref=f10e71]:
+    - banner [ref=f10e72]:
+      - generic [ref=f10e73]: Depth correlation/Same rock, across wells
+      - generic [ref=f10e75] [cursor=pointer]:
+        - generic [ref=f10e76]: Active well
+        - generic [ref=f10e77]: HGJ-012
+        - generic [ref=f10e120]: Hugrijan
+        - combobox "Active well" [ref=f10e78]:
+          - option "NHK-001 — Nahorkatiya (producing)"
+          - option "NHK-002 — Nahorkatiya (completed)"
+          - option "NHK-003 — Nahorkatiya (suspended)"
+          - option "MRN-004 — Moran (abandoned)"
+          - option "MRN-005 — Moran (suspended)"
+          - option "MRN-006 — Moran (completed)"
+          - option "BGJ-007 — Baghjan (completed)"
+          - option "BGJ-008 — Baghjan (abandoned)"
+          - option "BGJ-009 — Baghjan (suspended)"
+          - option "HGJ-010 — Hugrijan (suspended)"
+          - option "HGJ-011 — Hugrijan (abandoned)"
+          - option "HGJ-012 — Hugrijan (completed)" [selected]
+      - generic [ref=f10e79]: 05:34 am IST
+    - main [ref=f10e87]:
+      - generic [ref=f10e88]:
+        - generic [ref=f10e90]:
+          - generic [ref=f10e91]: Correlation by depth and formation
+          - heading "Is the same rock trouble in every well?" [level=1] [ref=f10e92]
+          - paragraph [ref=f10e93]: Wells are drilled at different angles and start from different elevations, so the same formation sits at different measured depths. Line them up on the formation at the bit to compare like with like. The dashed marker shows where the active bit depth falls in each offset well.
+        - generic [ref=f10e95]:
+          - generic [ref=f10e96]:
+            - generic [ref=f10e97]: Align wells by
+            - tablist [ref=f10e98]:
+              - tab "Formation (Barail Coal-Shale)" [selected] [ref=f10e121] [cursor=pointer]
+              - tab "True vertical depth" [ref=f10e100] [cursor=pointer]
+              - tab "Measured depth" [ref=f10e101] [cursor=pointer]
+          - generic [ref=f10e102]:
+            - generic [ref=f10e103]: Active bit depth
+            - slider "Active bit depth" [ref=f10e104]: "2553"
+            - generic [ref=f10e105]: 2,554 m
+        - generic [ref=f10e106]:
+          - generic [ref=f10e107]:
+            - generic [ref=f10e109]:
+              - heading "Correlation panel" [level=2] [ref=f10e110]
+              - paragraph [ref=f10e111]: Depths shown relative to the top of the Barail Coal-Shale in each well (0 = formation top).
+            - img [ref=f10e122]:
+              - generic [ref=f10e123]: "-191"
+              - generic [ref=f10e125]: "-44"
+              - generic [ref=f10e127]: "102"
+              - generic [ref=f10e129]: "249"
+              - generic [ref=f10e131]: "395"
+              - generic [ref=f10e133]: "542"
+              - generic [ref=f10e135]: "689"
+              - generic [ref=f10e147]:
+                - generic [ref=f10e148]:
+                  - generic [ref=f10e149]: Alluvium
+                  - generic [ref=f10e152]: Dihing
+                  - generic [ref=f10e155]: Tipam Sandstone
+                  - generic [ref=f10e158]: Girujan Clay
+                  - generic [ref=f10e161]: Barail Sandstone
+                  - generic [ref=f10e164]: Barail Coal-Shale
+                  - generic [ref=f10e167]: Kopili
+                  - generic [ref=f10e170]: Sylhet Limestone
+                  - generic [ref=f10e173] [cursor=pointer]: SP
+                  - generic [ref=f10e176] [cursor=pointer]: WI
+                  - generic [ref=f10e179] [cursor=pointer]: SP
+                  - generic [ref=f10e182]: 2554 m MD
+                - generic [ref=f10e186]: HGJ-012
+                - generic [ref=f10e187]: active
+              - generic [ref=f10e188]:
+                - generic [ref=f10e189]:
+                  - generic [ref=f10e190]: Alluvium
+                  - generic [ref=f10e193]: Dihing
+                  - generic [ref=f10e196]: Tipam Sandstone
+                  - generic [ref=f10e199]: Girujan Clay
+                  - generic [ref=f10e202]: Barail Sandstone
+                  - generic [ref=f10e205]: Barail Coal-Shale
+                  - generic [ref=f10e208]: Kopili
+                  - generic [ref=f10e211]: Sylhet Limestone
+                  - generic [ref=f10e214] [cursor=pointer]: SP
+                  - generic [ref=f10e217] [cursor=pointer]: WI
+                  - generic [ref=f10e220] [cursor=pointer]: SP
+                  - generic [ref=f10e223] [cursor=pointer]: SP
+                  - generic [ref=f10e226] [cursor=pointer]: WI
+                  - generic [ref=f10e229] [cursor=pointer]: TQ
+                  - generic [ref=f10e232] [cursor=pointer]: CM
+                  - generic [ref=f10e235] [cursor=pointer]: KK
+                  - generic [ref=f10e238] [cursor=pointer]: ML
+                  - generic [ref=f10e241] [cursor=pointer]: ML
+                  - generic [ref=f10e244] [cursor=pointer]: SP
+                  - generic [ref=f10e247] [cursor=pointer]: KK
+                  - generic [ref=f10e250]: 2637 m MD
+                - generic [ref=f10e254]: HGJ-011
+                - generic [ref=f10e255]: Vertical
+              - generic [ref=f10e256]:
+                - generic [ref=f10e257]:
+                  - generic [ref=f10e258]: Alluvium
+                  - generic [ref=f10e261]: Dihing
+                  - generic [ref=f10e264]: Tipam Sandstone
+                  - generic [ref=f10e267]: Girujan Clay
+                  - generic [ref=f10e270]: Barail Sandstone
+                  - generic [ref=f10e273]: Barail Coal-Shale
+                  - generic [ref=f10e276]: Kopili
+                  - generic [ref=f10e279]: Sylhet Limestone
+                  - generic [ref=f10e282] [cursor=pointer]: WI
+                  - generic [ref=f10e285] [cursor=pointer]: WI
+                  - generic [ref=f10e288] [cursor=pointer]: KK
+                  - generic [ref=f10e291] [cursor=pointer]: TQ
+                  - generic [ref=f10e294] [cursor=pointer]: KK
+                  - generic [ref=f10e297] [cursor=pointer]: ML
+                  - generic [ref=f10e300]: 2636 m MD
+                - generic [ref=f10e304]: HGJ-010
+                - generic [ref=f10e305]: Vertical
+              - generic [ref=f10e306]:
+                - generic [ref=f10e307]:
+                  - generic [ref=f10e308]: Alluvium
+                  - generic [ref=f10e311]: Dihing
+                  - generic [ref=f10e314]: Tipam Sandstone
+                  - generic [ref=f10e317]: Girujan Clay
+                  - generic [ref=f10e320]: Barail Sandstone
+                  - generic [ref=f10e323]: Barail Coal-Shale
+                  - generic [ref=f10e326]: Kopili
+                  - generic [ref=f10e329] [cursor=pointer]: WI
+                  - generic [ref=f10e332] [cursor=pointer]: ML
+                  - generic [ref=f10e335]: 2533 m MD
+                - generic [ref=f10e339]: NHK-001
+                - generic [ref=f10e340]: J-Type
+              - generic [ref=f10e341]:
+                - generic [ref=f10e342]:
+                  - generic [ref=f10e343]: Alluvium
+                  - generic [ref=f10e346]: Dihing
+                  - generic [ref=f10e349]: Tipam Sandstone
+                  - generic [ref=f10e352]: Girujan Clay
+                  - generic [ref=f10e355]: Barail Sandstone
+                  - generic [ref=f10e358]: Barail Coal-Shale
+                  - generic [ref=f10e361]: Kopili
+                  - generic [ref=f10e364]: Sylhet Limestone
+                  - generic [ref=f10e369] [cursor=pointer]: WI
+                  - generic [ref=f10e372] [cursor=pointer]: WI
+                  - generic [ref=f10e375] [cursor=pointer]: WI
+                  - generic [ref=f10e378] [cursor=pointer]: KK
+                  - generic [ref=f10e381]: 2565 m MD
+                - generic [ref=f10e385]: MRN-005
+                - generic [ref=f10e386]: S-Type
+          - generic [ref=f10e115]:
+            - generic [ref=f10e117]:
+              - heading "Same depth, other wells" [level=2] [ref=f10e118]
+              - paragraph [ref=f10e119]: What each offset well met at the equivalent position (±150 m).
+            - generic [ref=f10e387]:
+              - generic [ref=f10e388]:
+                - generic [ref=f10e389]:
+                  - link "HGJ-012" [ref=f10e390] [cursor=pointer]:
+                    - /url: /wells/WELL-HGJ-012
+                  - generic [ref=f10e391]: 2,554 m MD · Barail Coal-Shale
+                - generic [ref=f10e392]: Active well — bit reference
+              - generic [ref=f10e393]:
+                - generic [ref=f10e394]:
+                  - link "HGJ-011" [ref=f10e395] [cursor=pointer]:
+                    - /url: /wells/WELL-HGJ-011
+                  - generic [ref=f10e396]: 2,637 m MD · Barail Coal-Shale
+                - generic [ref=f10e397]:
+                  - generic [ref=f10e398]:
+                    - generic [ref=f10e399]: Torque spike
+                    - generic [ref=f10e401]: 2,557 m
+                    - generic [ref=f10e402]: High
+                  - paragraph [ref=f10e403]: "Action: Raised mud weight 0.3 ppg for coal stability, pumped hi-vis sweep, back-reamed out of hole to casing shoe"
+                  - button "Daily drilling report · HGJ-011 · 2556 m · p.3" [ref=f10e405] [cursor=pointer]
+                - generic [ref=f10e410]:
+                  - generic [ref=f10e411]:
+                    - generic [ref=f10e412]: Cementing issue
+                    - generic [ref=f10e414]: 2,697 m
+                    - generic [ref=f10e415]: High
+                  - paragraph [ref=f10e416]: "Action: Remedial squeeze through perforations; subsequent wells pumped lightweight lead slurry with LCM fibres and reduced displacement rate"
+                  - button "Daily drilling report · HGJ-011 · 2697 m · p.5" [ref=f10e418] [cursor=pointer]
+                - generic [ref=f10e423]:
+                  - generic [ref=f10e424]:
+                    - generic [ref=f10e425]: Kick / overpressure
+                    - generic [ref=f10e427]: 2,743 m
+                    - generic [ref=f10e428]: High
+                  - paragraph [ref=f10e429]: "Action: Shut in BOP; applied Driller's Method; weighted up mud to kill weight"
+                  - button "Daily drilling report · HGJ-011 · 2742 m · p.8" [ref=f10e431] [cursor=pointer]
+              - generic [ref=f10e436]:
+                - generic [ref=f10e437]:
+                  - link "HGJ-010" [ref=f10e438] [cursor=pointer]:
+                    - /url: /wells/WELL-HGJ-010
+                  - generic [ref=f10e439]: 2,636 m MD · Barail Coal-Shale
+                - generic [ref=f10e440]: No incidents near the equivalent depth.
+              - generic [ref=f10e441]:
+                - generic [ref=f10e442]:
+                  - link "NHK-001" [ref=f10e443] [cursor=pointer]:
+                    - /url: /wells/WELL-NHK-001
+                  - generic [ref=f10e444]: 2,533 m MD · Barail Coal-Shale
+                - generic [ref=f10e445]:
+                  - generic [ref=f10e446]:
+                    - generic [ref=f10e447]: Mud loss
+                    - generic [ref=f10e449]: 2,659 m
+                    - generic [ref=f10e450]: Critical
+                  - paragraph [ref=f10e451]: "Action: Pumped LCM pill; reduced mud weight; staged cementing squeeze"
+                  - button "Daily drilling report · NHK-001 · 2658 m · p.1" [ref=f10e453] [cursor=pointer]
+              - generic [ref=f10e458]:
+                - generic [ref=f10e459]:
+                  - link "MRN-005" [ref=f10e460] [cursor=pointer]:
+                    - /url: /wells/WELL-MRN-005
+                  - generic [ref=f10e461]: 2,565 m MD · Barail Coal-Shale
+                - generic [ref=f10e462]: No incidents near the equivalent depth.

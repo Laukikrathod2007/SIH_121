@@ -1,0 +1,237 @@
+- generic [ref=f26e3]:
+  - complementary [ref=f26e4]:
+    - generic [ref=f26e13]:
+      - generic [ref=f26e14]: NWIS
+      - generic [ref=f26e15]: Nearby Wells Intelligence
+    - navigation [ref=f26e16]:
+      - link "Live well What is ahead of the bit" [ref=f26e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f26e21]:
+          - generic [ref=f26e22]: Live well
+          - generic [ref=f26e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f26e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f26e27]:
+          - generic [ref=f26e28]: Nearby wells
+          - generic [ref=f26e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f26e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f26e35]:
+          - generic [ref=f26e36]: Depth correlation
+          - generic [ref=f26e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f26e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f26e41]:
+          - generic [ref=f26e42]: Ask the archive
+          - generic [ref=f26e43]: Search past events
+      - link "Alerts Warnings with evidence 4" [ref=f26e97] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f26e48]:
+          - generic [ref=f26e49]: Alerts
+          - generic [ref=f26e50]: Warnings with evidence
+        - generic [ref=f26e98]: "4"
+      - link "Documents Reports in, events out" [ref=f26e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f26e57]:
+          - generic [ref=f26e58]: Documents
+          - generic [ref=f26e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f26e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f26e63]:
+          - generic [ref=f26e64]: Rig sensors
+          - generic [ref=f26e65]: Physics twin + risk model
+      - link "Models & benchmarks Measured accuracy" [ref=f26e66] [cursor=pointer]:
+        - /url: /models
+        - generic [ref=f26e69]:
+          - generic [ref=f26e70]: Models & benchmarks
+          - generic [ref=f26e71]: Measured accuracy
+    - generic [ref=f26e72]:
+      - generic [ref=f26e73]: Backend connected
+      - generic [ref=f26e75]: Demo data · Upper Assam testbed
+      - generic [ref=f26e76]: Oil India Limited · PS 26121
+  - generic [ref=f26e77]:
+    - banner [ref=f26e78]:
+      - generic [ref=f26e79]: Live well/What is ahead of the bit
+      - generic [ref=f26e81] [cursor=pointer]:
+        - generic [ref=f26e82]: Active well
+        - generic [ref=f26e83]: HGJ-012
+        - generic [ref=f26e99]: Hugrijan
+        - combobox "Active well" [ref=f26e84]:
+          - option "NHK-001 — Nahorkatiya (producing)"
+          - option "NHK-002 — Nahorkatiya (completed)"
+          - option "NHK-003 — Nahorkatiya (suspended)"
+          - option "MRN-004 — Moran (abandoned)"
+          - option "MRN-005 — Moran (suspended)"
+          - option "MRN-006 — Moran (completed)"
+          - option "BGJ-007 — Baghjan (completed)"
+          - option "BGJ-008 — Baghjan (abandoned)"
+          - option "BGJ-009 — Baghjan (suspended)"
+          - option "HGJ-010 — Hugrijan (suspended)"
+          - option "HGJ-011 — Hugrijan (abandoned)"
+          - option "HGJ-012 — Hugrijan (completed)" [selected]
+      - generic [ref=f26e85]: 08:30 am IST
+    - main [ref=f26e93]:
+      - generic [ref=f26e100]:
+        - generic [ref=f26e101]:
+          - generic [ref=f26e102]:
+            - generic [ref=f26e103]: Hugrijan field · J-Type · completed
+            - 'heading "HGJ-012: what is ahead of the bit" [level=1] [ref=f26e104]'
+            - paragraph [ref=f26e105]: NWIS compares the active well with offset wells drilled through the same formations, and warns before the bit reaches a depth where they had trouble. The live stream replays this well as eRTMAC would feed it.
+          - button "Start live stream from 2,412 m" [ref=f26e107] [cursor=pointer]
+        - generic [ref=f26e110]:
+          - generic [ref=f26e111]:
+            - generic [ref=f26e112]:
+              - generic [ref=f26e113]: Planning view · bit at 2,412 m in Barail Coal-Shale
+              - paragraph [ref=f26e114]:
+                - text: 20 m to a torque spike zone (2,432 m–2,599 m) seen in HGJ-010, HGJ-011, costing on average
+                - generic [ref=f26e115]: 5 h
+                - text: of lost time.
+              - paragraph [ref=f26e116]: 20m to historical TORQUE SPIKE zone (HGJ-010 +1 more analog) — Reduce WOB by 30%; check top-drive parameters; prepare for string reciprocation
+            - generic [ref=f26e117]:
+              - generic [ref=f26e118]: Overall risk
+              - generic [ref=f26e119]: Moderate
+          - generic [ref=f26e120]:
+            - generic [ref=f26e121]: Explore a bit depth
+            - slider "Bit depth" [ref=f26e122]: "2411"
+            - generic [ref=f26e123]: 2,412 m
+        - generic [ref=f26e124]:
+          - generic [ref=f26e125]:
+            - generic [ref=f26e127]:
+              - heading "Depth column" [level=2] [ref=f26e128]
+              - paragraph [ref=f26e129]: Formations of this well, its casing shoes, and trouble zones from nearby wells.
+            - generic [ref=f26e130]:
+              - img "Depth column" [ref=f26e131]:
+                - generic [ref=f26e132]: "0"
+                - generic [ref=f26e134]: "250"
+                - generic [ref=f26e136]: "500"
+                - generic [ref=f26e138]: "750"
+                - generic [ref=f26e140]: "1000"
+                - generic [ref=f26e142]: "1250"
+                - generic [ref=f26e144]: "1500"
+                - generic [ref=f26e146]: "1750"
+                - generic [ref=f26e148]: "2000"
+                - generic [ref=f26e150]: "2250"
+                - generic [ref=f26e152]: "2500"
+                - generic [ref=f26e154]: "2750"
+                - generic [ref=f26e156]: Alluvium
+                - generic [ref=f26e159]: Dihing
+                - generic [ref=f26e162]: Tipam Sandstone
+                - generic [ref=f26e165]: Girujan Clay
+                - generic [ref=f26e168]: Barail Sandstone
+                - generic [ref=f26e171]: Barail Coal-Shale
+                - generic [ref=f26e174]: Kopili
+                - generic [ref=f26e177]: Sylhet Limestone
+                - generic [ref=f26e180]: 20"
+                - generic [ref=f26e183]: 13-3/8"
+                - generic [ref=f26e186]: 9-5/8"
+                - generic [ref=f26e189]: 7"
+                - generic [ref=f26e192] [cursor=pointer]:
+                  - generic [ref=f26e194]: TQ
+                  - generic [ref=f26e195]: 2w
+                - generic [ref=f26e196] [cursor=pointer]:
+                  - generic [ref=f26e198]: KK
+                  - generic [ref=f26e199]: 2w
+                - generic [ref=f26e200] [cursor=pointer]:
+                  - generic [ref=f26e202]: WI
+                  - generic [ref=f26e203]: 1w
+                - generic [ref=f26e204] [cursor=pointer]:
+                  - generic [ref=f26e206]: ML
+                  - generic [ref=f26e207]: 1w
+                - generic [ref=f26e208] [cursor=pointer]:
+                  - generic [ref=f26e210]: SP
+                  - generic [ref=f26e211]: 1w
+                - generic [ref=f26e212]: 2412 m
+              - generic [ref=f26e216]: "Left: formations · ▶ casing shoe · right: trouble zones from offset wells (letters = hazard, “w” = wells)"
+          - generic [ref=f26e218]:
+            - generic [ref=f26e219]:
+              - generic [ref=f26e220]:
+                - generic [ref=f26e221]:
+                  - heading "Risk by hazard at this depth" [level=2] [ref=f26e222]
+                  - paragraph [ref=f26e223]: "Each score blends three signals: what nearby wells experienced here, live sensor behaviour, and the hazard model."
+                - generic [ref=f26e224]: hover a row for the breakdown
+              - generic [ref=f26e226]:
+                - generic [ref=f26e227]:
+                  - generic [ref=f26e228]: Torque spike
+                  - generic [ref=f26e232]: Moderate
+                - generic [ref=f26e233]:
+                  - generic [ref=f26e234]: Stuck pipe
+                  - generic [ref=f26e238]: Moderate
+                - generic [ref=f26e239]:
+                  - generic [ref=f26e240]: Mud loss
+                  - generic [ref=f26e244]: Moderate
+                - generic [ref=f26e245]:
+                  - generic [ref=f26e246]: Wellbore instability
+                  - generic [ref=f26e250]: Moderate
+                - generic [ref=f26e251]:
+                  - generic [ref=f26e252]: Kick / overpressure
+                  - generic [ref=f26e256]: Low
+            - generic [ref=f26e257]:
+              - generic [ref=f26e258]:
+                - generic [ref=f26e259]:
+                  - heading "Active alerts for this well" [level=2] [ref=f26e261]
+                  - link "All alerts →" [ref=f26e263] [cursor=pointer]:
+                    - /url: /alerts
+                - list [ref=f26e264]:
+                  - listitem [ref=f26e265]:
+                    - generic [ref=f26e266]:
+                      - generic [ref=f26e267]: Critical
+                      - generic [ref=f26e269]: at 2,710 m
+                    - generic [ref=f26e270]: Inside historical mud loss zone
+                    - generic [ref=f26e271]: Bit is within the 2628–2718 m interval where offset wells recorded mud loss.
+                    - button "Daily drilling report · NHK-001 · 2658 m · p.1" [ref=f26e273] [cursor=pointer]
+                  - listitem [ref=f26e278]:
+                    - generic [ref=f26e279]:
+                      - generic [ref=f26e280]: High
+                      - generic [ref=f26e282]: at 2,597 m
+                    - generic [ref=f26e283]: Inside historical wellbore instability zone
+                    - generic [ref=f26e284]: Bit is within the 2492–2582 m interval where offset wells recorded wellbore instability.
+                    - button "DDR_HGJ-010_2019-11-14.pdf · p.1" [ref=f26e286] [cursor=pointer]
+                  - listitem [ref=f26e291]:
+                    - generic [ref=f26e292]:
+                      - generic [ref=f26e293]: High
+                      - generic [ref=f26e295]: at 2,618 m
+                    - generic [ref=f26e296]: Inside historical torque spike zone
+                    - generic [ref=f26e297]: Bit is within the 2527–2599 m interval where offset wells recorded torque spike.
+                    - button "Daily drilling report · HGJ-011 · 2556 m · p.3" [ref=f26e299] [cursor=pointer]
+                  - listitem [ref=f26e304]:
+                    - generic [ref=f26e305]:
+                      - generic [ref=f26e306]: High
+                      - generic [ref=f26e308]: at 2,710 m
+                    - generic [ref=f26e309]: Inside historical kick zone
+                    - generic [ref=f26e310]: Bit is within the 2620–2792 m interval where offset wells recorded kick.
+                    - button "DDR_NHK-003_2020-06-02.pdf · p.1" [ref=f26e312] [cursor=pointer]
+              - generic [ref=f26e317]:
+                - generic [ref=f26e319]:
+                  - heading "Most relevant offset wells" [level=2] [ref=f26e320]
+                  - paragraph [ref=f26e321]: Ranked by distance, same formation, depth reached, well path shape and incident history.
+                - list [ref=f26e322]:
+                  - listitem [ref=f26e323]:
+                    - link "HGJ-010 1.6 km · has Barail Coal-Shale 73" [ref=f26e324] [cursor=pointer]:
+                      - /url: /wells/WELL-HGJ-010
+                      - generic [ref=f26e325]: HGJ-010
+                      - generic [ref=f26e326]: 1.6 km · has Barail Coal-Shale
+                      - generic [ref=f26e330]: "73"
+                  - listitem [ref=f26e331]:
+                    - link "HGJ-011 8.4 km · has Barail Coal-Shale 69" [ref=f26e332] [cursor=pointer]:
+                      - /url: /wells/WELL-HGJ-011
+                      - generic [ref=f26e333]: HGJ-011
+                      - generic [ref=f26e334]: 8.4 km · has Barail Coal-Shale
+                      - generic [ref=f26e338]: "69"
+                  - listitem [ref=f26e339]:
+                    - link "NHK-001 58 km · has Barail Coal-Shale 64" [ref=f26e340] [cursor=pointer]:
+                      - /url: /wells/WELL-NHK-001
+                      - generic [ref=f26e341]: NHK-001
+                      - generic [ref=f26e342]: 58 km · has Barail Coal-Shale
+                      - generic [ref=f26e346]: "64"
+                  - listitem [ref=f26e347]:
+                    - link "NHK-002 56 km · has Barail Coal-Shale 60" [ref=f26e348] [cursor=pointer]:
+                      - /url: /wells/WELL-NHK-002
+                      - generic [ref=f26e349]: NHK-002
+                      - generic [ref=f26e350]: 56 km · has Barail Coal-Shale
+                      - generic [ref=f26e354]: "60"
+                  - listitem [ref=f26e355]:
+                    - link "NHK-003 69 km · has Barail Coal-Shale 59" [ref=f26e356] [cursor=pointer]:
+                      - /url: /wells/WELL-NHK-003
+                      - generic [ref=f26e357]: NHK-003
+                      - generic [ref=f26e358]: 69 km · has Barail Coal-Shale
+                      - generic [ref=f26e362]: "59"

@@ -1,0 +1,74 @@
+- generic [ref=f8e3]:
+  - complementary [ref=f8e4]:
+    - generic [ref=f8e13]:
+      - generic [ref=f8e14]: NWIS
+      - generic [ref=f8e15]: Nearby Wells Intelligence
+    - navigation [ref=f8e16]:
+      - link "Live well What is ahead of the bit" [ref=f8e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f8e21]:
+          - generic [ref=f8e22]: Live well
+          - generic [ref=f8e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f8e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f8e27]:
+          - generic [ref=f8e28]: Nearby wells
+          - generic [ref=f8e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f8e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f8e35]:
+          - generic [ref=f8e36]: Depth correlation
+          - generic [ref=f8e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f8e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f8e41]:
+          - generic [ref=f8e42]: Ask the archive
+          - generic [ref=f8e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=f8e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f8e48]:
+          - generic [ref=f8e49]: Alerts
+          - generic [ref=f8e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=f8e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f8e57]:
+          - generic [ref=f8e58]: Documents
+          - generic [ref=f8e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f8e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f8e63]:
+          - generic [ref=f8e64]: Rig sensors
+          - generic [ref=f8e65]: Physics twin + risk model
+    - generic [ref=f8e66]:
+      - generic [ref=f8e67]: Connecting…
+      - generic [ref=f8e69]: Demo data · Upper Assam testbed
+      - generic [ref=f8e70]: Oil India Limited · PS 26121
+  - generic [ref=f8e71]:
+    - banner [ref=f8e72]:
+      - generic [ref=f8e73]: Documents/Reports in, events out
+      - generic [ref=f8e75] [cursor=pointer]:
+        - generic [ref=f8e76]: Active well
+        - generic [ref=f8e77]: —
+        - combobox "Active well" [ref=f8e78]
+      - generic [ref=f8e79]: 05:33 am IST
+    - main [ref=f8e87]:
+      - generic [ref=f8e88]:
+        - generic [ref=f8e90]:
+          - generic [ref=f8e91]: Document intelligence
+          - heading "Reports in, structured events out" [level=1] [ref=f8e92]
+          - paragraph [ref=f8e93]: Drop a daily drilling report or well completion report. NWIS reads it (text layer, or OCR for scans), finds incidents, depths, formations and remedial actions, checks them against drilling physics, and adds them to the searchable archive with a link back to the page.
+        - generic [ref=f8e94]:
+          - generic [ref=f8e95]:
+            - generic [ref=f8e97]:
+              - generic [ref=f8e101]: Drop a PDF report here
+              - generic [ref=f8e102]: DDR or WCR · up to 100 MB · processed on this server
+              - button "Choose file" [ref=f8e103] [cursor=pointer]
+            - generic [ref=f8e108]:
+              - heading "Processing queue" [level=2] [ref=f8e111]
+              - generic [ref=f8e112]: No jobs yet
+            - generic [ref=f8e114]:
+              - heading "Processed reports (0)" [level=2] [ref=f8e117]
+              - generic [ref=f8e118]: Loading…
+          - generic [ref=f8e122]:
+            - generic [ref=f8e123]: Select a processed report
+            - generic [ref=f8e124]: Its extracted events, formations and lost-time records appear here.

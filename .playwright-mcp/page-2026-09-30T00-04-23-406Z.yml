@@ -1,0 +1,72 @@
+- generic [ref=f9e3]:
+  - complementary [ref=f9e4]:
+    - generic [ref=f9e13]:
+      - generic [ref=f9e14]: NWIS
+      - generic [ref=f9e15]: Nearby Wells Intelligence
+    - navigation [ref=f9e16]:
+      - link "Live well What is ahead of the bit" [ref=f9e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f9e21]:
+          - generic [ref=f9e22]: Live well
+          - generic [ref=f9e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f9e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f9e27]:
+          - generic [ref=f9e28]: Nearby wells
+          - generic [ref=f9e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f9e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f9e35]:
+          - generic [ref=f9e36]: Depth correlation
+          - generic [ref=f9e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f9e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f9e41]:
+          - generic [ref=f9e42]: Ask the archive
+          - generic [ref=f9e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=f9e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f9e48]:
+          - generic [ref=f9e49]: Alerts
+          - generic [ref=f9e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=f9e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f9e57]:
+          - generic [ref=f9e58]: Documents
+          - generic [ref=f9e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f9e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f9e63]:
+          - generic [ref=f9e64]: Rig sensors
+          - generic [ref=f9e65]: Physics twin + risk model
+    - generic [ref=f9e66]:
+      - generic [ref=f9e67]: Connecting…
+      - generic [ref=f9e69]: Demo data · Upper Assam testbed
+      - generic [ref=f9e70]: Oil India Limited · PS 26121
+  - generic [ref=f9e71]:
+    - banner [ref=f9e72]:
+      - generic [ref=f9e73]: Ask the archive/Search past events
+      - generic [ref=f9e75] [cursor=pointer]:
+        - generic [ref=f9e76]: Active well
+        - generic [ref=f9e77]: —
+        - combobox "Active well" [ref=f9e78]
+      - generic [ref=f9e79]: 05:34 am IST
+    - main [ref=f9e87]:
+      - generic [ref=f9e88]:
+        - generic [ref=f9e90]:
+          - generic [ref=f9e91]: Knowledge repository
+          - heading "Ask the archive" [level=1] [ref=f9e92]
+          - paragraph [ref=f9e93]: Ask in plain words. NWIS searches every recorded incident, mitigation and outcome from past reports, and answers only from those records. Every sentence points to the report it came from. “Nearby” means within 25 km of the active well.
+        - generic [ref=f9e95]:
+          - generic [ref=f9e96]: Try one of these
+          - generic [ref=f9e97]:
+            - button "How were mud losses handled in nearby wells?" [ref=f9e98] [cursor=pointer]
+            - button "What happened in the Kopili in offset wells?" [ref=f9e99] [cursor=pointer]
+            - button "Stuck pipe in Girujan Clay — what worked?" [ref=f9e100] [cursor=pointer]
+            - button "Show kicks near 2800 m" [ref=f9e101] [cursor=pointer]
+            - button "Torque spikes in Barail coal" [ref=f9e102] [cursor=pointer]
+            - button "Cementing problems and the remedial jobs" [ref=f9e103] [cursor=pointer]
+        - generic [ref=f9e107]:
+          - textbox "Question" [ref=f9e111]:
+            - /placeholder: e.g. What did nearby wells do about losses in the Sylhet Limestone?
+          - button "Ask" [disabled] [ref=f9e112]

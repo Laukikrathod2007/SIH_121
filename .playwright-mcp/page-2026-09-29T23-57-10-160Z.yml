@@ -1,0 +1,171 @@
+- generic [ref=f1e3]:
+  - complementary [ref=f1e4]:
+    - generic [ref=f1e13]:
+      - generic [ref=f1e14]: NWIS
+      - generic [ref=f1e15]: Nearby Wells Intelligence
+    - navigation [ref=f1e16]:
+      - link "Live well What is ahead of the bit" [ref=f1e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f1e21]:
+          - generic [ref=f1e22]: Live well
+          - generic [ref=f1e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f1e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f1e27]:
+          - generic [ref=f1e28]: Nearby wells
+          - generic [ref=f1e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f1e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f1e35]:
+          - generic [ref=f1e36]: Depth correlation
+          - generic [ref=f1e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f1e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f1e41]:
+          - generic [ref=f1e42]: Ask the archive
+          - generic [ref=f1e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=f1e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f1e48]:
+          - generic [ref=f1e49]: Alerts
+          - generic [ref=f1e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=f1e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f1e57]:
+          - generic [ref=f1e58]: Documents
+          - generic [ref=f1e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f1e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f1e63]:
+          - generic [ref=f1e64]: Rig sensors
+          - generic [ref=f1e65]: Physics twin + risk model
+    - generic [ref=f1e66]:
+      - generic [ref=f1e67]: Backend connected
+      - generic [ref=f1e69]: Demo data · Upper Assam testbed
+      - generic [ref=f1e70]: Oil India Limited · PS 26121
+  - generic [ref=f1e71]:
+    - banner [ref=f1e72]:
+      - generic [ref=f1e73]: Nearby wells/Offset wells on the map
+      - generic [ref=f1e75] [cursor=pointer]:
+        - generic [ref=f1e76]: Active well
+        - generic [ref=f1e77]: HGJ-012
+        - generic [ref=f1e163]: Hugrijan
+        - combobox "Active well" [ref=f1e78]:
+          - option "NHK-001 — Nahorkatiya (producing)"
+          - option "NHK-002 — Nahorkatiya (completed)"
+          - option "NHK-003 — Nahorkatiya (suspended)"
+          - option "MRN-004 — Moran (abandoned)"
+          - option "MRN-005 — Moran (suspended)"
+          - option "MRN-006 — Moran (completed)"
+          - option "BGJ-007 — Baghjan (completed)"
+          - option "BGJ-008 — Baghjan (abandoned)"
+          - option "BGJ-009 — Baghjan (suspended)"
+          - option "HGJ-010 — Hugrijan (suspended)"
+          - option "HGJ-011 — Hugrijan (abandoned)"
+          - option "HGJ-012 — Hugrijan (completed)" [selected]
+      - generic [ref=f1e79]: 05:27 am IST
+    - main [ref=f1e87]:
+      - generic [ref=f1e88]:
+        - generic [ref=f1e89]:
+          - generic [ref=f1e164]:
+            - generic:
+              - generic:
+                - img:
+                  - generic:
+                    - generic [ref=f1e165] [cursor=pointer]
+                    - generic [ref=f1e166] [cursor=pointer]
+                    - generic [ref=f1e167] [cursor=pointer]
+                    - generic [ref=f1e168] [cursor=pointer]
+                    - generic [ref=f1e169] [cursor=pointer]
+                    - generic [ref=f1e170] [cursor=pointer]
+                    - generic [ref=f1e171] [cursor=pointer]
+              - generic:
+                - button [ref=f1e172] [cursor=pointer]
+                - button "6" [ref=f1e178] [cursor=pointer]
+                - button "9" [ref=f1e181] [cursor=pointer]
+                - button "4" [ref=f1e184] [cursor=pointer]
+                - button "2" [ref=f1e187] [cursor=pointer]
+                - button "6" [ref=f1e190] [cursor=pointer]
+                - button "2" [ref=f1e193] [cursor=pointer]
+                - button "2" [ref=f1e196] [cursor=pointer]
+                - button "2" [ref=f1e199] [cursor=pointer]
+                - button "4" [ref=f1e202] [cursor=pointer]
+                - button "4" [ref=f1e205] [cursor=pointer]
+                - button "4" [ref=f1e208] [cursor=pointer]
+              - generic:
+                - tooltip "13 km"
+                - tooltip "25 km"
+            - generic [ref=f1e211]:
+              - link "Leaflet" [ref=f1e212] [cursor=pointer]:
+                - /url: https://leafletjs.com
+              - text: "| © OpenStreetMap contributors © CARTO"
+          - generic [ref=f1e94]:
+            - generic [ref=f1e95]:
+              - generic [ref=f1e96]:
+                - generic [ref=f1e97]: Search radius
+                - generic [ref=f1e104]: 25 km
+              - slider "Search radius in kilometres" [ref=f1e105]: "25"
+              - generic [ref=f1e106]:
+                - button "5 km" [ref=f1e107] [cursor=pointer]
+                - button "10 km" [ref=f1e108] [cursor=pointer]
+                - button "25 km" [ref=f1e109] [cursor=pointer]
+                - button "50 km" [ref=f1e110] [cursor=pointer]
+              - generic [ref=f1e111]: 2 offset wells within 25 km of HGJ-012
+            - generic [ref=f1e112]:
+              - generic [ref=f1e113]: Show wells that had
+              - generic [ref=f1e114]:
+                - button "Mud loss 2" [ref=f1e217] [cursor=pointer]:
+                  - text: Mud loss
+                  - generic [ref=f1e117]: "2"
+                - button "Stuck pipe 3" [ref=f1e218] [cursor=pointer]:
+                  - text: Stuck pipe
+                  - generic [ref=f1e120]: "3"
+                - button "Kick / overpressure 3" [ref=f1e219] [cursor=pointer]:
+                  - text: Kick / overpressure
+                  - generic [ref=f1e123]: "3"
+                - button "Wellbore instability 4" [ref=f1e220] [cursor=pointer]:
+                  - text: Wellbore instability
+                  - generic [ref=f1e126]: "4"
+                - button "Torque spike 2" [ref=f1e221] [cursor=pointer]:
+                  - text: Torque spike
+                  - generic [ref=f1e129]: "2"
+                - button "Cementing issue 1" [ref=f1e222] [cursor=pointer]:
+                  - text: Cementing issue
+                  - generic [ref=f1e132]: "1"
+            - generic [ref=f1e133]:
+              - generic [ref=f1e134]:
+                - button "Light" [ref=f1e135] [cursor=pointer]
+                - button "Streets" [ref=f1e136] [cursor=pointer]
+                - button "Satellite" [ref=f1e137] [cursor=pointer]
+              - generic [ref=f1e138]:
+                - button "Distance lines" [pressed] [ref=f1e139] [cursor=pointer]
+                - button "Well paths (plan view)" [pressed] [ref=f1e142] [cursor=pointer]
+                - button "Re-centre on active well" [ref=f1e147] [cursor=pointer]
+          - generic [ref=f1e152]: Ring colours = incident mix · number = incidents · size grows with incidents
+        - complementary [ref=f1e158]:
+          - generic [ref=f1e159]:
+            - generic [ref=f1e160]: Offset wells, nearest first
+            - generic [ref=f1e161]: Hover to locate · click for its history
+          - generic [ref=f1e162]:
+            - button "HGJ-010 1.6 km Hugrijan · Vertical · suspended · TD 2,882 m 2 kick / overpressure 2 wellbore instability 1 mud loss 1 torque spike" [ref=f1e223] [cursor=pointer]:
+              - generic [ref=f1e224]:
+                - generic [ref=f1e225]: HGJ-010
+                - generic [ref=f1e226]: 1.6 km
+              - generic [ref=f1e227]: Hugrijan · Vertical · suspended · TD 2,882 m
+              - generic [ref=f1e234]:
+                - generic [ref=f1e235]: 2 kick / overpressure
+                - generic [ref=f1e236]: 2 wellbore instability
+                - generic [ref=f1e237]: 1 mud loss
+                - generic [ref=f1e238]: 1 torque spike
+            - button "HGJ-011 8.4 km Hugrijan · Vertical · abandoned · TD 2,843 m 2 wellbore instability 3 stuck pipe 1 kick / overpressure 1 mud loss 1 torque spike 1 cementing issue" [ref=f1e239] [cursor=pointer]:
+              - generic [ref=f1e240]:
+                - generic [ref=f1e241]: HGJ-011
+                - generic [ref=f1e242]: 8.4 km
+              - generic [ref=f1e243]: Hugrijan · Vertical · abandoned · TD 2,843 m
+              - generic [ref=f1e252]:
+                - generic [ref=f1e253]: 2 wellbore instability
+                - generic [ref=f1e254]: 3 stuck pipe
+                - generic [ref=f1e255]: 1 kick / overpressure
+                - generic [ref=f1e256]: 1 mud loss
+                - generic [ref=f1e257]: 1 torque spike
+                - generic [ref=f1e258]: 1 cementing issue

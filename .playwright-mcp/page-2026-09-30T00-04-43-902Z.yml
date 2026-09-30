@@ -1,0 +1,79 @@
+- generic [ref=f10e3]:
+  - complementary [ref=f10e4]:
+    - generic [ref=f10e13]:
+      - generic [ref=f10e14]: NWIS
+      - generic [ref=f10e15]: Nearby Wells Intelligence
+    - navigation [ref=f10e16]:
+      - link "Live well What is ahead of the bit" [ref=f10e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f10e21]:
+          - generic [ref=f10e22]: Live well
+          - generic [ref=f10e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f10e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f10e27]:
+          - generic [ref=f10e28]: Nearby wells
+          - generic [ref=f10e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f10e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f10e35]:
+          - generic [ref=f10e36]: Depth correlation
+          - generic [ref=f10e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f10e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f10e41]:
+          - generic [ref=f10e42]: Ask the archive
+          - generic [ref=f10e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=f10e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f10e48]:
+          - generic [ref=f10e49]: Alerts
+          - generic [ref=f10e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=f10e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f10e57]:
+          - generic [ref=f10e58]: Documents
+          - generic [ref=f10e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f10e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f10e63]:
+          - generic [ref=f10e64]: Rig sensors
+          - generic [ref=f10e65]: Physics twin + risk model
+    - generic [ref=f10e66]:
+      - generic [ref=f10e67]: Connecting…
+      - generic [ref=f10e69]: Demo data · Upper Assam testbed
+      - generic [ref=f10e70]: Oil India Limited · PS 26121
+  - generic [ref=f10e71]:
+    - banner [ref=f10e72]:
+      - generic [ref=f10e73]: Depth correlation/Same rock, across wells
+      - generic [ref=f10e75] [cursor=pointer]:
+        - generic [ref=f10e76]: Active well
+        - generic [ref=f10e77]: —
+        - combobox "Active well" [ref=f10e78]
+      - generic [ref=f10e79]: 05:34 am IST
+    - main [ref=f10e87]:
+      - generic [ref=f10e88]:
+        - generic [ref=f10e90]:
+          - generic [ref=f10e91]: Correlation by depth and formation
+          - heading "Is the same rock trouble in every well?" [level=1] [ref=f10e92]
+          - paragraph [ref=f10e93]: Wells are drilled at different angles and start from different elevations, so the same formation sits at different measured depths. Line them up on the formation at the bit to compare like with like. The dashed marker shows where the active bit depth falls in each offset well.
+        - generic [ref=f10e95]:
+          - generic [ref=f10e96]:
+            - generic [ref=f10e97]: Align wells by
+            - tablist [ref=f10e98]:
+              - tab "Formation (…)" [selected] [ref=f10e99] [cursor=pointer]
+              - tab "True vertical depth" [ref=f10e100] [cursor=pointer]
+              - tab "Measured depth" [ref=f10e101] [cursor=pointer]
+          - generic [ref=f10e102]:
+            - generic [ref=f10e103]: Active bit depth
+            - slider "Active bit depth" [ref=f10e104]: "2700"
+            - generic [ref=f10e105]: 2,700 m
+        - generic [ref=f10e106]:
+          - generic [ref=f10e107]:
+            - generic [ref=f10e109]:
+              - heading "Correlation panel" [level=2] [ref=f10e110]
+              - paragraph [ref=f10e111]: Depths shown relative to the top of the null in each well (0 = formation top).
+            - generic [ref=f10e112]: Aligning wells…
+          - generic [ref=f10e117]:
+            - heading "Same depth, other wells" [level=2] [ref=f10e118]
+            - paragraph [ref=f10e119]: What each offset well met at the equivalent position (±150 m).

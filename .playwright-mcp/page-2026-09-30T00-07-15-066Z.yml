@@ -1,0 +1,279 @@
+- generic [ref=f13e3]:
+  - complementary [ref=f13e4]:
+    - generic [ref=f13e13]:
+      - generic [ref=f13e14]: NWIS
+      - generic [ref=f13e15]: Nearby Wells Intelligence
+    - navigation [ref=f13e16]:
+      - link "Live well What is ahead of the bit" [ref=f13e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f13e21]:
+          - generic [ref=f13e22]: Live well
+          - generic [ref=f13e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f13e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f13e27]:
+          - generic [ref=f13e28]: Nearby wells
+          - generic [ref=f13e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f13e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f13e35]:
+          - generic [ref=f13e36]: Depth correlation
+          - generic [ref=f13e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f13e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f13e41]:
+          - generic [ref=f13e42]: Ask the archive
+          - generic [ref=f13e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=f13e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f13e48]:
+          - generic [ref=f13e49]: Alerts
+          - generic [ref=f13e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=f13e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f13e57]:
+          - generic [ref=f13e58]: Documents
+          - generic [ref=f13e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f13e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f13e63]:
+          - generic [ref=f13e64]: Rig sensors
+          - generic [ref=f13e65]: Physics twin + risk model
+    - generic [ref=f13e66]:
+      - generic [ref=f13e67]: Backend connected
+      - generic [ref=f13e69]: Demo data · Upper Assam testbed
+      - generic [ref=f13e70]: Oil India Limited · PS 26121
+  - generic [ref=f13e71]:
+    - banner [ref=f13e72]:
+      - generic [ref=f13e73]: /
+      - generic [ref=f13e75] [cursor=pointer]:
+        - generic [ref=f13e76]: Active well
+        - generic [ref=f13e77]: HGJ-012
+        - generic [ref=f13e91]: Hugrijan
+        - combobox "Active well" [ref=f13e78]:
+          - option "NHK-001 — Nahorkatiya (producing)"
+          - option "NHK-002 — Nahorkatiya (completed)"
+          - option "NHK-003 — Nahorkatiya (suspended)"
+          - option "MRN-004 — Moran (abandoned)"
+          - option "MRN-005 — Moran (suspended)"
+          - option "MRN-006 — Moran (completed)"
+          - option "BGJ-007 — Baghjan (completed)"
+          - option "BGJ-008 — Baghjan (abandoned)"
+          - option "BGJ-009 — Baghjan (suspended)"
+          - option "HGJ-010 — Hugrijan (suspended)"
+          - option "HGJ-011 — Hugrijan (abandoned)"
+          - option "HGJ-012 — Hugrijan (completed)" [selected]
+      - generic [ref=f13e79]: 05:37 am IST
+    - main [ref=f13e87]:
+      - generic [ref=f13e92]:
+        - link "Nearby wells" [ref=f13e93] [cursor=pointer]:
+          - /url: /map
+        - generic [ref=f13e96]:
+          - generic [ref=f13e97]:
+            - generic [ref=f13e98]: Hugrijan field · Vertical · abandoned
+            - heading "Well file · HGJ-011" [level=1] [ref=f13e99]
+            - paragraph [ref=f13e100]: "Everything NWIS knows about HGJ-011: how it was drilled, what went wrong, what fixed it, and the reports it came from."
+          - button "Set as active well" [ref=f13e102] [cursor=pointer]
+        - generic [ref=f13e106]:
+          - generic [ref=f13e107]:
+            - generic [ref=f13e108]: Total depth (MD)
+            - generic [ref=f13e109]: 2,843 m
+          - generic [ref=f13e110]:
+            - generic [ref=f13e111]: Total depth (TVD)
+            - generic [ref=f13e112]: 2,839 m
+          - generic [ref=f13e113]:
+            - generic [ref=f13e114]: Max inclination
+            - generic [ref=f13e115]: 5.4°
+          - generic [ref=f13e116]:
+            - generic [ref=f13e117]: Incidents
+            - generic [ref=f13e118]: "12"
+          - generic [ref=f13e119]:
+            - generic [ref=f13e120]: Lost time
+            - generic [ref=f13e121]: 81.3 h
+          - generic [ref=f13e122]:
+            - generic [ref=f13e123]: Spud → completion
+            - generic [ref=f13e124]: 2020-12-18 → 2021-11-10
+        - generic [ref=f13e125]:
+          - generic [ref=f13e126]:
+            - generic [ref=f13e127]:
+              - generic [ref=f13e129]:
+                - heading "Well path" [level=2] [ref=f13e130]
+                - paragraph [ref=f13e131]: Side view (vertical section) from the survey stations.
+              - generic [ref=f13e132]:
+                - img [ref=f13e133]:
+                  - generic [ref=f13e134]: "0"
+                  - generic [ref=f13e136]: "710"
+                  - generic [ref=f13e138]: "1419"
+                  - generic [ref=f13e140]: "2129"
+                  - generic [ref=f13e142]: "2839"
+                  - generic [ref=f13e144]: horizontal displacement → 200 m
+                  - generic "Stuck pipe at 574 m MD" [ref=f13e146]
+                  - generic "Wellbore instability at 1424 m MD" [ref=f13e147]
+                  - generic "Stuck pipe at 1614 m MD" [ref=f13e148]
+                  - generic "Stuck pipe at 1739 m MD" [ref=f13e149]
+                  - generic "Wellbore instability at 1835 m MD" [ref=f13e150]
+                  - generic "Torque spike at 2557 m MD" [ref=f13e151]
+                  - generic "Cementing issue at 2697 m MD" [ref=f13e152]
+                  - generic "Kick / overpressure at 2743 m MD" [ref=f13e153]
+                  - generic "Mud loss at 2788 m MD" [ref=f13e154]
+                  - generic "Mud loss at 2801 m MD" [ref=f13e155]
+                  - generic "Stuck pipe at 2812 m MD" [ref=f13e156]
+                  - generic "Kick / overpressure at 2820 m MD" [ref=f13e157]
+                - generic [ref=f13e158]: TVD in metres (down). Dots are incidents at their depth. TD 2843 m MD.
+            - generic [ref=f13e159]:
+              - generic [ref=f13e161]:
+                - heading "Lessons learned" [level=2] [ref=f13e162]
+                - paragraph [ref=f13e163]: What was done about each incident, as written in the reports.
+              - list [ref=f13e164]:
+                - listitem [ref=f13e165]:
+                  - generic [ref=f13e166]:
+                    - generic [ref=f13e167]: Stuck pipe
+                    - generic [ref=f13e169]: 574 m
+                  - paragraph [ref=f13e170]: Applied overpull + torque; spotted freeing agent; reciprocated string
+                  - paragraph [ref=f13e171]: "Result: Pipe freed; cased off interval"
+                  - button "Daily drilling report · HGJ-011 · 573 m · p.3" [ref=f13e173] [cursor=pointer]
+                - listitem [ref=f13e178]:
+                  - generic [ref=f13e179]:
+                    - generic [ref=f13e180]: Wellbore instability
+                    - generic [ref=f13e182]: 1,424 m
+                  - paragraph [ref=f13e183]: Raised KCl inhibitor; increased mud weight; short trips for caliper
+                  - paragraph [ref=f13e184]: "Result: Stabilized; casing run"
+                  - button "Daily drilling report · HGJ-011 · 1423 m · p.3" [ref=f13e186] [cursor=pointer]
+                - listitem [ref=f13e191]:
+                  - generic [ref=f13e192]:
+                    - generic [ref=f13e193]: Stuck pipe
+                    - generic [ref=f13e195]: 1,614 m
+                  - paragraph [ref=f13e196]: Applied overpull + torque; spotted freeing agent; reciprocated string
+                  - paragraph [ref=f13e197]: "Result: Pipe freed; cased off interval"
+                  - button "Daily drilling report · HGJ-011 · 1614 m · p.4" [ref=f13e199] [cursor=pointer]
+                - listitem [ref=f13e204]:
+                  - generic [ref=f13e205]:
+                    - generic [ref=f13e206]: Stuck pipe
+                    - generic [ref=f13e208]: 1,739 m
+                  - paragraph [ref=f13e209]: Applied overpull + torque; spotted freeing agent; reciprocated string
+                  - paragraph [ref=f13e210]: "Result: Pipe freed; cased off interval"
+                  - button "Daily drilling report · HGJ-011 · 1739 m · p.2" [ref=f13e212] [cursor=pointer]
+                - listitem [ref=f13e217]:
+                  - generic [ref=f13e218]:
+                    - generic [ref=f13e219]: Wellbore instability
+                    - generic [ref=f13e221]: 1,835 m
+                  - paragraph [ref=f13e222]: Raised KCl inhibitor; increased mud weight; short trips for caliper
+                  - paragraph [ref=f13e223]: "Result: Stabilized; casing run"
+                  - button "Daily drilling report · HGJ-011 · 1834 m · p.1" [ref=f13e225] [cursor=pointer]
+                - listitem [ref=f13e230]:
+                  - generic [ref=f13e231]:
+                    - generic [ref=f13e232]: Torque spike
+                    - generic [ref=f13e234]: 2,557 m
+                  - paragraph [ref=f13e235]: Raised mud weight 0.3 ppg for coal stability, pumped hi-vis sweep, back-reamed out of hole to casing shoe
+                  - paragraph [ref=f13e236]: "Result: Hole cleaned; torque back to normal after wiper trip"
+                  - button "Daily drilling report · HGJ-011 · 2556 m · p.3" [ref=f13e238] [cursor=pointer]
+                - listitem [ref=f13e243]:
+                  - generic [ref=f13e244]:
+                    - generic [ref=f13e245]: Cementing issue
+                    - generic [ref=f13e247]: 2,697 m
+                  - paragraph [ref=f13e248]: Remedial squeeze through perforations; subsequent wells pumped lightweight lead slurry with LCM fibres and reduced displacement rate
+                  - paragraph [ref=f13e249]: "Result: Zonal isolation confirmed by second CBL"
+                  - button "Daily drilling report · HGJ-011 · 2697 m · p.5" [ref=f13e251] [cursor=pointer]
+                - listitem [ref=f13e256]:
+                  - generic [ref=f13e257]:
+                    - generic [ref=f13e258]: Kick / overpressure
+                    - generic [ref=f13e260]: 2,743 m
+                  - paragraph [ref=f13e261]: Shut in BOP; applied Driller's Method; weighted up mud to kill weight
+                  - paragraph [ref=f13e262]: "Result: Well killed successfully; drilling resumed"
+                  - button "Daily drilling report · HGJ-011 · 2742 m · p.8" [ref=f13e264] [cursor=pointer]
+                - listitem [ref=f13e269]:
+                  - generic [ref=f13e270]:
+                    - generic [ref=f13e271]: Mud loss
+                    - generic [ref=f13e273]: 2,788 m
+                  - paragraph [ref=f13e274]: Pumped 60 bbl cross-linked LCM pill, squeezed with 50 bbl cement plug, drilled out and continued with 10.6 ppg SBM and managed ECD
+                  - paragraph [ref=f13e275]: "Result: Returns regained after cement squeeze; 22 h NPT"
+                  - button "Daily drilling report · HGJ-011 · 2788 m · p.4" [ref=f13e277] [cursor=pointer]
+                - listitem [ref=f13e282]:
+                  - generic [ref=f13e283]:
+                    - generic [ref=f13e284]: Mud loss
+                    - generic [ref=f13e286]: 2,801 m
+                  - paragraph [ref=f13e287]: Spotted 40 bbl CaCO3 LCM pill and reduced pump rate to 1700 lpm. Losses cured
+                  - button "DDR_HGJ-011_2021-03-02.pdf · p.1" [ref=f13e289] [cursor=pointer]
+                - listitem [ref=f13e294]:
+                  - generic [ref=f13e295]:
+                    - generic [ref=f13e296]: Stuck pipe
+                    - generic [ref=f13e298]: 2,812 m
+                  - paragraph [ref=f13e299]: Worked pipe and jarred free, back-reamed one stand
+                  - button "DDR_HGJ-011_2021-03-02.pdf · p.1" [ref=f13e301] [cursor=pointer]
+                - listitem [ref=f13e306]:
+                  - generic [ref=f13e307]:
+                    - generic [ref=f13e308]: Kick / overpressure
+                    - generic [ref=f13e310]: 2,820 m
+                  - paragraph [ref=f13e311]: Shut in well and circulated out kick with 10.8 ppg mud
+                  - button "DDR_HGJ-011_2021-03-02.pdf · p.1" [ref=f13e313] [cursor=pointer]
+          - generic [ref=f13e318]:
+            - generic [ref=f13e319]:
+              - heading "Well record" [level=2] [ref=f13e321]
+              - tablist [ref=f13e323]:
+                - tab "Incidents (12)" [ref=f13e324] [cursor=pointer]
+                - tab "Casing & mud" [active] [selected] [ref=f13e325] [cursor=pointer]
+                - tab "Formations (8)" [ref=f13e326] [cursor=pointer]
+                - tab "Documents (11)" [ref=f13e327] [cursor=pointer]
+            - generic [ref=f13e552]:
+              - generic [ref=f13e553]:
+                - generic [ref=f13e554]: Casing program
+                - table [ref=f13e555]:
+                  - rowgroup [ref=f13e556]:
+                    - row [ref=f13e557]:
+                      - cell "20\"" [ref=f13e558]
+                      - cell "in 26\" hole" [ref=f13e559]
+                      - cell "191 m" [ref=f13e560]
+                      - cell "Alluvium" [ref=f13e561]
+                    - row [ref=f13e562]:
+                      - cell "13-3/8\"" [ref=f13e563]
+                      - cell "in 17-1/2\" hole" [ref=f13e564]
+                      - cell "1,060 m" [ref=f13e565]
+                      - cell "Tipam Sandstone" [ref=f13e566]
+                    - row [ref=f13e567]:
+                      - cell "9-5/8\"" [ref=f13e568]
+                      - cell "in 12-1/4\" hole" [ref=f13e569]
+                      - cell "2,704 m" [ref=f13e570]
+                      - cell "Barail Coal-Shale" [ref=f13e571]
+                    - row [ref=f13e572]:
+                      - cell "7\"" [ref=f13e573]
+                      - cell "in 8-1/2\" hole" [ref=f13e574]
+                      - cell "2,843 m" [ref=f13e575]
+                      - cell "Sylhet Limestone" [ref=f13e576]
+                - button "Well completion report · HGJ-011 · p.1" [ref=f13e578] [cursor=pointer]
+              - generic [ref=f13e583]:
+                - generic [ref=f13e584]: Mud program
+                - table [ref=f13e585]:
+                  - rowgroup [ref=f13e586]:
+                    - row [ref=f13e587]:
+                      - cell "91–191 m" [ref=f13e588]
+                      - cell "Spud mud (bentonite)" [ref=f13e589]
+                      - cell "9.1 ppg" [ref=f13e590]
+                    - row [ref=f13e591]:
+                      - cell "195–404 m" [ref=f13e592]
+                      - cell "Spud mud (bentonite)" [ref=f13e593]
+                      - cell "9.1 ppg" [ref=f13e594]
+                    - row [ref=f13e595]:
+                      - cell "364–1,060 m" [ref=f13e596]
+                      - cell "KCl-Polymer WBM" [ref=f13e597]
+                      - cell "9.5 ppg" [ref=f13e598]
+                    - row [ref=f13e599]:
+                      - cell "1,308–1,679 m" [ref=f13e600]
+                      - cell "KCl-PHPA inhibitive WBM" [ref=f13e601]
+                      - cell "9.7 ppg" [ref=f13e602]
+                    - row [ref=f13e603]:
+                      - cell "1,536–2,073 m" [ref=f13e604]
+                      - cell "KCl-PHPA inhibitive WBM" [ref=f13e605]
+                      - cell "10.4 ppg" [ref=f13e606]
+                    - row [ref=f13e607]:
+                      - cell "2,377–2,704 m" [ref=f13e608]
+                      - cell "Synthetic-based mud (SBM)" [ref=f13e609]
+                      - cell "10.6 ppg" [ref=f13e610]
+                    - row [ref=f13e611]:
+                      - cell "2,632–2,843 m" [ref=f13e612]
+                      - cell "Synthetic-based mud (SBM)" [ref=f13e613]
+                      - cell "11.0 ppg" [ref=f13e614]
+                    - row [ref=f13e615]:
+                      - cell "2,759–2,843 m" [ref=f13e616]
+                      - cell "Synthetic-based mud (SBM)" [ref=f13e617]
+                      - cell "11.3 ppg" [ref=f13e618]
+                - paragraph [ref=f13e619]: Mud weight = formation pore pressure + planned overbalance.

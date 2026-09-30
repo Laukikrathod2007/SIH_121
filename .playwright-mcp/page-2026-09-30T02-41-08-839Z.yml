@@ -1,0 +1,104 @@
+- generic [ref=f20e3]:
+  - complementary [ref=f20e4]:
+    - generic [ref=f20e13]:
+      - generic [ref=f20e14]: NWIS
+      - generic [ref=f20e15]: Nearby Wells Intelligence
+    - navigation [ref=f20e16]:
+      - link "Live well What is ahead of the bit" [ref=f20e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f20e21]:
+          - generic [ref=f20e22]: Live well
+          - generic [ref=f20e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f20e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f20e27]:
+          - generic [ref=f20e28]: Nearby wells
+          - generic [ref=f20e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f20e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f20e35]:
+          - generic [ref=f20e36]: Depth correlation
+          - generic [ref=f20e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f20e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f20e41]:
+          - generic [ref=f20e42]: Ask the archive
+          - generic [ref=f20e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=f20e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f20e48]:
+          - generic [ref=f20e49]: Alerts
+          - generic [ref=f20e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=f20e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f20e57]:
+          - generic [ref=f20e58]: Documents
+          - generic [ref=f20e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f20e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f20e63]:
+          - generic [ref=f20e64]: Rig sensors
+          - generic [ref=f20e65]: Physics twin + risk model
+    - generic [ref=f20e66]:
+      - generic [ref=f20e67]: Connecting…
+      - generic [ref=f20e69]: Demo data · Upper Assam testbed
+      - generic [ref=f20e70]: Oil India Limited · PS 26121
+  - generic [ref=f20e71]:
+    - banner [ref=f20e72]:
+      - generic [ref=f20e73]: Nearby wells/Offset wells on the map
+      - generic [ref=f20e75] [cursor=pointer]:
+        - generic [ref=f20e76]: Active well
+        - generic [ref=f20e77]: —
+        - combobox "Active well" [ref=f20e78]
+      - generic [ref=f20e79]: 08:11 am IST
+    - main [ref=f20e87]:
+      - generic [ref=f20e88]:
+        - generic [ref=f20e89]:
+          - generic [ref=f20e90]:
+            - generic [ref=f20e91]:
+              - generic [ref=f20e92]:
+                - generic [ref=f20e93]: Search radius
+                - generic [ref=f20e100]: 25 km
+              - slider "Search radius in kilometres" [ref=f20e101]: "25"
+              - generic [ref=f20e102]:
+                - button "5 km" [ref=f20e103] [cursor=pointer]
+                - button "10 km" [ref=f20e104] [cursor=pointer]
+                - button "25 km" [ref=f20e105] [cursor=pointer]
+                - button "50 km" [ref=f20e106] [cursor=pointer]
+              - generic [ref=f20e107]: 0 offset wells within 25 km of
+            - generic [ref=f20e108]:
+              - generic [ref=f20e109]: Show wells that had
+              - generic [ref=f20e110]:
+                - button "Mud loss 0" [ref=f20e111] [cursor=pointer]:
+                  - text: Mud loss
+                  - generic [ref=f20e113]: "0"
+                - button "Stuck pipe 0" [ref=f20e114] [cursor=pointer]:
+                  - text: Stuck pipe
+                  - generic [ref=f20e116]: "0"
+                - button "Kick / overpressure 0" [ref=f20e117] [cursor=pointer]:
+                  - text: Kick / overpressure
+                  - generic [ref=f20e119]: "0"
+                - button "Wellbore instability 0" [ref=f20e120] [cursor=pointer]:
+                  - text: Wellbore instability
+                  - generic [ref=f20e122]: "0"
+                - button "Torque spike 0" [ref=f20e123] [cursor=pointer]:
+                  - text: Torque spike
+                  - generic [ref=f20e125]: "0"
+                - button "Cementing issue 0" [ref=f20e126] [cursor=pointer]:
+                  - text: Cementing issue
+                  - generic [ref=f20e128]: "0"
+            - generic [ref=f20e129]:
+              - generic [ref=f20e130]:
+                - button "Light" [ref=f20e131] [cursor=pointer]
+                - button "Streets" [ref=f20e132] [cursor=pointer]
+                - button "Satellite" [ref=f20e133] [cursor=pointer]
+              - generic [ref=f20e134]:
+                - button "Distance lines" [pressed] [ref=f20e135] [cursor=pointer]
+                - button "Well paths (plan view)" [pressed] [ref=f20e138] [cursor=pointer]
+                - button "Re-centre on active well" [ref=f20e143] [cursor=pointer]
+          - generic [ref=f20e148]: Ring colours = incident mix · number = incidents · size grows with incidents
+        - complementary [ref=f20e154]:
+          - generic [ref=f20e155]:
+            - generic [ref=f20e156]: Offset wells, nearest first
+            - generic [ref=f20e157]: Hover to locate · click for its history
+          - generic [ref=f20e158]: No offset wells match. Widen the radius or clear the hazard filter.

@@ -1,0 +1,199 @@
+- generic [ref=f7e3]:
+  - complementary [ref=f7e4]:
+    - generic [ref=f7e13]:
+      - generic [ref=f7e14]: NWIS
+      - generic [ref=f7e15]: Nearby Wells Intelligence
+    - navigation [ref=f7e16]:
+      - link "Live well What is ahead of the bit" [ref=f7e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f7e21]:
+          - generic [ref=f7e22]: Live well
+          - generic [ref=f7e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f7e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f7e27]:
+          - generic [ref=f7e28]: Nearby wells
+          - generic [ref=f7e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f7e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f7e35]:
+          - generic [ref=f7e36]: Depth correlation
+          - generic [ref=f7e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f7e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f7e41]:
+          - generic [ref=f7e42]: Ask the archive
+          - generic [ref=f7e43]: Search past events
+      - link "Alerts Warnings with evidence 4" [ref=f7e107] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f7e48]:
+          - generic [ref=f7e49]: Alerts
+          - generic [ref=f7e50]: Warnings with evidence
+        - generic [ref=f7e108]: "4"
+      - link "Documents Reports in, events out" [ref=f7e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f7e57]:
+          - generic [ref=f7e58]: Documents
+          - generic [ref=f7e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f7e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f7e63]:
+          - generic [ref=f7e64]: Rig sensors
+          - generic [ref=f7e65]: Physics twin + risk model
+    - generic [ref=f7e66]:
+      - generic [ref=f7e67]: Backend connected
+      - generic [ref=f7e69]: Demo data · Upper Assam testbed
+      - generic [ref=f7e70]: Oil India Limited · PS 26121
+  - generic [ref=f7e71]:
+    - banner [ref=f7e72]:
+      - generic [ref=f7e73]: Alerts/Warnings with evidence
+      - generic [ref=f7e75] [cursor=pointer]:
+        - generic [ref=f7e76]: Active well
+        - generic [ref=f7e77]: HGJ-012
+        - generic [ref=f7e109]: Hugrijan
+        - combobox "Active well" [ref=f7e78]:
+          - option "NHK-001 — Nahorkatiya (producing)"
+          - option "NHK-002 — Nahorkatiya (completed)"
+          - option "NHK-003 — Nahorkatiya (suspended)"
+          - option "MRN-004 — Moran (abandoned)"
+          - option "MRN-005 — Moran (suspended)"
+          - option "MRN-006 — Moran (completed)"
+          - option "BGJ-007 — Baghjan (completed)"
+          - option "BGJ-008 — Baghjan (abandoned)"
+          - option "BGJ-009 — Baghjan (suspended)"
+          - option "HGJ-010 — Hugrijan (suspended)"
+          - option "HGJ-011 — Hugrijan (abandoned)"
+          - option "HGJ-012 — Hugrijan (completed)" [selected]
+      - generic [ref=f7e79]: 05:32 am IST
+    - main [ref=f7e87]:
+      - generic [ref=f7e88]:
+        - generic [ref=f7e89]:
+          - generic [ref=f7e90]:
+            - generic [ref=f7e91]: Alert center
+            - heading "Warnings, with the evidence behind them" [level=1] [ref=f7e92]
+            - paragraph [ref=f7e93]: An alert is raised when the bit nears a depth where offset wells had trouble, or when the combined risk score turns high. Each one shows which wells, which reports, and what those crews did about it.
+          - tablist [ref=f7e95]:
+            - tab "Active (4)" [selected] [ref=f7e110] [cursor=pointer]
+            - tab "Acknowledged" [ref=f7e97] [cursor=pointer]
+            - tab "History" [ref=f7e98] [cursor=pointer]
+        - generic [ref=f7e111]:
+          - list [ref=f7e113]:
+            - listitem [ref=f7e114]:
+              - button "High just now Inside historical torque spike zone HGJ-012 · bit 2,604 m · active" [ref=f7e115] [cursor=pointer]:
+                - generic [ref=f7e117]:
+                  - generic [ref=f7e118]: High
+                  - generic [ref=f7e120]: just now
+                - generic [ref=f7e121]: Inside historical torque spike zone
+                - generic [ref=f7e124]: HGJ-012 · bit 2,604 m · active
+            - listitem [ref=f7e125]:
+              - button "High just now Inside historical torque spike zone HGJ-012 · bit 2,618 m · active" [ref=f7e126] [cursor=pointer]:
+                - generic [ref=f7e128]:
+                  - generic [ref=f7e129]: High
+                  - generic [ref=f7e131]: just now
+                - generic [ref=f7e132]: Inside historical torque spike zone
+                - generic [ref=f7e135]: HGJ-012 · bit 2,618 m · active
+            - listitem [ref=f7e136]:
+              - button "High just now Approaching historical mud loss zone HGJ-012 · bit 2,625 m · active" [ref=f7e137] [cursor=pointer]:
+                - generic [ref=f7e139]:
+                  - generic [ref=f7e140]: High
+                  - generic [ref=f7e142]: just now
+                - generic [ref=f7e143]: Approaching historical mud loss zone
+                - generic [ref=f7e146]: HGJ-012 · bit 2,625 m · active
+            - listitem [ref=f7e147]:
+              - button "High just now Approaching historical kick zone HGJ-012 · bit 2,625 m · active" [ref=f7e148] [cursor=pointer]:
+                - generic [ref=f7e150]:
+                  - generic [ref=f7e151]: High
+                  - generic [ref=f7e153]: just now
+                - generic [ref=f7e154]: Approaching historical kick zone
+                - generic [ref=f7e157]: HGJ-012 · bit 2,625 m · active
+          - generic [ref=f7e158]:
+            - generic [ref=f7e160]:
+              - generic [ref=f7e161]:
+                - generic [ref=f7e162]: High
+                - generic [ref=f7e164]: Torque spike
+                - generic [ref=f7e166]: HGJ-012 · raised just now · from live stream
+              - heading "Inside historical torque spike zone" [level=2] [ref=f7e167]
+              - paragraph [ref=f7e168]: Bit is within the 2432–2599 m interval where offset wells recorded torque spike.
+              - generic [ref=f7e169]:
+                - generic [ref=f7e170]:
+                  - generic [ref=f7e171]: Bit depth
+                  - generic [ref=f7e172]: 2,604 m
+                - generic [ref=f7e173]:
+                  - generic [ref=f7e174]: Trouble zone
+                  - generic [ref=f7e175]: 2,432 m–2,599 m
+                - generic [ref=f7e176]:
+                  - generic [ref=f7e177]: Distance to zone
+                  - generic [ref=f7e178]: inside
+                - generic [ref=f7e179]:
+                  - generic [ref=f7e180]: Formation at bit
+                  - generic [ref=f7e181]: Barail Coal-Shale
+            - generic [ref=f7e182]:
+              - generic [ref=f7e183]:
+                - generic [ref=f7e185]:
+                  - heading "Why NWIS raised it" [level=2] [ref=f7e186]
+                  - paragraph [ref=f7e187]: Combined risk score 0.31 from three independent signals.
+                - generic [ref=f7e188]:
+                  - generic [ref=f7e190]:
+                    - generic [ref=f7e191]: What nearby wells experienced at this depth
+                    - generic [ref=f7e192]: "0.20"
+                  - generic [ref=f7e196]:
+                    - generic [ref=f7e197]: Live sensor behaviour (flow, torque, pressure)
+                    - generic [ref=f7e198]: "0.25"
+                  - generic [ref=f7e202]:
+                    - generic [ref=f7e203]: Rule-based estimate — not enough past cases to train a model
+                    - generic [ref=f7e204]: "0.65"
+              - generic [ref=f7e207]:
+                - heading "Recommended before entering the zone" [level=2] [ref=f7e210]
+                - generic [ref=f7e211]:
+                  - paragraph [ref=f7e212]: Reduce WOB by 30%; check top-drive parameters; prepare for string reciprocation
+                  - generic [ref=f7e213]: What worked in the offset wells
+                  - list [ref=f7e214]:
+                    - listitem [ref=f7e215]:
+                      - text: HGJ-010Reduced WOB 20%, increased RPM to 140, added 2% lubricant; worked pipe and back-reamed stand
+                      - generic [ref=f7e216]: → Torque stabilised at 13-15 kNm
+                      - button "Daily drilling report · HGJ-010 · 2461 m · p.2" [ref=f7e218] [cursor=pointer]
+                    - listitem [ref=f7e223]:
+                      - text: HGJ-011Raised mud weight 0.3 ppg for coal stability, pumped hi-vis sweep, back-reamed out of hole to casing shoe
+                      - generic [ref=f7e224]: → Hole cleaned; torque back to normal after wiper trip
+                      - button "Daily drilling report · HGJ-011 · 2556 m · p.3" [ref=f7e226] [cursor=pointer]
+            - generic [ref=f7e231]:
+              - generic [ref=f7e233]:
+                - heading "Evidence · 2 offset-well records" [level=2] [ref=f7e234]
+                - paragraph [ref=f7e235]: Source report → extracted fact → event → this alert.
+              - list [ref=f7e236]:
+                - listitem [ref=f7e237]:
+                  - generic [ref=f7e238]:
+                    - link "HGJ-010" [ref=f7e239] [cursor=pointer]:
+                      - /url: /wells/WELL-HGJ-010
+                    - generic [ref=f7e240]: 2,462 m
+                    - generic [ref=f7e241]: Barail Coal-Shale
+                  - generic [ref=f7e242]:
+                    - paragraph [ref=f7e243]: Erratic surface torque spikes 18-26 kNm (baseline 12 kNm) and stick-slip while drilling Barail coal stringers; string stalled twice. Depth 2461.8 m MD.
+                    - paragraph [ref=f7e244]: "Action: Reduced WOB 20%, increased RPM to 140, added 2% lubricant; worked pipe and back-reamed stand"
+                    - button "Daily drilling report · HGJ-010 · 2461 m · p.2" [ref=f7e246] [cursor=pointer]
+                  - generic [ref=f7e251]:
+                    - generic [ref=f7e252]: Medium
+                    - generic [ref=f7e254]: 3.5 h lost
+                - listitem [ref=f7e255]:
+                  - generic [ref=f7e256]:
+                    - link "HGJ-011" [ref=f7e257] [cursor=pointer]:
+                      - /url: /wells/WELL-HGJ-011
+                    - generic [ref=f7e258]: 2,557 m
+                    - generic [ref=f7e259]: Barail Coal-Shale
+                  - generic [ref=f7e260]:
+                    - paragraph [ref=f7e261]: Torque spikes to 29 kNm with overpull 25 t on connection in Barail coal; cavings of blocky coal on shakers. Depth 2556.6 m MD.
+                    - paragraph [ref=f7e262]: "Action: Raised mud weight 0.3 ppg for coal stability, pumped hi-vis sweep, back-reamed out of hole to casing shoe"
+                    - button "Daily drilling report · HGJ-011 · 2556 m · p.3" [ref=f7e264] [cursor=pointer]
+                  - generic [ref=f7e269]:
+                    - generic [ref=f7e270]: High
+                    - generic [ref=f7e272]: 6.0 h lost
+            - generic [ref=f7e274]:
+              - generic [ref=f7e275]:
+                - generic [ref=f7e276]: Your name
+                - textbox "Your name" [ref=f7e277]:
+                  - /placeholder: Drilling engineer
+              - generic [ref=f7e278]:
+                - generic [ref=f7e279]: Action taken (optional)
+                - textbox "Action taken (optional)" [ref=f7e280]:
+                  - /placeholder: e.g. 30 bbl LCM pill pre-mixed, pump rate reduced
+              - button "Acknowledge" [ref=f7e281] [cursor=pointer]

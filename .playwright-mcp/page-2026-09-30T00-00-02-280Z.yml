@@ -1,0 +1,55 @@
+- generic [ref=f5e3]:
+  - complementary [ref=f5e4]:
+    - generic [ref=f5e13]:
+      - generic [ref=f5e14]: NWIS
+      - generic [ref=f5e15]: Nearby Wells Intelligence
+    - navigation [ref=f5e16]:
+      - link "Live well What is ahead of the bit" [ref=f5e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f5e21]:
+          - generic [ref=f5e22]: Live well
+          - generic [ref=f5e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f5e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f5e27]:
+          - generic [ref=f5e28]: Nearby wells
+          - generic [ref=f5e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f5e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f5e35]:
+          - generic [ref=f5e36]: Depth correlation
+          - generic [ref=f5e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f5e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f5e41]:
+          - generic [ref=f5e42]: Ask the archive
+          - generic [ref=f5e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=f5e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f5e48]:
+          - generic [ref=f5e49]: Alerts
+          - generic [ref=f5e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=f5e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f5e57]:
+          - generic [ref=f5e58]: Documents
+          - generic [ref=f5e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f5e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f5e63]:
+          - generic [ref=f5e64]: Rig sensors
+          - generic [ref=f5e65]: Physics twin + risk model
+    - generic [ref=f5e66]:
+      - generic [ref=f5e67]: Connecting…
+      - generic [ref=f5e69]: Demo data · Upper Assam testbed
+      - generic [ref=f5e70]: Oil India Limited · PS 26121
+  - generic [ref=f5e71]:
+    - banner [ref=f5e72]:
+      - generic [ref=f5e73]: Live well/What is ahead of the bit
+      - generic [ref=f5e75] [cursor=pointer]:
+        - generic [ref=f5e76]: Active well
+        - generic [ref=f5e77]: —
+        - combobox "Active well" [ref=f5e78]
+      - generic [ref=f5e79]: 05:30 am IST
+    - main [ref=f5e87]:
+      - generic [ref=f5e88]: Loading active well…

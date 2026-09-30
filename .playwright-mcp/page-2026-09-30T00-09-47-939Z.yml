@@ -1,0 +1,182 @@
+- generic [ref=f14e3]:
+  - complementary [ref=f14e4]:
+    - generic [ref=f14e13]:
+      - generic [ref=f14e14]: NWIS
+      - generic [ref=f14e15]: Nearby Wells Intelligence
+    - navigation [ref=f14e16]:
+      - link "Live well What is ahead of the bit" [ref=f14e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f14e21]:
+          - generic [ref=f14e22]: Live well
+          - generic [ref=f14e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f14e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f14e27]:
+          - generic [ref=f14e28]: Nearby wells
+          - generic [ref=f14e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f14e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f14e35]:
+          - generic [ref=f14e36]: Depth correlation
+          - generic [ref=f14e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f14e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f14e41]:
+          - generic [ref=f14e42]: Ask the archive
+          - generic [ref=f14e43]: Search past events
+      - link "Alerts Warnings with evidence 4" [ref=f14e289] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f14e48]:
+          - generic [ref=f14e49]: Alerts
+          - generic [ref=f14e50]: Warnings with evidence
+        - generic [ref=f14e108]: "4"
+      - link "Documents Reports in, events out" [ref=f14e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f14e57]:
+          - generic [ref=f14e58]: Documents
+          - generic [ref=f14e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f14e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f14e63]:
+          - generic [ref=f14e64]: Rig sensors
+          - generic [ref=f14e65]: Physics twin + risk model
+    - generic [ref=f14e66]:
+      - generic [ref=f14e67]: Backend connected
+      - generic [ref=f14e69]: Demo data · Upper Assam testbed
+      - generic [ref=f14e70]: Oil India Limited · PS 26121
+  - generic [ref=f14e71]:
+    - banner [ref=f14e72]:
+      - generic [ref=f14e73]: Alerts/Warnings with evidence
+      - generic [ref=f14e75] [cursor=pointer]:
+        - generic [ref=f14e76]: Active well
+        - generic [ref=f14e77]: HGJ-012
+        - generic [ref=f14e109]: Hugrijan
+        - combobox "Active well" [ref=f14e78]:
+          - option "NHK-001 — Nahorkatiya (producing)"
+          - option "NHK-002 — Nahorkatiya (completed)"
+          - option "NHK-003 — Nahorkatiya (suspended)"
+          - option "MRN-004 — Moran (abandoned)"
+          - option "MRN-005 — Moran (suspended)"
+          - option "MRN-006 — Moran (completed)"
+          - option "BGJ-007 — Baghjan (completed)"
+          - option "BGJ-008 — Baghjan (abandoned)"
+          - option "BGJ-009 — Baghjan (suspended)"
+          - option "HGJ-010 — Hugrijan (suspended)"
+          - option "HGJ-011 — Hugrijan (abandoned)"
+          - option "HGJ-012 — Hugrijan (completed)" [selected]
+      - generic [ref=f14e79]: 05:39 am IST
+    - main [ref=f14e87]:
+      - generic [ref=f14e88]:
+        - generic [ref=f14e89]:
+          - generic [ref=f14e90]:
+            - generic [ref=f14e91]: Alert center
+            - heading "Warnings, with the evidence behind them" [level=1] [ref=f14e92]
+            - paragraph [ref=f14e93]: An alert is raised when the bit nears a depth where offset wells had trouble, or when the combined risk score turns high. Each one shows which wells, which reports, and what those crews did about it.
+          - tablist [ref=f14e95]:
+            - tab "Active (4)" [selected] [ref=f14e290] [cursor=pointer]
+            - tab "Acknowledged" [ref=f14e97] [cursor=pointer]
+            - tab "History" [ref=f14e98] [cursor=pointer]
+        - generic [ref=f14e111]:
+          - list [ref=f14e113]:
+            - listitem [ref=f14e125]:
+              - button "High just now Inside historical mud loss zone HGJ-012 · bit 2,732 m · active" [ref=f14e126] [cursor=pointer]:
+                - generic [ref=f14e128]:
+                  - generic [ref=f14e129]: High
+                  - generic [ref=f14e131]: just now
+                - generic [ref=f14e132]: Inside historical mud loss zone
+                - generic [ref=f14e135]: HGJ-012 · bit 2,732 m · active
+            - listitem [ref=f14e136]:
+              - button "High just now Inside historical kick zone HGJ-012 · bit 2,838 m · active" [ref=f14e137] [cursor=pointer]:
+                - generic [ref=f14e139]:
+                  - generic [ref=f14e140]: High
+                  - generic [ref=f14e142]: just now
+                - generic [ref=f14e143]: Inside historical kick zone
+                - generic [ref=f14e146]: HGJ-012 · bit 2,838 m · active
+            - listitem [ref=f14e147]:
+              - button "High just now Inside historical stuck pipe zone HGJ-012 · bit 2,838 m · active" [ref=f14e148] [cursor=pointer]:
+                - generic [ref=f14e150]:
+                  - generic [ref=f14e151]: High
+                  - generic [ref=f14e153]: just now
+                - generic [ref=f14e154]: Inside historical stuck pipe zone
+                - generic [ref=f14e157]: HGJ-012 · bit 2,838 m · active
+            - listitem [ref=f14e158]:
+              - button "High just now Inside historical mud loss zone HGJ-012 · bit 2,838 m · active" [ref=f14e159] [cursor=pointer]:
+                - generic [ref=f14e161]:
+                  - generic [ref=f14e162]: High
+                  - generic [ref=f14e164]: just now
+                - generic [ref=f14e165]: Inside historical mud loss zone
+                - generic [ref=f14e168]: HGJ-012 · bit 2,838 m · active
+          - generic [ref=f14e291]:
+            - generic [ref=f14e293]:
+              - generic [ref=f14e294]:
+                - generic [ref=f14e295]: High
+                - generic [ref=f14e297]: Mud loss
+                - generic [ref=f14e299]: HGJ-012 · raised just now · from live stream
+              - heading "Inside historical mud loss zone" [level=2] [ref=f14e300]
+              - paragraph [ref=f14e301]: Bit is within the 2628–2718 m interval where offset wells recorded mud loss.
+              - generic [ref=f14e302]:
+                - generic [ref=f14e303]:
+                  - generic [ref=f14e304]: Bit depth
+                  - generic [ref=f14e305]: 2,732 m
+                - generic [ref=f14e306]:
+                  - generic [ref=f14e307]: Trouble zone
+                  - generic [ref=f14e308]: 2,629 m–2,718 m
+                - generic [ref=f14e309]:
+                  - generic [ref=f14e310]: Distance to zone
+                  - generic [ref=f14e311]: inside
+                - generic [ref=f14e312]:
+                  - generic [ref=f14e313]: Formation at bit
+                  - generic [ref=f14e314]: Kopili
+            - generic [ref=f14e315]:
+              - generic [ref=f14e316]:
+                - generic [ref=f14e318]:
+                  - heading "Why NWIS raised it" [level=2] [ref=f14e319]
+                  - paragraph [ref=f14e320]: "Trigger: the bit is inside a depth interval where 1 offset well(s) had this problem. Supporting signals (combined 0.54):"
+                - generic [ref=f14e321]:
+                  - generic [ref=f14e323]:
+                    - generic [ref=f14e324]: What nearby wells experienced at this depth
+                    - generic [ref=f14e325]: "0.30"
+                  - generic [ref=f14e329]:
+                    - generic [ref=f14e330]: Live sensor behaviour (flow, torque, pressure)
+                    - generic [ref=f14e331]: "0.59"
+                  - generic [ref=f14e335]:
+                    - generic [ref=f14e336]: Rule-based estimate — not enough past cases to train a model
+                    - generic [ref=f14e337]: "1.00"
+              - generic [ref=f14e340]:
+                - heading "Recommended before entering the zone" [level=2] [ref=f14e343]
+                - generic [ref=f14e344]:
+                  - paragraph [ref=f14e345]: Pre-mix 25 bbl medium-nut-plug LCM pill; prepare lost circulation contingency; monitor pit volume continuously
+                  - generic [ref=f14e346]: What worked in the offset wells
+                  - list [ref=f14e347]:
+                    - listitem [ref=f14e348]:
+                      - text: NHK-001Pumped LCM pill; reduced mud weight; staged cementing squeeze
+                      - generic [ref=f14e349]: → Returns restored; resumed drilling
+                      - button "Daily drilling report · NHK-001 · 2658 m · p.1" [ref=f14e351] [cursor=pointer]
+            - generic [ref=f14e356]:
+              - generic [ref=f14e358]:
+                - heading "Evidence · 1 offset-well record" [level=2] [ref=f14e359]
+                - paragraph [ref=f14e360]: Source report → extracted fact → event → this alert.
+              - list [ref=f14e361]:
+                - listitem [ref=f14e362]:
+                  - generic [ref=f14e363]:
+                    - link "NHK-001" [ref=f14e364] [cursor=pointer]:
+                      - /url: /wells/WELL-NHK-001
+                    - generic [ref=f14e365]: 2,659 m
+                    - generic [ref=f14e366]: Kopili
+                  - generic [ref=f14e367]:
+                    - paragraph [ref=f14e368]: Lost circulation encountered at 2658.5m in Kopili. Total fluid loss of 27.0 bbl. Pumped 24.0 bbl medium-nut-plug LCM pill at 1550 lpm. Returned to full circulation after 1.6 hrs.
+                    - paragraph [ref=f14e369]: "Action: Pumped LCM pill; reduced mud weight; staged cementing squeeze"
+                    - button "Daily drilling report · NHK-001 · 2658 m · p.1" [ref=f14e371] [cursor=pointer]
+                  - generic [ref=f14e376]:
+                    - generic [ref=f14e377]: Critical
+                    - generic [ref=f14e379]: 1.6 h lost
+            - generic [ref=f14e381]:
+              - generic [ref=f14e382]:
+                - generic [ref=f14e383]: Your name
+                - textbox "Your name" [ref=f14e384]:
+                  - /placeholder: Drilling engineer
+              - generic [ref=f14e385]:
+                - generic [ref=f14e386]: Action taken (optional)
+                - textbox "Action taken (optional)" [ref=f14e387]:
+                  - /placeholder: e.g. 30 bbl LCM pill pre-mixed, pump rate reduced
+              - button "Acknowledge" [ref=f14e388] [cursor=pointer]

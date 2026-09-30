@@ -1,0 +1,55 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e13]:
+      - generic [ref=e14]: NWIS
+      - generic [ref=e15]: Nearby Wells Intelligence
+    - navigation [ref=e16]:
+      - link "Live well What is ahead of the bit" [ref=e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e21]:
+          - generic [ref=e22]: Live well
+          - generic [ref=e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=e27]:
+          - generic [ref=e28]: Nearby wells
+          - generic [ref=e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=e35]:
+          - generic [ref=e36]: Depth correlation
+          - generic [ref=e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=e41]:
+          - generic [ref=e42]: Ask the archive
+          - generic [ref=e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=e48]:
+          - generic [ref=e49]: Alerts
+          - generic [ref=e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=e57]:
+          - generic [ref=e58]: Documents
+          - generic [ref=e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=e63]:
+          - generic [ref=e64]: Rig sensors
+          - generic [ref=e65]: Physics twin + risk model
+    - generic [ref=e66]:
+      - generic [ref=e67]: Connecting…
+      - generic [ref=e69]: Demo data · Upper Assam testbed
+      - generic [ref=e70]: Oil India Limited · PS 26121
+  - generic [ref=e71]:
+    - banner [ref=e72]:
+      - generic [ref=e73]: Live well/What is ahead of the bit
+      - generic [ref=e75] [cursor=pointer]:
+        - generic [ref=e76]: Active well
+        - generic [ref=e77]: —
+        - combobox "Active well" [ref=e78]
+      - generic [ref=e79]: 05:26 am IST
+    - main [ref=e87]:
+      - generic [ref=e88]: Loading active well…

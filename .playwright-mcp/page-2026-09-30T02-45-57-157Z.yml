@@ -1,0 +1,314 @@
+- generic [ref=f24e3]:
+  - complementary [ref=f24e4]:
+    - generic [ref=f24e13]:
+      - generic [ref=f24e14]: NWIS
+      - generic [ref=f24e15]: Nearby Wells Intelligence
+    - navigation [ref=f24e16]:
+      - link "Live well What is ahead of the bit" [ref=f24e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f24e21]:
+          - generic [ref=f24e22]: Live well
+          - generic [ref=f24e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f24e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f24e27]:
+          - generic [ref=f24e28]: Nearby wells
+          - generic [ref=f24e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f24e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f24e35]:
+          - generic [ref=f24e36]: Depth correlation
+          - generic [ref=f24e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f24e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f24e41]:
+          - generic [ref=f24e42]: Ask the archive
+          - generic [ref=f24e43]: Search past events
+      - link "Alerts Warnings with evidence 1" [ref=f24e97] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f24e48]:
+          - generic [ref=f24e49]: Alerts
+          - generic [ref=f24e50]: Warnings with evidence
+        - generic [ref=f24e98]: "1"
+      - link "Documents Reports in, events out" [ref=f24e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f24e57]:
+          - generic [ref=f24e58]: Documents
+          - generic [ref=f24e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f24e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f24e63]:
+          - generic [ref=f24e64]: Rig sensors
+          - generic [ref=f24e65]: Physics twin + risk model
+      - link "Models & benchmarks Measured accuracy" [ref=f24e66] [cursor=pointer]:
+        - /url: /models
+        - generic [ref=f24e69]:
+          - generic [ref=f24e70]: Models & benchmarks
+          - generic [ref=f24e71]: Measured accuracy
+    - generic [ref=f24e72]:
+      - generic [ref=f24e73]: Backend connected
+      - generic [ref=f24e75]: Demo data · Upper Assam testbed
+      - generic [ref=f24e76]: Oil India Limited · PS 26121
+  - generic [ref=f24e77]:
+    - banner [ref=f24e78]:
+      - generic [ref=f24e79]: Models & benchmarks/Measured accuracy
+      - generic [ref=f24e81] [cursor=pointer]:
+        - generic [ref=f24e82]: Active well
+        - generic [ref=f24e83]: HGJ-012
+        - generic [ref=f24e99]: Hugrijan
+        - combobox "Active well" [ref=f24e84]:
+          - option "NHK-001 — Nahorkatiya (producing)"
+          - option "NHK-002 — Nahorkatiya (completed)"
+          - option "NHK-003 — Nahorkatiya (suspended)"
+          - option "MRN-004 — Moran (abandoned)"
+          - option "MRN-005 — Moran (suspended)"
+          - option "MRN-006 — Moran (completed)"
+          - option "BGJ-007 — Baghjan (completed)"
+          - option "BGJ-008 — Baghjan (abandoned)"
+          - option "BGJ-009 — Baghjan (suspended)"
+          - option "HGJ-010 — Hugrijan (suspended)"
+          - option "HGJ-011 — Hugrijan (abandoned)"
+          - option "HGJ-012 — Hugrijan (completed)" [selected]
+      - generic [ref=f24e85]: 08:15 am IST
+    - main [ref=f24e93]:
+      - generic [ref=f24e100]:
+        - generic [ref=f24e102]:
+          - generic [ref=f24e103]: Models & benchmarks
+          - heading "How good are the models? Measured, not claimed." [level=1] [ref=f24e104]
+          - paragraph [ref=f24e105]: Three kinds of model power NWIS. Each is tested on data it did not see during training, and the numbers below are produced by the evaluation code in this repository. Where there is not enough data to train a model, the app falls back to transparent rules and says so.
+        - generic [ref=f24e106]:
+          - generic [ref=f24e107]:
+            - generic [ref=f24e108]:
+              - heading "1 · Offset-history hazard models" [level=2] [ref=f24e109]
+              - paragraph [ref=f24e110]: Predict, from depth, formation and well path alone, whether a hazard is likely at a given point of a well. Tested by holding out one entire well at a time and predicting it from the others.
+            - generic [ref=f24e111]: trained 30/9/2026, 8:10:17 am
+          - generic [ref=f24e113]:
+            - table [ref=f24e114]:
+              - rowgroup [ref=f24e115]:
+                - row [ref=f24e116]:
+                  - columnheader "Hazard" [ref=f24e117]
+                  - columnheader "Status" [ref=f24e118]
+                  - columnheader "Past cases" [ref=f24e119]
+                  - columnheader "Ranking quality (AUC)" [ref=f24e120]
+                  - columnheader "Wells tested" [ref=f24e121]
+              - rowgroup [ref=f24e122]:
+                - row [ref=f24e123]:
+                  - cell "Stuck pipe" [ref=f24e124]
+                  - cell "Trained model" [ref=f24e127]
+                  - cell "14 / 194" [ref=f24e128]
+                  - cell "0.62 weak but above chance" [ref=f24e129]:
+                    - generic [ref=f24e130]:
+                      - generic [ref=f24e133]: "0.62"
+                      - generic [ref=f24e134]: weak but above chance
+                  - cell "7" [ref=f24e135]
+                - row [ref=f24e136]:
+                  - cell "Kick / overpressure" [ref=f24e137]
+                  - cell "Trained model" [ref=f24e140]
+                  - cell "10 / 190" [ref=f24e141]
+                  - cell "0.82 useful" [ref=f24e142]:
+                    - generic [ref=f24e143]:
+                      - generic [ref=f24e146]: "0.82"
+                      - generic [ref=f24e147]: useful
+                  - cell "8" [ref=f24e148]
+                - row [ref=f24e149]:
+                  - cell "Wellbore instability" [ref=f24e150]
+                  - cell "Trained model" [ref=f24e153]
+                  - cell "12 / 192" [ref=f24e154]
+                  - cell "0.60 near chance" [ref=f24e155]:
+                    - generic [ref=f24e156]:
+                      - generic [ref=f24e159]: "0.60"
+                      - generic [ref=f24e160]: near chance
+                  - cell "8" [ref=f24e161]
+                - row [ref=f24e162]:
+                  - cell "Mud loss" [ref=f24e163]
+                  - cell "Rule-based estimate" [ref=f24e166]
+                  - cell "6" [ref=f24e167]
+                  - cell "not trained — only 6 historical example(s), need >= 8" [ref=f24e168]
+                  - cell "—" [ref=f24e169]
+                - row [ref=f24e170]:
+                  - cell "Torque spike" [ref=f24e171]
+                  - cell "Rule-based estimate" [ref=f24e174]
+                  - cell "3" [ref=f24e175]
+                  - cell "not trained — only 3 historical example(s), need >= 8" [ref=f24e176]
+                  - cell "—" [ref=f24e177]
+                - row [ref=f24e178]:
+                  - cell "Cementing issue" [ref=f24e179]
+                  - cell "Rule-based estimate" [ref=f24e182]
+                  - cell "3" [ref=f24e183]
+                  - cell "not trained — only 3 historical example(s), need >= 8" [ref=f24e184]
+                  - cell "—" [ref=f24e185]
+            - generic [ref=f24e186]:
+              - generic [ref=f24e187]: How to read AUC
+              - text: "0.5 means no better than chance, 1.0 means every true case is ranked above every non-case. With 10–14 past cases per hazard on a 12-well testbed these are modest, honest numbers; they improve as more offset reports are ingested. Method: Logistic regression per hazard on depth/formation/trajectory features; leave-one-well-out cross-validation (each fold holds out one entire well)."
+        - generic [ref=f24e188]:
+          - generic [ref=f24e189]:
+            - generic [ref=f24e190]:
+              - heading "2 · Real-time sensor risk engine" [level=2] [ref=f24e191]
+              - paragraph [ref=f24e192]: Detects a developing problem from the rig's sensor stream. Tested on held-out simulator runs (1 reading per second), each containing a normal period followed by a fault.
+            - generic [ref=f24e193]: benchmarked 30/9/2026, 8:10:59 am
+          - generic [ref=f24e195]:
+            - table [ref=f24e196]:
+              - rowgroup [ref=f24e197]:
+                - row [ref=f24e198]:
+                  - columnheader "Approach" [ref=f24e199]
+                  - columnheader "Precision" [ref=f24e200]
+                  - columnheader "Recall" [ref=f24e201]
+                  - columnheader "F1" [ref=f24e202]
+                  - columnheader "Problems caught" [ref=f24e203]
+                  - columnheader "False alarms / h" [ref=f24e204]
+                  - columnheader "Time to detect" [ref=f24e205]
+              - rowgroup [ref=f24e206]:
+                - row [ref=f24e207]:
+                  - cell "Physics rules only Thresholds on flow balance, pit trend, overpull, torque, pressure window" [ref=f24e208]:
+                    - generic [ref=f24e209]: Physics rules only
+                    - generic [ref=f24e210]: Thresholds on flow balance, pit trend, overpull, torque, pressure window
+                  - cell "0.82" [ref=f24e211]
+                  - cell "0.76" [ref=f24e212]
+                  - cell "0.79" [ref=f24e213]
+                  - cell "6/6" [ref=f24e214]
+                  - cell "0.0" [ref=f24e215]
+                  - cell "24.3 s" [ref=f24e216]
+                - row [ref=f24e217]:
+                  - cell "Rules + anomaly detector Rules blended with an Isolation Forest trained on normal drilling" [ref=f24e218]:
+                    - generic [ref=f24e219]: Rules + anomaly detector
+                    - generic [ref=f24e220]: Rules blended with an Isolation Forest trained on normal drilling
+                  - cell "0.83" [ref=f24e221]
+                  - cell "1.00" [ref=f24e222]
+                  - cell "0.91" [ref=f24e223]
+                  - cell "6/6" [ref=f24e224]
+                  - cell "0.0" [ref=f24e225]
+                  - cell "0.0 s" [ref=f24e226]
+                - row [ref=f24e227]:
+                  - cell "Gradient-boosted classifier XGBoost multi-class model on engineered sensor features" [ref=f24e228]:
+                    - generic [ref=f24e229]: Gradient-boosted classifier
+                    - generic [ref=f24e230]: XGBoost multi-class model on engineered sensor features
+                  - cell "1.00" [ref=f24e231]
+                  - cell "0.91" [ref=f24e232]
+                  - cell "0.95" [ref=f24e233]
+                  - cell "6/6" [ref=f24e234]
+                  - cell "0.0" [ref=f24e235]
+                  - cell "0.0 s" [ref=f24e236]
+                - row [ref=f24e237]:
+                  - cell "Full fusion (what the app runs) Rules + anomaly + classifier + offset-well history, weighted" [ref=f24e238]:
+                    - generic [ref=f24e239]: Full fusion (what the app runs)
+                    - generic [ref=f24e240]: Rules + anomaly + classifier + offset-well history, weighted
+                  - cell "0.96" [ref=f24e241]
+                  - cell "0.47" [ref=f24e242]
+                  - cell "0.63" [ref=f24e243]
+                  - cell "6/6" [ref=f24e244]
+                  - cell "30.0" [ref=f24e245]
+                  - cell "22.5 s" [ref=f24e246]
+            - generic [ref=f24e247]:
+              - generic [ref=f24e248]:
+                - generic [ref=f24e249]: What this shows
+                - text: "Every approach catches all 6 test problems. The classifier is the most precise on this data; the full fusion engine used in the app is deliberately more conservative per reading (it waits for corroboration across signals and offset history), which lowers per-reading recall and adds detection delay — a trade-off to tune with real eRTMAC data. Test set: 6 held-out runs, 720 readings."
+              - generic [ref=f24e250]:
+                - generic [ref=f24e251]: Speed per reading
+                - generic [ref=f24e252]:
+                  - generic [ref=f24e253]:
+                    - generic [ref=f24e254]: Feature extraction
+                    - generic [ref=f24e255]: 0.3 ms
+                  - generic [ref=f24e256]:
+                    - generic [ref=f24e257]: Model inference
+                    - generic [ref=f24e258]: 21.5 ms
+                  - generic [ref=f24e259]:
+                    - generic [ref=f24e260]: Risk fusion
+                    - generic [ref=f24e261]: 20.4 ms
+                  - generic [ref=f24e262]:
+                    - generic [ref=f24e263]: Total, reading → alert
+                    - generic [ref=f24e264]: 42.2 ms
+            - generic [ref=f24e265]:
+              - generic [ref=f24e266]: Signals the classifier relies on most
+              - generic [ref=f24e267]:
+                - generic [ref=f24e268]:
+                  - generic [ref=f24e269]: Margin to fracture pressure
+                  - generic [ref=f24e272]: "0.145"
+                - generic [ref=f24e273]:
+                  - generic [ref=f24e274]: Stick-slip index
+                  - generic [ref=f24e277]: "0.127"
+                - generic [ref=f24e278]:
+                  - generic [ref=f24e279]: d-exponent deviation
+                  - generic [ref=f24e282]: "0.125"
+                - generic [ref=f24e283]:
+                  - generic [ref=f24e284]: Overpull
+                  - generic [ref=f24e287]: "0.103"
+                - generic [ref=f24e288]:
+                  - generic [ref=f24e289]: d-exponent trend
+                  - generic [ref=f24e292]: "0.081"
+                - generic [ref=f24e293]:
+                  - generic [ref=f24e294]: Flow out − flow in
+                  - generic [ref=f24e297]: "0.049"
+                - generic [ref=f24e298]:
+                  - generic [ref=f24e299]: Duration of flow imbalance
+                  - generic [ref=f24e302]: "0.043"
+                - generic [ref=f24e303]:
+                  - generic [ref=f24e304]: Standpipe pressure
+                  - generic [ref=f24e307]: "0.041"
+        - generic [ref=f24e308]:
+          - generic [ref=f24e310]:
+            - heading "3 · Report reading (document extraction)" [level=2] [ref=f24e311]
+            - paragraph [ref=f24e312]: "Checked against hand-labelled sample reports: event counts as found when hazard type matches and depth is within 5 m of the label."
+          - generic [ref=f24e313]:
+            - generic [ref=f24e314]:
+              - generic [ref=f24e315]: Incidents found
+              - generic [ref=f24e316]: 100%
+              - generic [ref=f24e317]: recall, 9 labelled
+            - generic [ref=f24e318]:
+              - generic [ref=f24e319]: Correct when found
+              - generic [ref=f24e320]: 100%
+              - generic [ref=f24e321]: precision
+            - generic [ref=f24e322]:
+              - generic [ref=f24e323]: F1
+              - generic [ref=f24e324]: "1.00"
+            - generic [ref=f24e325]:
+              - generic [ref=f24e326]: Well identified
+              - generic [ref=f24e327]: 100%
+              - generic [ref=f24e328]: 4 reports
+            - generic [ref=f24e329]:
+              - generic [ref=f24e330]: Real 74-page report
+              - generic [ref=f24e331]: 39 ms/page
+              - generic [ref=f24e332]: 17 incidents found
+          - table [ref=f24e333]:
+            - rowgroup [ref=f24e334]:
+              - row [ref=f24e335]:
+                - columnheader "Report" [ref=f24e336]
+                - columnheader "Labelled" [ref=f24e337]
+                - columnheader "Found" [ref=f24e338]
+                - columnheader "Missed" [ref=f24e339]
+                - columnheader "Spurious" [ref=f24e340]
+                - columnheader "Well name" [ref=f24e341]
+                - columnheader "Time" [ref=f24e342]
+            - rowgroup [ref=f24e343]:
+              - row [ref=f24e344]:
+                - cell "DDR_HGJ-011_2021-03-02.pdf" [ref=f24e345]
+                - cell "3" [ref=f24e346]
+                - cell "3" [ref=f24e347]
+                - cell "0" [ref=f24e348]
+                - cell "0" [ref=f24e349]
+                - cell "HGJ-011 ✓" [ref=f24e350]
+                - cell "22 ms" [ref=f24e351]
+              - row [ref=f24e352]:
+                - cell "DDR_HGJ-010_2019-11-14.pdf" [ref=f24e353]
+                - cell "2" [ref=f24e354]
+                - cell "2" [ref=f24e355]
+                - cell "0" [ref=f24e356]
+                - cell "0" [ref=f24e357]
+                - cell "HGJ-010 ✓" [ref=f24e358]
+                - cell "51 ms" [ref=f24e359]
+              - row [ref=f24e360]:
+                - cell "DDR_NHK-003_2020-06-02.pdf" [ref=f24e361]
+                - cell "2" [ref=f24e362]
+                - cell "2" [ref=f24e363]
+                - cell "0" [ref=f24e364]
+                - cell "0" [ref=f24e365]
+                - cell "NHK-003 ✓" [ref=f24e366]
+                - cell "18 ms" [ref=f24e367]
+              - row [ref=f24e368]:
+                - cell "synthetic_oil_india_ddr.pdf" [ref=f24e369]
+                - cell "2" [ref=f24e370]
+                - cell "2" [ref=f24e371]
+                - cell "0" [ref=f24e372]
+                - cell "0" [ref=f24e373]
+                - cell "NHK-105 ✓" [ref=f24e374]
+                - cell "42 ms" [ref=f24e375]
+          - paragraph [ref=f24e376]: "Caveat: the labelled set is small and the reports are clean, typed DDRs, so this shows the pipeline works end to end rather than real-world accuracy. The 74-page run is a real public drilling report (throughput only — it has no labels). Scanned reports need the OCR engine (Docling) installed."

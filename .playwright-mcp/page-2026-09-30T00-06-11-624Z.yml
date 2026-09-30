@@ -1,0 +1,138 @@
+- generic [ref=f12e3]:
+  - complementary [ref=f12e4]:
+    - generic [ref=f12e13]:
+      - generic [ref=f12e14]: NWIS
+      - generic [ref=f12e15]: Nearby Wells Intelligence
+    - navigation [ref=f12e16]:
+      - link "Live well What is ahead of the bit" [ref=f12e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f12e21]:
+          - generic [ref=f12e22]: Live well
+          - generic [ref=f12e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f12e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f12e27]:
+          - generic [ref=f12e28]: Nearby wells
+          - generic [ref=f12e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f12e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f12e35]:
+          - generic [ref=f12e36]: Depth correlation
+          - generic [ref=f12e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f12e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f12e41]:
+          - generic [ref=f12e42]: Ask the archive
+          - generic [ref=f12e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=f12e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f12e48]:
+          - generic [ref=f12e49]: Alerts
+          - generic [ref=f12e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=f12e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f12e57]:
+          - generic [ref=f12e58]: Documents
+          - generic [ref=f12e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f12e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f12e63]:
+          - generic [ref=f12e64]: Rig sensors
+          - generic [ref=f12e65]: Physics twin + risk model
+    - generic [ref=f12e66]:
+      - generic [ref=f12e67]: Connecting…
+      - generic [ref=f12e69]: Demo data · Upper Assam testbed
+      - generic [ref=f12e70]: Oil India Limited · PS 26121
+  - generic [ref=f12e71]:
+    - banner [ref=f12e72]:
+      - generic [ref=f12e73]: Rig sensors/Physics twin + risk model
+      - generic [ref=f12e75] [cursor=pointer]:
+        - generic [ref=f12e76]: Active well
+        - generic [ref=f12e77]: —
+        - combobox "Active well" [ref=f12e78]
+      - generic [ref=f12e79]: 05:36 am IST
+    - main [ref=f12e87]:
+      - generic [ref=f12e88]:
+        - generic [ref=f12e89]:
+          - generic [ref=f12e90]:
+            - generic [ref=f12e91]: Real-time sensors · physics digital twin
+            - heading "Can the sensors see trouble before the crew does?" [level=1] [ref=f12e92]
+            - paragraph [ref=f12e93]: A drilling-physics model plays the role of the rig's eRTMAC feed (25 readings per second). Inject a downhole problem below; the risk engine reads only the sensor traces and raises its own alert. Replace this simulator with the live eRTMAC stream and nothing else changes.
+          - generic [ref=f12e94]:
+            - generic [ref=f12e95]: Connecting…
+            - button "Run" [ref=f12e96] [cursor=pointer]
+            - button "Reset" [ref=f12e99] [cursor=pointer]
+        - generic [ref=f12e104]:
+          - generic [ref=f12e105]: Inject a problem
+          - button "Lost circulation" [ref=f12e108] [cursor=pointer]
+          - button "Kick" [ref=f12e109] [cursor=pointer]
+          - button "Stuck pipe" [ref=f12e110] [cursor=pointer]
+          - button "Stick-slip" [ref=f12e111] [cursor=pointer]
+          - button "Poor hole cleaning" [ref=f12e112] [cursor=pointer]
+          - button "Washout" [ref=f12e113] [cursor=pointer]
+          - generic [ref=f12e114]:
+            - text: Severity
+            - slider "Severity 1.0" [ref=f12e115]: "1"
+            - generic [ref=f12e116]: "1.0"
+          - generic [ref=f12e117]: —
+        - generic [ref=f12e118]:
+          - generic [ref=f12e119]:
+            - generic [ref=f12e120]:
+              - generic [ref=f12e121]:
+                - generic [ref=f12e122]:
+                  - generic [ref=f12e123]: Flow in vs flow out
+                  - generic [ref=f12e124]: Out < in = losing mud · out > in = influx
+                - generic [ref=f12e125]:
+                  - generic [ref=f12e126]: — In
+                  - generic [ref=f12e127]: — Out
+              - generic [ref=f12e129]: L/min · range -0.1–1.1 · last ~25 s
+            - generic [ref=f12e130]:
+              - generic [ref=f12e131]:
+                - generic [ref=f12e132]:
+                  - generic [ref=f12e133]: Pit volume
+                  - generic [ref=f12e134]: Falling = losses · rising = kick
+                - generic [ref=f12e135]: — Pit
+              - generic [ref=f12e138]: m³ · range -0.1–1.1 · last ~25 s
+            - generic [ref=f12e139]:
+              - generic [ref=f12e140]:
+                - generic [ref=f12e141]:
+                  - generic [ref=f12e142]: Surface torque
+                  - generic [ref=f12e143]: Spikes / oscillation = sticking or stick-slip
+                - generic [ref=f12e144]: — Torque
+              - generic [ref=f12e147]: kN·m · range -0.1–1.1 · last ~25 s
+            - generic [ref=f12e148]:
+              - generic [ref=f12e149]:
+                - generic [ref=f12e150]:
+                  - generic [ref=f12e151]: Overpull
+                  - generic [ref=f12e152]: Rising overpull = pipe getting stuck
+                - generic [ref=f12e153]: — Overpull
+              - generic [ref=f12e156]: kN · range -0.1–1.1 · last ~25 s
+            - generic [ref=f12e157]:
+              - generic [ref=f12e158]:
+                - generic [ref=f12e159]:
+                  - generic [ref=f12e160]: Standpipe pressure
+                  - generic [ref=f12e161]: Sudden drop = washout · rise = pack-off
+                - generic [ref=f12e162]: — SPP
+              - generic [ref=f12e165]: bar · range -0.1–1.1 · last ~25 s
+            - generic [ref=f12e166]:
+              - generic [ref=f12e167]:
+                - generic [ref=f12e168]:
+                  - generic [ref=f12e169]: Pressure window
+                  - generic [ref=f12e170]: Distance to pore (kick) and fracture (loss) pressure
+                - generic [ref=f12e171]:
+                  - generic [ref=f12e172]: — to pore
+                  - generic [ref=f12e173]: — to fracture
+              - generic [ref=f12e175]: bar margin · range -0.1–1.1 · last ~25 s
+          - generic [ref=f12e176]:
+            - generic [ref=f12e177]:
+              - generic [ref=f12e179]:
+                - heading "Risk engine, live" [level=2] [ref=f12e180]
+                - paragraph [ref=f12e181]: Rules + anomaly detector + model + offset history, fused every second.
+              - generic [ref=f12e182]: Waiting for sensor data
+            - generic [ref=f12e184]:
+              - generic [ref=f12e186]:
+                - heading "Sensor alerts" [level=2] [ref=f12e187]
+                - paragraph [ref=f12e188]: Raised by the risk engine, not by the simulator.
+              - generic [ref=f12e189]:
+                - generic [ref=f12e190]: No sensor alerts
+                - generic [ref=f12e191]: Inject a problem and give it 10–30 seconds to develop.

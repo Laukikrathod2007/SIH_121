@@ -1,0 +1,260 @@
+- generic [ref=f4e3]:
+  - complementary [ref=f4e4]:
+    - generic [ref=f4e13]:
+      - generic [ref=f4e14]: NWIS
+      - generic [ref=f4e15]: Nearby Wells Intelligence
+    - navigation [ref=f4e16]:
+      - link "Live well What is ahead of the bit" [ref=f4e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f4e21]:
+          - generic [ref=f4e22]: Live well
+          - generic [ref=f4e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f4e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f4e27]:
+          - generic [ref=f4e28]: Nearby wells
+          - generic [ref=f4e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f4e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f4e35]:
+          - generic [ref=f4e36]: Depth correlation
+          - generic [ref=f4e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f4e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f4e41]:
+          - generic [ref=f4e42]: Ask the archive
+          - generic [ref=f4e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=f4e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f4e48]:
+          - generic [ref=f4e49]: Alerts
+          - generic [ref=f4e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=f4e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f4e57]:
+          - generic [ref=f4e58]: Documents
+          - generic [ref=f4e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f4e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f4e63]:
+          - generic [ref=f4e64]: Rig sensors
+          - generic [ref=f4e65]: Physics twin + risk model
+    - generic [ref=f4e66]:
+      - generic [ref=f4e67]: Backend connected
+      - generic [ref=f4e69]: Demo data · Upper Assam testbed
+      - generic [ref=f4e70]: Oil India Limited · PS 26121
+  - generic [ref=f4e71]:
+    - banner [ref=f4e72]:
+      - generic [ref=f4e73]: Nearby wells/Offset wells on the map
+      - generic [ref=f4e75] [cursor=pointer]:
+        - generic [ref=f4e76]: Active well
+        - generic [ref=f4e77]: HGJ-012
+        - generic [ref=f4e160]: Hugrijan
+        - combobox "Active well" [ref=f4e78]:
+          - option "NHK-001 — Nahorkatiya (producing)"
+          - option "NHK-002 — Nahorkatiya (completed)"
+          - option "NHK-003 — Nahorkatiya (suspended)"
+          - option "MRN-004 — Moran (abandoned)"
+          - option "MRN-005 — Moran (suspended)"
+          - option "MRN-006 — Moran (completed)"
+          - option "BGJ-007 — Baghjan (completed)"
+          - option "BGJ-008 — Baghjan (abandoned)"
+          - option "BGJ-009 — Baghjan (suspended)"
+          - option "HGJ-010 — Hugrijan (suspended)"
+          - option "HGJ-011 — Hugrijan (abandoned)"
+          - option "HGJ-012 — Hugrijan (completed)" [selected]
+      - generic [ref=f4e79]: 05:29 am IST
+    - main [ref=f4e87]:
+      - generic [ref=f4e88]:
+        - generic [ref=f4e89]:
+          - generic [ref=f4e161]:
+            - generic:
+              - generic:
+                - img:
+                  - generic:
+                    - generic [ref=f4e162] [cursor=pointer]
+                    - generic [ref=f4e163] [cursor=pointer]
+                    - generic [ref=f4e164] [cursor=pointer]
+                    - generic [ref=f4e165] [cursor=pointer]
+                    - generic [ref=f4e166] [cursor=pointer]
+                    - generic [ref=f4e167] [cursor=pointer]
+                    - generic [ref=f4e168] [cursor=pointer]
+              - generic:
+                - button [ref=f4e169] [cursor=pointer]
+                - button "6" [ref=f4e175] [cursor=pointer]
+                - button "4" [ref=f4e181] [cursor=pointer]
+                - button "2" [ref=f4e184] [cursor=pointer]
+                - button "6" [ref=f4e187] [cursor=pointer]
+                - button "2" [ref=f4e190] [cursor=pointer]
+                - button "2" [ref=f4e193] [cursor=pointer]
+                - button "2" [ref=f4e196] [cursor=pointer]
+                - button "4" [ref=f4e199] [cursor=pointer]
+                - button "4" [ref=f4e202] [cursor=pointer]
+                - button "4" [ref=f4e205] [cursor=pointer]
+                - button "9" [ref=f4e308] [cursor=pointer]
+              - generic:
+                - tooltip "12.5 km"
+                - tooltip "25 km"
+            - generic [ref=f4e208]:
+              - link "Leaflet" [ref=f4e209] [cursor=pointer]:
+                - /url: https://leafletjs.com
+              - text: "| Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors"
+          - generic [ref=f4e90]:
+            - generic [ref=f4e91]:
+              - generic [ref=f4e92]:
+                - generic [ref=f4e93]: Search radius
+                - generic [ref=f4e100]: 25 km
+              - slider "Search radius in kilometres" [ref=f4e101]: "25"
+              - generic [ref=f4e102]:
+                - button "5 km" [ref=f4e103] [cursor=pointer]
+                - button "10 km" [ref=f4e104] [cursor=pointer]
+                - button "25 km" [ref=f4e105] [cursor=pointer]
+                - button "50 km" [ref=f4e106] [cursor=pointer]
+              - generic [ref=f4e107]: 2 offset wells within 25 km of HGJ-012
+            - generic [ref=f4e108]:
+              - generic [ref=f4e109]: Show wells that had
+              - generic [ref=f4e110]:
+                - button "Mud loss 2" [ref=f4e214] [cursor=pointer]:
+                  - text: Mud loss
+                  - generic [ref=f4e113]: "2"
+                - button "Stuck pipe 3" [ref=f4e215] [cursor=pointer]:
+                  - text: Stuck pipe
+                  - generic [ref=f4e116]: "3"
+                - button "Kick / overpressure 3" [ref=f4e216] [cursor=pointer]:
+                  - text: Kick / overpressure
+                  - generic [ref=f4e119]: "3"
+                - button "Wellbore instability 4" [ref=f4e217] [cursor=pointer]:
+                  - text: Wellbore instability
+                  - generic [ref=f4e122]: "4"
+                - button "Torque spike 2" [ref=f4e218] [cursor=pointer]:
+                  - text: Torque spike
+                  - generic [ref=f4e125]: "2"
+                - button "Cementing issue 1" [ref=f4e219] [cursor=pointer]:
+                  - text: Cementing issue
+                  - generic [ref=f4e128]: "1"
+            - generic [ref=f4e129]:
+              - generic [ref=f4e130]:
+                - button "Light" [ref=f4e131] [cursor=pointer]
+                - button "Streets" [ref=f4e132] [cursor=pointer]
+                - button "Satellite" [ref=f4e133] [cursor=pointer]
+              - generic [ref=f4e134]:
+                - button "Distance lines" [pressed] [ref=f4e135] [cursor=pointer]
+                - button "Well paths (plan view)" [pressed] [ref=f4e138] [cursor=pointer]
+                - button "Re-centre on active well" [ref=f4e143] [cursor=pointer]
+          - generic [ref=f4e148]: Ring colours = incident mix · number = incidents · size grows with incidents
+        - complementary [ref=f4e154]:
+          - generic [ref=f4e311]:
+            - generic [ref=f4e312]:
+              - button "← All offset wells" [ref=f4e313] [cursor=pointer]
+              - generic [ref=f4e314]:
+                - heading "HGJ-011" [level=2] [ref=f4e315]
+                - generic [ref=f4e316]: 8.4 km away
+              - generic [ref=f4e317]: Hugrijan field · Vertical · abandoned
+              - generic [ref=f4e318]:
+                - generic [ref=f4e319]:
+                  - generic [ref=f4e320]: Total depth
+                  - generic [ref=f4e321]: 2,843 m
+                - generic [ref=f4e322]:
+                  - generic [ref=f4e323]: Incidents
+                  - generic [ref=f4e324]: "9"
+                - generic [ref=f4e325]:
+                  - generic [ref=f4e326]: Lost time
+                  - generic [ref=f4e327]: 71 h
+              - generic [ref=f4e328]:
+                - button "Open well file" [ref=f4e329] [cursor=pointer]
+                - button "Set as active well" [ref=f4e333] [cursor=pointer]
+            - generic [ref=f4e334]:
+              - generic [ref=f4e335]: What happened in this well, by depth
+              - list [ref=f4e336]:
+                - listitem [ref=f4e337]:
+                  - generic [ref=f4e339]:
+                    - generic [ref=f4e340]: 574 m
+                    - generic [ref=f4e341]: Critical
+                  - generic [ref=f4e343]:
+                    - generic [ref=f4e344]: Stuck pipe
+                    - generic [ref=f4e346]: Tipam Sandstone
+                  - paragraph [ref=f4e347]: Differential pipe sticking at 573.8m in Tipam Sandstone. Applied 16 kNm right torque and reciprocated string. Worked free after 3.1 hrs. LCM pill not required.
+                  - paragraph [ref=f4e348]: "What they did: Applied overpull + torque; spotted freeing agent; reciprocated string"
+                  - button "Daily drilling report · HGJ-011 · 573 m · p.3" [ref=f4e350] [cursor=pointer]
+                - listitem [ref=f4e355]:
+                  - generic [ref=f4e357]:
+                    - generic [ref=f4e358]: 1,424 m
+                    - generic [ref=f4e359]: High
+                  - generic [ref=f4e361]:
+                    - generic [ref=f4e362]: Wellbore instability
+                    - generic [ref=f4e364]: Girujan Clay
+                  - paragraph [ref=f4e365]: Washout suspected at 1423.9m in Girujan Clay. Caliper log showed 21% over-gauge hole. Pumped casing cement to seal.
+                  - paragraph [ref=f4e366]: "What they did: Raised KCl inhibitor; increased mud weight; short trips for caliper"
+                  - button "Daily drilling report · HGJ-011 · 1423 m · p.3" [ref=f4e368] [cursor=pointer]
+                - listitem [ref=f4e373]:
+                  - generic [ref=f4e375]:
+                    - generic [ref=f4e376]: 1,614 m
+                    - generic [ref=f4e377]: High
+                  - generic [ref=f4e379]:
+                    - generic [ref=f4e380]: Stuck pipe
+                    - generic [ref=f4e382]: Barail Sandstone
+                  - paragraph [ref=f4e383]: Differential pipe sticking at 1614.4m in Barail Sandstone. Applied 34 kNm right torque and reciprocated string. Worked free after 5.5 hrs. LCM pill not required.
+                  - paragraph [ref=f4e384]: "What they did: Applied overpull + torque; spotted freeing agent; reciprocated string"
+                  - button "Daily drilling report · HGJ-011 · 1614 m · p.4" [ref=f4e386] [cursor=pointer]
+                - listitem [ref=f4e391]:
+                  - generic [ref=f4e393]:
+                    - generic [ref=f4e394]: 1,739 m
+                    - generic [ref=f4e395]: High
+                  - generic [ref=f4e397]:
+                    - generic [ref=f4e398]: Stuck pipe
+                    - generic [ref=f4e400]: Barail Sandstone
+                  - paragraph [ref=f4e401]: Tight hole observed while tripping out through Barail Sandstone at 1739.0m. Pipe stuck for 4.0 hrs. Applied 36 klbs overpull. Released after spot freeing agent.
+                  - paragraph [ref=f4e402]: "What they did: Applied overpull + torque; spotted freeing agent; reciprocated string"
+                  - button "Daily drilling report · HGJ-011 · 1739 m · p.2" [ref=f4e404] [cursor=pointer]
+                - listitem [ref=f4e409]:
+                  - generic [ref=f4e411]:
+                    - generic [ref=f4e412]: 1,835 m
+                    - generic [ref=f4e413]: Medium
+                  - generic [ref=f4e415]:
+                    - generic [ref=f4e416]: Wellbore instability
+                    - generic [ref=f4e418]: Barail Sandstone
+                  - paragraph [ref=f4e419]: Tight hole and overpull of 55 klbs noted at 1834.7m in Barail Sandstone shale. Reamed and circulated to clear cavings.
+                  - paragraph [ref=f4e420]: "What they did: Raised KCl inhibitor; increased mud weight; short trips for caliper"
+                  - button "Daily drilling report · HGJ-011 · 1834 m · p.1" [ref=f4e422] [cursor=pointer]
+                - listitem [ref=f4e427]:
+                  - generic [ref=f4e429]:
+                    - generic [ref=f4e430]: 2,557 m
+                    - generic [ref=f4e431]: High
+                  - generic [ref=f4e433]:
+                    - generic [ref=f4e434]: Torque spike
+                    - generic [ref=f4e436]: Barail Coal-Shale
+                  - paragraph [ref=f4e437]: Torque spikes to 29 kNm with overpull 25 t on connection in Barail coal; cavings of blocky coal on shakers. Depth 2556.6 m MD.
+                  - paragraph [ref=f4e438]: "What they did: Raised mud weight 0.3 ppg for coal stability, pumped hi-vis sweep, back-reamed out of hole to casing shoe"
+                  - button "Daily drilling report · HGJ-011 · 2556 m · p.3" [ref=f4e440] [cursor=pointer]
+                - listitem [ref=f4e445]:
+                  - generic [ref=f4e447]:
+                    - generic [ref=f4e448]: 2,697 m
+                    - generic [ref=f4e449]: High
+                  - generic [ref=f4e451]:
+                    - generic [ref=f4e452]: Cementing issue
+                    - generic [ref=f4e454]: Barail Coal-Shale
+                  - paragraph [ref=f4e455]: "9-5/8\" casing cement job: losses during displacement, top of cement 400 m below plan; CBL showed poor bond across Barail coal. Depth 2697.3 m MD."
+                  - paragraph [ref=f4e456]: "What they did: Remedial squeeze through perforations; subsequent wells pumped lightweight lead slurry with LCM fibres and reduced displacement rate"
+                  - button "Daily drilling report · HGJ-011 · 2697 m · p.5" [ref=f4e458] [cursor=pointer]
+                - listitem [ref=f4e463]:
+                  - generic [ref=f4e465]:
+                    - generic [ref=f4e466]: 2,743 m
+                    - generic [ref=f4e467]: High
+                  - generic [ref=f4e469]:
+                    - generic [ref=f4e470]: Kick / overpressure
+                    - generic [ref=f4e472]: Kopili
+                  - paragraph [ref=f4e473]: Pit gain of 7 bbls observed at 2742.7m while drilling Kopili. Shut in BOP. SICP=540 psi, SIDPP=473 psi. Killed using Driller's Method in 1.9 hrs.
+                  - paragraph [ref=f4e474]: "What they did: Shut in BOP; applied Driller's Method; weighted up mud to kill weight"
+                  - button "Daily drilling report · HGJ-011 · 2742 m · p.8" [ref=f4e476] [cursor=pointer]
+                - listitem [ref=f4e481]:
+                  - generic [ref=f4e483]:
+                    - generic [ref=f4e484]: 2,788 m
+                    - generic [ref=f4e485]: Critical
+                  - generic [ref=f4e487]:
+                    - generic [ref=f4e488]: Mud loss
+                    - generic [ref=f4e490]: Sylhet Limestone
+                  - paragraph [ref=f4e491]: Total losses at top Sylhet Limestone — returns dropped from 100% to 0% in fractured, vugular limestone. Annulus level dropped, well monitored on trip tank. Depth 2788.3 m MD.
+                  - paragraph [ref=f4e492]: "What they did: Pumped 60 bbl cross-linked LCM pill, squeezed with 50 bbl cement plug, drilled out and continued with 10.6 ppg SBM and managed ECD"
+                  - button "Daily drilling report · HGJ-011 · 2788 m · p.4" [ref=f4e494] [cursor=pointer]
+              - link "Compare its formations with the active well →" [ref=f4e500] [cursor=pointer]:
+                - /url: /correlation?offset=WELL-HGJ-011

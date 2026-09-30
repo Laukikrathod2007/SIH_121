@@ -1,0 +1,60 @@
+- generic [ref=f24e3]:
+  - complementary [ref=f24e4]:
+    - generic [ref=f24e13]:
+      - generic [ref=f24e14]: NWIS
+      - generic [ref=f24e15]: Nearby Wells Intelligence
+    - navigation [ref=f24e16]:
+      - link "Live well What is ahead of the bit" [ref=f24e17] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f24e21]:
+          - generic [ref=f24e22]: Live well
+          - generic [ref=f24e23]: What is ahead of the bit
+      - link "Nearby wells Offset wells on the map" [ref=f24e24] [cursor=pointer]:
+        - /url: /map
+        - generic [ref=f24e27]:
+          - generic [ref=f24e28]: Nearby wells
+          - generic [ref=f24e29]: Offset wells on the map
+      - link "Depth correlation Same rock, across wells" [ref=f24e30] [cursor=pointer]:
+        - /url: /correlation
+        - generic [ref=f24e35]:
+          - generic [ref=f24e36]: Depth correlation
+          - generic [ref=f24e37]: Same rock, across wells
+      - link "Ask the archive Search past events" [ref=f24e38] [cursor=pointer]:
+        - /url: /ask
+        - generic [ref=f24e41]:
+          - generic [ref=f24e42]: Ask the archive
+          - generic [ref=f24e43]: Search past events
+      - link "Alerts Warnings with evidence" [ref=f24e44] [cursor=pointer]:
+        - /url: /alerts
+        - generic [ref=f24e48]:
+          - generic [ref=f24e49]: Alerts
+          - generic [ref=f24e50]: Warnings with evidence
+      - link "Documents Reports in, events out" [ref=f24e51] [cursor=pointer]:
+        - /url: /documents
+        - generic [ref=f24e57]:
+          - generic [ref=f24e58]: Documents
+          - generic [ref=f24e59]: Reports in, events out
+      - link "Rig sensors Physics twin + risk model" [ref=f24e60] [cursor=pointer]:
+        - /url: /sensors
+        - generic [ref=f24e63]:
+          - generic [ref=f24e64]: Rig sensors
+          - generic [ref=f24e65]: Physics twin + risk model
+      - link "Models & benchmarks Measured accuracy" [ref=f24e66] [cursor=pointer]:
+        - /url: /models
+        - generic [ref=f24e69]:
+          - generic [ref=f24e70]: Models & benchmarks
+          - generic [ref=f24e71]: Measured accuracy
+    - generic [ref=f24e72]:
+      - generic [ref=f24e73]: Connecting…
+      - generic [ref=f24e75]: Demo data · Upper Assam testbed
+      - generic [ref=f24e76]: Oil India Limited · PS 26121
+  - generic [ref=f24e77]:
+    - banner [ref=f24e78]:
+      - generic [ref=f24e79]: Models & benchmarks/Measured accuracy
+      - generic [ref=f24e81] [cursor=pointer]:
+        - generic [ref=f24e82]: Active well
+        - generic [ref=f24e83]: —
+        - combobox "Active well" [ref=f24e84]
+      - generic [ref=f24e85]: 08:15 am IST
+    - main [ref=f24e93]:
+      - generic [ref=f24e94]: Loading benchmarks…
