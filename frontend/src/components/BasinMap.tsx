@@ -1,18 +1,38 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Circle, Popup, Tooltip, useMap } from 'react-leaflet';
 import type { LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Well } from '../types';
 
-// A real interactive map (Leaflet + free CartoDB dark tiles, no API key
+// A real interactive map (Leaflet + free tile providers, no API key
 // required) — replaces the earlier schematic SVG that projected lat/lon
 // with hand-tuned constants and drew fake fault-line/basin-info overlays as
 // static decoration. Well positions below are the real surface_lat/lon from
 // the API, rendered through Leaflet's actual projection, not a hand-rolled one.
+//
+// 3 basemap styles, matching the "different map visualizations" pattern
+// seen in a competitor's demo -- deliberately using free-tier providers
+// (CARTO, OpenStreetMap, Esri) rather than Google Maps, which needs a
+// billed API key that would be a real risk to depend on for a live demo.
+type MapStyle = 'dark' | 'streets' | 'satellite';
 
-const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const DARK_TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+const MAP_STYLES: Record<MapStyle, { label: string; url: string; attribution: string }> = {
+  dark: {
+    label: 'Dark Vector',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  },
+  streets: {
+    label: 'Streets',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  },
+  satellite: {
+    label: 'Satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+  },
+};
 
 interface BasinMapProps {
   wells: Well[];
@@ -33,6 +53,7 @@ function FitToWells({ wells }: { wells: Well[] }) {
 }
 
 export const BasinMap: React.FC<BasinMapProps> = ({ wells, activeWellId, selectedWellId, onSelectWell, radiusKm }) => {
+  const [mapStyle, setMapStyle] = useState<MapStyle>('dark');
   const activeWell = useMemo(() => wells.find((w) => w.well_id === activeWellId), [wells, activeWellId]);
   const center: [number, number] = activeWell
     ? [activeWell.surface_lat, activeWell.surface_lon]
@@ -41,6 +62,20 @@ export const BasinMap: React.FC<BasinMapProps> = ({ wells, activeWellId, selecte
     : [27.15, 95.3];
 
   return (
+    <div className="relative w-full h-full">
+      <div className="absolute top-2 right-2 z-[1000] bg-slate-950/90 border border-slate-800 rounded-lg p-1 flex gap-1">
+        {(Object.keys(MAP_STYLES) as MapStyle[]).map((key) => (
+          <button
+            key={key}
+            onClick={() => setMapStyle(key)}
+            className={`px-2 py-1 rounded text-[10px] font-mono transition-colors ${
+              mapStyle === key ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-slate-400 hover:text-slate-200 border border-transparent'
+            }`}
+          >
+            {MAP_STYLES[key].label}
+          </button>
+        ))}
+      </div>
     <MapContainer
       center={center}
       zoom={11}
@@ -48,7 +83,7 @@ export const BasinMap: React.FC<BasinMapProps> = ({ wells, activeWellId, selecte
       style={{ background: '#090c12' }}
       zoomControl={true}
     >
-      <TileLayer url={DARK_TILE_URL} attribution={DARK_TILE_ATTRIBUTION} />
+      <TileLayer key={mapStyle} url={MAP_STYLES[mapStyle].url} attribution={MAP_STYLES[mapStyle].attribution} />
       <FitToWells wells={wells} />
       {activeWell && radiusKm && (
         <Circle
@@ -90,5 +125,6 @@ export const BasinMap: React.FC<BasinMapProps> = ({ wells, activeWellId, selecte
         );
       })}
     </MapContainer>
+    </div>
   );
 };

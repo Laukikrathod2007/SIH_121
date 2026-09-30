@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Radar, Download } from 'lucide-react';
+import { Radar, Download, Box, Map as MapIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useCommandCenterData } from '../hooks/useCommandCenterData';
 import { CommandScene3D } from '../components/commandcenter/CommandScene3D';
@@ -10,8 +10,12 @@ import { WellListPanel } from '../components/commandcenter/WellListPanel';
 import { KPIStrip } from '../components/commandcenter/KPIStrip';
 import { OperationalDirective } from '../components/commandcenter/OperationalDirective';
 import { EventDeepDive } from '../components/commandcenter/EventDeepDive';
+import { BackendStatusStrip } from '../components/commandcenter/BackendStatusStrip';
+import { BasinMap } from '../components/BasinMap';
 import { downloadCSV } from '../lib/csvExport';
 import { DrillingEvent } from '../types';
+
+type ViewMode = '3D' | 'MAP';
 
 // The IVAAP/DrillPlan/Tela-inspired command center, built directly against
 // real Module 02 endpoints from the start (trajectory, analyzeWell, real
@@ -24,6 +28,8 @@ export const CommandCenterPage: React.FC = () => {
   const { wells, activeWellId, setActiveWellId } = useApp();
   const [radiusKm, setRadiusKm] = useState(25);
   const [selectedEvent, setSelectedEvent] = useState<DrillingEvent | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('3D');
+  const [bottomExpanded, setBottomExpanded] = useState(true);
 
   const {
     trajectory, formations, events, depth, setDepth, minDepth, maxDepth,
@@ -69,6 +75,11 @@ export const CommandCenterPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Live backend status -- genuinely health-checked, not hardcoded */}
+      <div className="shrink-0">
+        <BackendStatusStrip />
+      </div>
+
       {/* KPI strip + operational directive */}
       <div className="shrink-0 space-y-2">
         <KPIStrip analysis={analysis} eventCount={events.length} />
@@ -92,17 +103,50 @@ export const CommandCenterPage: React.FC = () => {
           />
         </div>
 
-        <div className="scada-panel overflow-hidden min-h-[360px] lg:min-h-0">
-          <CommandScene3D
-            activeTrajectory={trajectory}
-            offsetTrajectory={offsetTrajectory}
-            formations={formations}
-            events={events}
-            corridors={corridors}
-            depth={depth}
-            offsetWellName={offsetWell?.well_name}
-            onEventClick={setSelectedEvent}
-          />
+        <div className="scada-panel overflow-hidden min-h-[360px] lg:min-h-0 flex flex-col">
+          {/* 3D / Map view toggle -- the "different maps" integration,
+              sharing the same well-list/look-ahead side panels rather
+              than duplicating them on a separate page. */}
+          <div className="flex items-center gap-1 p-1.5 border-b border-slate-800 shrink-0">
+            <button
+              onClick={() => setViewMode('3D')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono ${
+                viewMode === '3D' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Box className="w-3.5 h-3.5" /> 3D Subsurface
+            </button>
+            <button
+              onClick={() => setViewMode('MAP')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono ${
+                viewMode === 'MAP' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <MapIcon className="w-3.5 h-3.5" /> Field Map
+            </button>
+          </div>
+          <div className="flex-1 min-h-0">
+            {viewMode === '3D' ? (
+              <CommandScene3D
+                activeTrajectory={trajectory}
+                offsetTrajectory={offsetTrajectory}
+                formations={formations}
+                events={events}
+                corridors={corridors}
+                depth={depth}
+                offsetWellName={offsetWell?.well_name}
+                onEventClick={setSelectedEvent}
+              />
+            ) : (
+              <BasinMap
+                wells={wells}
+                activeWellId={activeWellId}
+                selectedWellId={offsetWell?.well_id ?? activeWellId}
+                onSelectWell={setActiveWellId}
+                radiusKm={radiusKm}
+              />
+            )}
+          </div>
         </div>
 
         <div className="min-h-[300px] lg:min-h-0">
@@ -110,19 +154,31 @@ export const CommandCenterPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom: depth correlation + telemetry HUD */}
+      {/* Bottom: depth correlation + telemetry HUD -- collapsible to
+          reduce on-screen density when not needed. */}
       <div className="shrink-0 space-y-2">
-        <DepthCorrelationStrip
-          activeLabel={activeWell?.well_name ?? activeWellId}
-          activeEvents={events}
-          offsetLabel={offsetWell?.well_name}
-          offsetEvents={offsetEvents}
-          currentDepth={depth}
-          minDepth={minDepth}
-          maxDepth={maxDepth}
-          onEventClick={setSelectedEvent}
-        />
-        <TelemetryHUD telemetry={telemetry} depth={depth} />
+        <button
+          onClick={() => setBottomExpanded(!bottomExpanded)}
+          className="w-full flex items-center justify-center gap-1.5 text-[10px] font-mono text-slate-500 hover:text-slate-300 py-0.5"
+        >
+          {bottomExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+          {bottomExpanded ? 'Hide' : 'Show'} Depth Correlation & Telemetry
+        </button>
+        {bottomExpanded && (
+          <>
+            <DepthCorrelationStrip
+              activeLabel={activeWell?.well_name ?? activeWellId}
+              activeEvents={events}
+              offsetLabel={offsetWell?.well_name}
+              offsetEvents={offsetEvents}
+              currentDepth={depth}
+              minDepth={minDepth}
+              maxDepth={maxDepth}
+              onEventClick={setSelectedEvent}
+            />
+            <TelemetryHUD telemetry={telemetry} depth={depth} />
+          </>
+        )}
       </div>
 
       <EventDeepDive event={selectedEvent} onClose={() => setSelectedEvent(null)} />
