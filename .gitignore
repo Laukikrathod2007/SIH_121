@@ -2,3 +2,11 @@
 # Never tracked, never committed, never pushed — keeps their code fully
 # separate from our own submission history.
 research/competitor_repos/
+
+# Source scaffolding for the nwis-map-package integration -- its useful
+# content (the 3 components, real PDFs) has been copied into
+# frontend/src/components/nwis-map/ and evidence-server/ respectively.
+# This raw folder (with its own large node_modules) has no reason to be
+# tracked separately.
+nwis-map-package/
+evidence-server/node_modules/

@@ -17,6 +17,7 @@ import {
   Radar,
   Sun,
   Moon,
+  MapPin,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../hooks/useTheme';
@@ -32,6 +33,7 @@ export const Sidebar: React.FC = () => {
     { to: '/command-center', label: 'Command Center', icon: Radar, badge: 'NEW' },
     { to: '/drilling', label: 'Live Drilling', icon: Gauge, badge: isWsConnected ? 'LIVE' : undefined },
     { to: '/wells', label: 'Nearby Wells', icon: Compass },
+    { to: '/offset-map', label: 'Offset Map', icon: MapPin, badge: 'NEW' },
     { to: '/correlation', label: 'Geological Correlation', icon: Layers },
     { to: '/risk', label: 'Risk & Prediction', icon: ShieldAlert },
     { to: '/alerts', label: 'Alerts & Advisory', icon: BellRing, alertCount: activeAlertsCount },
