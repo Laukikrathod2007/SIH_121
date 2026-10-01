@@ -1,0 +1,196 @@
+[
+  {
+    "well_id": "WELL-NHK-001",
+    "well_name": "NHK-001",
+    "field": "Nahorkatiya",
+    "lat": 27.149183,
+    "lon": 95.292326,
+    "status": "PRODUCING",
+    "well_type": "J-Type",
+    "total_depth_md_m": 2820.0,
+    "total_events": 2,
+    "npt_hours": 7.8,
+    "events_by_type": {
+      "WELLBORE_INSTABILITY": 1,
+      "MUD_LOSS": 1
+    }
+  },
+  {
+    "well_id": "WELL-NHK-002",
+    "well_name": "NHK-002",
+    "field": "Nahorkatiya",
+    "lat": 27.260229,
+    "lon": 95.291487,
+    "status": "COMPLETED",
+    "well_type": "J-Type",
+    "total_depth_md_m": 3244.0,
+    "total_events": 2,
+    "npt_hours": 7.6,
+    "events_by_type": {
+      "WELLBORE_INSTABILITY": 1,
+      "KICK": 1
+    }
+  },
+  {
+    "well_id": "WELL-NHK-003",
+    "well_name": "NHK-003",
+    "field": "Nahorkatiya",
+    "lat": 27.152943,
+    "lon": 95.406274,
+    "status": "SUSPENDED",
+    "well_type": "Vertical",
+    "total_depth_md_m": 3461.0,
+    "total_events": 2,
+    "npt_hours": 13.8,
+    "events_by_type": {
+      "KICK": 2
+    }
+  },
+  {
+    "well_id": "WELL-MRN-004",
+    "well_name": "MRN-004",
+    "field": "Moran",
+    "lat": 27.037065,
+    "lon": 94.981018,
+    "status": "ABANDONED",
+    "well_type": "Vertical",
+    "total_depth_md_m": 3108.0,
+    "total_events": 2,
+    "npt_hours": 13.1,
+    "events_by_type": {
+      "WELLBORE_INSTABILITY": 1,
+      "STUCK_PIPE": 1
+    }
+  },
+  {
+    "well_id": "WELL-MRN-005",
+    "well_name": "MRN-005",
+    "field": "Moran",
+    "lat": 27.088685,
+    "lon": 94.984708,
+    "status": "SUSPENDED",
+    "well_type": "S-Type",
+    "total_depth_md_m": 3490.0,
+    "total_events": 4,
+    "npt_hours": 19.2,
+    "events_by_type": {
+      "WELLBORE_INSTABILITY": 3,
+      "KICK": 1
+    }
+  },
+  {
+    "well_id": "WELL-MRN-006",
+    "well_name": "MRN-006",
+    "field": "Moran",
+    "lat": 27.078776,
+    "lon": 95.047567,
+    "status": "COMPLETED",
+    "well_type": "Vertical",
+    "total_depth_md_m": 2949.0,
+    "total_events": 5,
+    "npt_hours": 26.0,
+    "events_by_type": {
+      "KICK": 1,
+      "STUCK_PIPE": 3,
+      "MUD_LOSS": 1
+    }
+  },
+  {
+    "well_id": "WELL-BGJ-007",
+    "well_name": "BGJ-007",
+    "field": "Baghjan",
+    "lat": 27.486087,
+    "lon": 95.393323,
+    "status": "COMPLETED",
+    "well_type": "Vertical",
+    "total_depth_md_m": 3064.0,
+    "total_events": 4,
+    "npt_hours": 18.9,
+    "events_by_type": {
+      "WELLBORE_INSTABILITY": 1,
+      "STUCK_PIPE": 2,
+      "KICK": 1
+    }
+  },
+  {
+    "well_id": "WELL-BGJ-008",
+    "well_name": "BGJ-008",
+    "field": "Baghjan",
+    "lat": 27.600434,
+    "lon": 95.312772,
+    "status": "ABANDONED",
+    "well_type": "Vertical",
+    "total_depth_md_m": 3296.0,
+    "total_events": 3,
+    "npt_hours": 12.2,
+    "events_by_type": {
+      "MUD_LOSS": 1,
+      "STUCK_PIPE": 1,
+      "KICK": 1
+    }
+  },
+  {
+    "well_id": "WELL-BGJ-009",
+    "well_name": "BGJ-009",
+    "field": "Baghjan",
+    "lat": 27.607952,
+    "lon": 95.283917,
+    "status": "SUSPENDED",
+    "well_type": "S-Type",
+    "total_depth_md_m": 3160.0,
+    "total_events": 2,
+    "npt_hours": 8.5,
+    "events_by_type": {
+      "STUCK_PIPE": 2
+    }
+  },
+  {
+    "well_id": "WELL-HGJ-010",
+    "well_name": "HGJ-010",
+    "field": "Hugrijan",
+    "lat": 27.277859,
+    "lon": 94.738453,
+    "status": "SUSPENDED",
+    "well_type": "Vertical",
+    "total_depth_md_m": 2882.0,
+    "total_events": 4,
+    "npt_hours": 18.5,
+    "events_by_type": {
+      "KICK": 2,
+      "WELLBORE_INSTABILITY": 2
+    }
+  },
+  {
+    "well_id": "WELL-HGJ-011",
+    "well_name": "HGJ-011",
+    "field": "Hugrijan",
+    "lat": 27.202888,
+    "lon": 94.750397,
+    "status": "ABANDONED",
+    "well_type": "Vertical",
+    "total_depth_md_m": 2843.0,
+    "total_events": 6,
+    "npt_hours": 24.8,
+    "events_by_type": {
+      "WELLBORE_INSTABILITY": 2,
+      "STUCK_PIPE": 3,
+      "KICK": 1
+    }
+  },
+  {
+    "well_id": "WELL-HGJ-012",
+    "well_name": "HGJ-012",
+    "field": "Hugrijan",
+    "lat": 27.274571,
+    "lon": 94.723159,
+    "status": "COMPLETED",
+    "well_type": "J-Type",
+    "total_depth_md_m": 2838.0,
+    "total_events": 3,
+    "npt_hours": 19.3,
+    "events_by_type": {
+      "STUCK_PIPE": 2,
+      "WELLBORE_INSTABILITY": 1
+    }
+  }
+]

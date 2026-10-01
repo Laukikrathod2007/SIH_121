@@ -31,8 +31,19 @@ function landingPageAtRoot(): Plugin {
             path.resolve(__dirname, 'public/landing/index.html'),
             'utf-8',
           );
+          // The file's own relative asset paths (href="assets/css/...", no
+          // leading slash) are correct for its real location, /landing/ --
+          // but it's being served here AT "/", so the browser would resolve
+          // them against the wrong base and every stylesheet/script/image
+          // 404s. Injecting <base href="/landing/"> fixes resolution without
+          // touching the file on disk or its own paths at all.
+          const withBase = landingHtml.replace(
+            /<head>/i,
+            '<head><base href="/landing/">',
+          );
           res.setHeader('Content-Type', 'text/html');
-          res.end(landingHtml);
+          res.setHeader('Cache-Control', 'no-store');
+          res.end(withBase);
           return;
         }
         next();

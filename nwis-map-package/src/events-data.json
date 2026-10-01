@@ -1,0 +1,533 @@
+{
+  "WELL-NHK-001": [
+    {
+      "event_id": "EVT-3F39EACF",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "MEDIUM",
+      "depth_start_md_m": 1221.5,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Washout suspected at 1221.5m in Girujan Clay. Caliper log showed 33% over-gauge hole. Pumped casing cement to seal.",
+      "npt_hours": 6.2,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-NHK-001_1221m.pdf",
+      "source_page": 5
+    },
+    {
+      "event_id": "EVT-4FD3A896",
+      "event_type": "MUD_LOSS",
+      "severity": "CRITICAL",
+      "depth_start_md_m": 2658.5,
+      "formation": "Kopili",
+      "raw_narrative": "Lost circulation encountered at 2658.5m in Kopili. Total fluid loss of 27.0 bbl. Pumped 24.0 bbl medium-nut-plug LCM pill at 1550 lpm. Returned to full circulation after 1.6 hrs.",
+      "npt_hours": 1.6,
+      "mitigation_description": "Pumped LCM pill; reduced mud weight; staged cementing squeeze",
+      "outcome": "Returns restored; resumed drilling",
+      "source_document": "DDR_WELL-NHK-001_2658m.pdf",
+      "source_page": 1
+    }
+  ],
+  "WELL-NHK-002": [
+    {
+      "event_id": "EVT-87C9E9B9",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "MEDIUM",
+      "depth_start_md_m": 1459.2,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Tight hole and overpull of 42 klbs noted at 1459.2m in Girujan Clay shale. Reamed and circulated to clear cavings.",
+      "npt_hours": 5.6,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-NHK-002_1459m.pdf",
+      "source_page": 1
+    },
+    {
+      "event_id": "EVT-926FC89D",
+      "event_type": "KICK",
+      "severity": "HIGH",
+      "depth_start_md_m": 1620.3,
+      "formation": "Barail Sandstone",
+      "raw_narrative": "Unexpected gas show at 1620.3m in Barail Sandstone. Fingerprinting confirmed formation gas. Weight up mud to 10.7 ppg. NPT 2.0 hrs.",
+      "npt_hours": 2.0,
+      "mitigation_description": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
+      "outcome": "Well killed successfully; drilling resumed",
+      "source_document": "DDR_WELL-NHK-002_1620m.pdf",
+      "source_page": 8
+    }
+  ],
+  "WELL-NHK-003": [
+    {
+      "event_id": "EVT-B4236127",
+      "event_type": "KICK",
+      "severity": "HIGH",
+      "depth_start_md_m": 2663.9,
+      "formation": "Kopili",
+      "raw_narrative": "Pit gain of 10 bbls observed at 2663.9m while drilling Kopili. Shut in BOP. SICP=379 psi, SIDPP=190 psi. Killed using Driller's Method in 7.8 hrs.",
+      "npt_hours": 7.8,
+      "mitigation_description": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
+      "outcome": "Well killed successfully; drilling resumed",
+      "source_document": "DDR_WELL-NHK-003_2663m.pdf",
+      "source_page": 8
+    },
+    {
+      "event_id": "EVT-A092A410",
+      "event_type": "KICK",
+      "severity": "CRITICAL",
+      "depth_start_md_m": 3061.5,
+      "formation": "Sylhet Limestone",
+      "raw_narrative": "Pit gain of 14 bbls observed at 3061.5m while drilling Sylhet Limestone. Shut in BOP. SICP=506 psi, SIDPP=477 psi. Killed using Driller's Method in 6.0 hrs.",
+      "npt_hours": 6.0,
+      "mitigation_description": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
+      "outcome": "Well killed successfully; drilling resumed",
+      "source_document": "DDR_WELL-NHK-003_3061m.pdf",
+      "source_page": 5
+    }
+  ],
+  "WELL-MRN-004": [
+    {
+      "event_id": "EVT-3EF575F2",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "MEDIUM",
+      "depth_start_md_m": 1324.0,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Tight hole and overpull of 47 klbs noted at 1324.0m in Girujan Clay shale. Reamed and circulated to clear cavings.",
+      "npt_hours": 6.2,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-MRN-004_1324m.pdf",
+      "source_page": 1
+    },
+    {
+      "event_id": "EVT-45042485",
+      "event_type": "STUCK_PIPE",
+      "severity": "CRITICAL",
+      "depth_start_md_m": 496.0,
+      "formation": "Tipam Sandstone",
+      "raw_narrative": "Differential pipe sticking at 496.0m in Tipam Sandstone. Applied 26 kNm right torque and reciprocated string. Worked free after 6.9 hrs. LCM pill not required.",
+      "npt_hours": 6.9,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-MRN-004_496m.pdf",
+      "source_page": 8
+    }
+  ],
+  "WELL-MRN-005": [
+    {
+      "event_id": "EVT-12697F53",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "HIGH",
+      "depth_start_md_m": 1179.4,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Tight hole and overpull of 56 klbs noted at 1179.4m in Girujan Clay shale. Reamed and circulated to clear cavings.",
+      "npt_hours": 3.2,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-MRN-005_1179m.pdf",
+      "source_page": 7
+    },
+    {
+      "event_id": "EVT-2256E581",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "MEDIUM",
+      "depth_start_md_m": 1281.1,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Washout suspected at 1281.1m in Girujan Clay. Caliper log showed 15% over-gauge hole. Pumped casing cement to seal.",
+      "npt_hours": 5.2,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-MRN-005_1281m.pdf",
+      "source_page": 2
+    },
+    {
+      "event_id": "EVT-9BFCF927",
+      "event_type": "KICK",
+      "severity": "CRITICAL",
+      "depth_start_md_m": 3069.8,
+      "formation": "Sylhet Limestone",
+      "raw_narrative": "Gas kick detected at 3069.8m. Flow check positive. Shut in well. Kill mud density 11.6 ppg required. NPT: 2.4 hrs.",
+      "npt_hours": 2.4,
+      "mitigation_description": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
+      "outcome": "Well killed successfully; drilling resumed",
+      "source_document": "DDR_WELL-MRN-005_3069m.pdf",
+      "source_page": 1
+    },
+    {
+      "event_id": "EVT-0F153310",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "HIGH",
+      "depth_start_md_m": 1844.0,
+      "formation": "Barail Sandstone",
+      "raw_narrative": "Wellbore instability (WBS) observed in Barail Sandstone at 1844.0m. High cavings on shakers. Increased mud weight to 10.9 ppg and added KCl inhibitor. NPT: 8.4 hrs.",
+      "npt_hours": 8.4,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-MRN-005_1844m.pdf",
+      "source_page": 7
+    }
+  ],
+  "WELL-MRN-006": [
+    {
+      "event_id": "EVT-60A3E4FF",
+      "event_type": "KICK",
+      "severity": "HIGH",
+      "depth_start_md_m": 2902.1,
+      "formation": "Kopili",
+      "raw_narrative": "Gas kick detected at 2902.1m. Flow check positive. Shut in well. Kill mud density 11.2 ppg required. NPT: 4.8 hrs.",
+      "npt_hours": 4.8,
+      "mitigation_description": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
+      "outcome": "Well killed successfully; drilling resumed",
+      "source_document": "DDR_WELL-MRN-006_2902m.pdf",
+      "source_page": 4
+    },
+    {
+      "event_id": "EVT-0A60E138",
+      "event_type": "STUCK_PIPE",
+      "severity": "HIGH",
+      "depth_start_md_m": 569.8,
+      "formation": "Tipam Sandstone",
+      "raw_narrative": "Tight hole observed while tripping out through Tipam Sandstone at 569.8m. Pipe stuck for 5.2 hrs. Applied 40 klbs overpull. Released after spot freeing agent.",
+      "npt_hours": 5.2,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-MRN-006_569m.pdf",
+      "source_page": 8
+    },
+    {
+      "event_id": "EVT-3883E9E3",
+      "event_type": "STUCK_PIPE",
+      "severity": "CRITICAL",
+      "depth_start_md_m": 1383.5,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Tight hole observed while tripping out through Girujan Clay at 1383.5m. Pipe stuck for 5.2 hrs. Applied 64 klbs overpull. Released after spot freeing agent.",
+      "npt_hours": 5.2,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-MRN-006_1383m.pdf",
+      "source_page": 5
+    },
+    {
+      "event_id": "EVT-DE31D627",
+      "event_type": "STUCK_PIPE",
+      "severity": "HIGH",
+      "depth_start_md_m": 1490.1,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Mechanical sticking in Girujan Clay at 1490.1m. Key-seating suspected. Rotated string and applied jar blows (6.9 hrs NPT).",
+      "npt_hours": 6.9,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-MRN-006_1490m.pdf",
+      "source_page": 1
+    },
+    {
+      "event_id": "EVT-8E95EBDE",
+      "event_type": "MUD_LOSS",
+      "severity": "HIGH",
+      "depth_start_md_m": 1835.5,
+      "formation": "Barail Sandstone",
+      "raw_narrative": "Partial loss of circulation at 1835.5m (Barail Sandstone). Loss rate 76 bbl/hr. Reduced ECD by lowering mud weight from 10.7 to 10.1 ppg. Regained returns in 3.9 hrs.",
+      "npt_hours": 3.9,
+      "mitigation_description": "Pumped LCM pill; reduced mud weight; staged cementing squeeze",
+      "outcome": "Returns restored; resumed drilling",
+      "source_document": "DDR_WELL-MRN-006_1835m.pdf",
+      "source_page": 1
+    }
+  ],
+  "WELL-BGJ-007": [
+    {
+      "event_id": "EVT-7C5FFF40",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "MEDIUM",
+      "depth_start_md_m": 1345.2,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Washout suspected at 1345.2m in Girujan Clay. Caliper log showed 36% over-gauge hole. Pumped casing cement to seal.",
+      "npt_hours": 5.4,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-BGJ-007_1345m.pdf",
+      "source_page": 7
+    },
+    {
+      "event_id": "EVT-AF199B90",
+      "event_type": "STUCK_PIPE",
+      "severity": "HIGH",
+      "depth_start_md_m": 563.2,
+      "formation": "Tipam Sandstone",
+      "raw_narrative": "Mechanical sticking in Tipam Sandstone at 563.2m. Key-seating suspected. Rotated string and applied jar blows (6.7 hrs NPT).",
+      "npt_hours": 6.7,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-BGJ-007_563m.pdf",
+      "source_page": 8
+    },
+    {
+      "event_id": "EVT-018270CF",
+      "event_type": "KICK",
+      "severity": "HIGH",
+      "depth_start_md_m": 2905.3,
+      "formation": "Kopili",
+      "raw_narrative": "Pit gain of 25 bbls observed at 2905.3m while drilling Kopili. Shut in BOP. SICP=249 psi, SIDPP=541 psi. Killed using Driller's Method in 2.7 hrs.",
+      "npt_hours": 2.7,
+      "mitigation_description": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
+      "outcome": "Well killed successfully; drilling resumed",
+      "source_document": "DDR_WELL-BGJ-007_2905m.pdf",
+      "source_page": 2
+    },
+    {
+      "event_id": "EVT-1A65D83B",
+      "event_type": "STUCK_PIPE",
+      "severity": "HIGH",
+      "depth_start_md_m": 1236.7,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Mechanical sticking in Girujan Clay at 1236.7m. Key-seating suspected. Rotated string and applied jar blows (4.1 hrs NPT).",
+      "npt_hours": 4.1,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-BGJ-007_1236m.pdf",
+      "source_page": 7
+    }
+  ],
+  "WELL-BGJ-008": [
+    {
+      "event_id": "EVT-120E1E30",
+      "event_type": "MUD_LOSS",
+      "severity": "MEDIUM",
+      "depth_start_md_m": 3173.1,
+      "formation": "Sylhet Limestone",
+      "raw_narrative": "Lost circulation encountered at 3173.1m in Sylhet Limestone. Total fluid loss of 57.0 bbl. Pumped 23.0 bbl medium-nut-plug LCM pill at 1650 lpm. Returned to full circulation after 3.7 hrs.",
+      "npt_hours": 3.7,
+      "mitigation_description": "Pumped LCM pill; reduced mud weight; staged cementing squeeze",
+      "outcome": "Returns restored; resumed drilling",
+      "source_document": "DDR_WELL-BGJ-008_3173m.pdf",
+      "source_page": 5
+    },
+    {
+      "event_id": "EVT-93D47090",
+      "event_type": "STUCK_PIPE",
+      "severity": "CRITICAL",
+      "depth_start_md_m": 1244.0,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Tight hole observed while tripping out through Girujan Clay at 1244.0m. Pipe stuck for 5.8 hrs. Applied 66 klbs overpull. Released after spot freeing agent.",
+      "npt_hours": 5.8,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-BGJ-008_1244m.pdf",
+      "source_page": 1
+    },
+    {
+      "event_id": "EVT-B1746DAB",
+      "event_type": "KICK",
+      "severity": "CRITICAL",
+      "depth_start_md_m": 1813.3,
+      "formation": "Barail Sandstone",
+      "raw_narrative": "Unexpected gas show at 1813.3m in Barail Sandstone. Fingerprinting confirmed formation gas. Weight up mud to 10.6 ppg. NPT 2.7 hrs.",
+      "npt_hours": 2.7,
+      "mitigation_description": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
+      "outcome": "Well killed successfully; drilling resumed",
+      "source_document": "DDR_WELL-BGJ-008_1813m.pdf",
+      "source_page": 2
+    }
+  ],
+  "WELL-BGJ-009": [
+    {
+      "event_id": "EVT-57576A2C",
+      "event_type": "STUCK_PIPE",
+      "severity": "HIGH",
+      "depth_start_md_m": 1937.5,
+      "formation": "Barail Sandstone",
+      "raw_narrative": "Differential pipe sticking at 1937.5m in Barail Sandstone. Applied 28 kNm right torque and reciprocated string. Worked free after 1.9 hrs. LCM pill not required.",
+      "npt_hours": 1.9,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-BGJ-009_1937m.pdf",
+      "source_page": 5
+    },
+    {
+      "event_id": "EVT-8E41FF3D",
+      "event_type": "STUCK_PIPE",
+      "severity": "HIGH",
+      "depth_start_md_m": 1203.8,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Differential pipe sticking at 1203.8m in Girujan Clay. Applied 35 kNm right torque and reciprocated string. Worked free after 6.6 hrs. LCM pill not required.",
+      "npt_hours": 6.6,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-BGJ-009_1203m.pdf",
+      "source_page": 3
+    }
+  ],
+  "WELL-HGJ-010": [
+    {
+      "event_id": "EVT-8779C573",
+      "event_type": "KICK",
+      "severity": "HIGH",
+      "depth_start_md_m": 2801.5,
+      "formation": "Sylhet Limestone",
+      "raw_narrative": "Unexpected gas show at 2801.5m in Sylhet Limestone. Fingerprinting confirmed formation gas. Weight up mud to 11.9 ppg. NPT 3.8 hrs.",
+      "npt_hours": 3.8,
+      "mitigation_description": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
+      "outcome": "Well killed successfully; drilling resumed",
+      "source_document": "DDR_WELL-HGJ-010_2801m.pdf",
+      "source_page": 5
+    },
+    {
+      "event_id": "EVT-2D9E9ACB",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "HIGH",
+      "depth_start_md_m": 1180.7,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Washout suspected at 1180.7m in Girujan Clay. Caliper log showed 24% over-gauge hole. Pumped casing cement to seal.",
+      "npt_hours": 8.1,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-HGJ-010_1180m.pdf",
+      "source_page": 2
+    },
+    {
+      "event_id": "EVT-A506B185",
+      "event_type": "KICK",
+      "severity": "HIGH",
+      "depth_start_md_m": 1571.9,
+      "formation": "Barail Sandstone",
+      "raw_narrative": "Unexpected gas show at 1571.9m in Barail Sandstone. Fingerprinting confirmed formation gas. Weight up mud to 10.5 ppg. NPT 3.0 hrs.",
+      "npt_hours": 3.0,
+      "mitigation_description": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
+      "outcome": "Well killed successfully; drilling resumed",
+      "source_document": "DDR_WELL-HGJ-010_1571m.pdf",
+      "source_page": 4
+    },
+    {
+      "event_id": "EVT-092B589B",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "MEDIUM",
+      "depth_start_md_m": 1257.3,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Wellbore instability (WBS) observed in Girujan Clay at 1257.3m. High cavings on shakers. Increased mud weight to 9.9 ppg and added KCl inhibitor. NPT: 3.6 hrs.",
+      "npt_hours": 3.6,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-HGJ-010_1257m.pdf",
+      "source_page": 7
+    }
+  ],
+  "WELL-HGJ-011": [
+    {
+      "event_id": "EVT-91458494",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "HIGH",
+      "depth_start_md_m": 1423.9,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Washout suspected at 1423.9m in Girujan Clay. Caliper log showed 21% over-gauge hole. Pumped casing cement to seal.",
+      "npt_hours": 6.3,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-HGJ-011_1423m.pdf",
+      "source_page": 3
+    },
+    {
+      "event_id": "EVT-8BB5D739",
+      "event_type": "STUCK_PIPE",
+      "severity": "HIGH",
+      "depth_start_md_m": 1739.0,
+      "formation": "Barail Sandstone",
+      "raw_narrative": "Tight hole observed while tripping out through Barail Sandstone at 1739.0m. Pipe stuck for 4.0 hrs. Applied 36 klbs overpull. Released after spot freeing agent.",
+      "npt_hours": 4.0,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-HGJ-011_1739m.pdf",
+      "source_page": 2
+    },
+    {
+      "event_id": "EVT-695F1835",
+      "event_type": "KICK",
+      "severity": "HIGH",
+      "depth_start_md_m": 2742.7,
+      "formation": "Kopili",
+      "raw_narrative": "Pit gain of 7 bbls observed at 2742.7m while drilling Kopili. Shut in BOP. SICP=540 psi, SIDPP=473 psi. Killed using Driller's Method in 1.9 hrs.",
+      "npt_hours": 1.9,
+      "mitigation_description": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
+      "outcome": "Well killed successfully; drilling resumed",
+      "source_document": "DDR_WELL-HGJ-011_2742m.pdf",
+      "source_page": 8
+    },
+    {
+      "event_id": "EVT-431ED3FA",
+      "event_type": "STUCK_PIPE",
+      "severity": "HIGH",
+      "depth_start_md_m": 1614.4,
+      "formation": "Barail Sandstone",
+      "raw_narrative": "Differential pipe sticking at 1614.4m in Barail Sandstone. Applied 34 kNm right torque and reciprocated string. Worked free after 5.5 hrs. LCM pill not required.",
+      "npt_hours": 5.5,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-HGJ-011_1614m.pdf",
+      "source_page": 4
+    },
+    {
+      "event_id": "EVT-681732C8",
+      "event_type": "STUCK_PIPE",
+      "severity": "CRITICAL",
+      "depth_start_md_m": 573.8,
+      "formation": "Tipam Sandstone",
+      "raw_narrative": "Differential pipe sticking at 573.8m in Tipam Sandstone. Applied 16 kNm right torque and reciprocated string. Worked free after 3.1 hrs. LCM pill not required.",
+      "npt_hours": 3.1,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-HGJ-011_573m.pdf",
+      "source_page": 3
+    },
+    {
+      "event_id": "EVT-39F378F6",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "MEDIUM",
+      "depth_start_md_m": 1834.7,
+      "formation": "Barail Sandstone",
+      "raw_narrative": "Tight hole and overpull of 55 klbs noted at 1834.7m in Barail Sandstone shale. Reamed and circulated to clear cavings.",
+      "npt_hours": 4.0,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-HGJ-011_1834m.pdf",
+      "source_page": 1
+    }
+  ],
+  "WELL-HGJ-012": [
+    {
+      "event_id": "EVT-CD5DAAA2",
+      "event_type": "STUCK_PIPE",
+      "severity": "CRITICAL",
+      "depth_start_md_m": 1396.6,
+      "formation": "Girujan Clay",
+      "raw_narrative": "Mechanical sticking in Girujan Clay at 1396.6m. Key-seating suspected. Rotated string and applied jar blows (6.5 hrs NPT).",
+      "npt_hours": 6.5,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-HGJ-012_1396m.pdf",
+      "source_page": 1
+    },
+    {
+      "event_id": "EVT-FD5F563F",
+      "event_type": "STUCK_PIPE",
+      "severity": "HIGH",
+      "depth_start_md_m": 488.0,
+      "formation": "Tipam Sandstone",
+      "raw_narrative": "Differential pipe sticking at 488.0m in Tipam Sandstone. Applied 24 kNm right torque and reciprocated string. Worked free after 8.4 hrs. LCM pill not required.",
+      "npt_hours": 8.4,
+      "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
+      "outcome": "Pipe freed; cased off interval",
+      "source_document": "DDR_WELL-HGJ-012_488m.pdf",
+      "source_page": 5
+    },
+    {
+      "event_id": "EVT-6A11F81B",
+      "event_type": "WELLBORE_INSTABILITY",
+      "severity": "HIGH",
+      "depth_start_md_m": 691.4,
+      "formation": "Tipam Sandstone",
+      "raw_narrative": "Washout suspected at 691.4m in Tipam Sandstone. Caliper log showed 30% over-gauge hole. Pumped casing cement to seal.",
+      "npt_hours": 4.4,
+      "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+      "outcome": "Stabilized; casing run",
+      "source_document": "DDR_WELL-HGJ-012_691m.pdf",
+      "source_page": 4
+    }
+  ]
+}
