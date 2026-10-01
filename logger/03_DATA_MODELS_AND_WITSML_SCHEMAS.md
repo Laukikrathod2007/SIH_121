@@ -1,6 +1,6 @@
 # SIH 26121 — eRTMAC-NWIS: Data Models & WITSML Schemas
 
-This document defines the data structures and schema mapping used in NWIS, fully compatible with Energistics WITSML (Wellsite Information Transfer Standard Markup Language) and OSDU standards.
+This document defines the data structures and schema mapping used in NWIS. Field names follow WITSML (Wellsite Information Transfer Standard Markup Language) naming conventions as an interoperability step — this is custom JSON using WITSML-style field names, not a certified Energistics WITSML 1.4/2.0 or OSDU schema/namespace (verified by direct code audit, `11_NWIS_BACKEND_VISUALIZATION_READINESS_AUDIT.md`). See `09_VERIFIED_STATUS_ARCHITECTURE_BENCHMARKS_AND_TECHNICAL_REFERENCE.md` §5.1 for the precise framing to use when describing this.
 
 ---
 

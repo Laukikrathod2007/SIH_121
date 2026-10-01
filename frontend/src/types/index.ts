@@ -153,6 +153,11 @@ export interface DORSComponentScores {
   hazard: number;
   total: number;
   distance_km: number;
+  // engines/dors_engine.py::check_structural_fault_heuristic -- when this
+  // fires POSSIBLE_FAULT_BOUNDARY, `total` above has already been cut to
+  // 20% of its pre-penalty value (FAULT_PENALTY_FACTOR). Real backend
+  // field that had no frontend type/display until this audit found it.
+  structural_fault_status: 'SAME_FAULT_BLOCK' | 'POSSIBLE_FAULT_BOUNDARY' | null;
 }
 
 export interface OffsetWellRanking {
@@ -219,6 +224,42 @@ export interface NWISAnalysisResponse {
   formation_at_bit?: string | null;
   overall_risk_level: RiskLevel;
   alert_message?: string | null;
+}
+
+// GET /api/v2/casing/{well_id} — real data for 2 real Volve wells only
+// (modules/02_nwis_backend's own CasingRecord docstring is honest that
+// nothing currently populates this from module 01's extraction output;
+// this is the separate real_data/real_casing_records_all.json import).
+export interface CasingRecord {
+  well_id: string;
+  casing_size_inches: number | null;
+  shoe_depth_md_m: number;
+  top_of_cement_md_m: number | null;
+}
+
+// GET /api/v2/ahead_of_bit/{well_id} — 0..max_lookahead_m projection ahead
+// of the bit, mapped into offset wells for forward-looking per-hazard risk
+// density (Gaussian-smoothed, same sigma as DORS's own S_hazard). Real,
+// working endpoint with zero prior frontend consumer before this.
+export interface AheadOfBitCorridorPoint {
+  depth_ahead_m: number;
+  md_m: number;
+  tvd_m: number;
+  tvdss_m: number;
+  formation: string | null;
+  window_tier: 'IMMEDIATE_0_20M' | 'SHORT_TERM_20_50M' | 'LOOKAHEAD_50_200M';
+  hazard_risk: Record<string, number>;
+  evidence_count: number;
+  evidence_event_ids: string[];
+}
+
+export interface AheadOfBitCorridor {
+  active_well_id: string;
+  current_md_m: number;
+  current_tvd_m: number;
+  current_tvdss_m: number;
+  current_formation: string | null;
+  points: AheadOfBitCorridorPoint[];
 }
 
 // Shape from engines/stratigraphic_correlator.py align_horizons_across_wells()

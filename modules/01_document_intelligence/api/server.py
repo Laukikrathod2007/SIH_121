@@ -69,8 +69,8 @@ logger.add(
 async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info("NWIS Document Intelligence API starting...")
-    logger.info("6-Layer Pipeline: PyMuPDF → Docling → NER → Template → Physics → JSON")
-    logger.info("100% Air-Gapped | Zero Cloud Dependencies | WITSML Compliant")
+    logger.info("6-Layer Pipeline: PyMuPDF → Docling → Rules Extraction → Template → Physics → JSON")
+    logger.info("100% Air-Gapped | Zero Cloud Dependencies | WITSML-Aligned Field Naming")
     logger.info("=" * 60)
 
     # Pre-warm Docling converter (downloads model weights on first run)
@@ -94,8 +94,8 @@ app = FastAPI(
     description=(
         "Module 01: AI-powered OCR and entity extraction pipeline for "
         "Oil & Gas Daily Drilling Reports (DDR) and Well Completion Reports (WCR). "
-        "6-layer architecture: PyMuPDF → Docling → NER → Template Learning → "
-        "Physics Validation → WITSML JSON. "
+        "6-layer architecture: PyMuPDF → Docling → rules-based extraction → Template Learning → "
+        "Physics Validation → WITSML-aligned JSON. "
         "100% air-gapped, no cloud APIs required."
     ),
     version="1.0.0",
@@ -187,8 +187,8 @@ async def root():
         "version": "1.0.0",
         "status": "operational",
         "docs": "/docs",
-        "pipeline": "6-layer air-gapped OCR + NER + Physics Validation",
-        "compliance": "WITSML 2.0 | OSDU | IADC NPT Taxonomy",
+        "pipeline": "6-layer air-gapped OCR + rules-based extraction + Physics Validation",
+        "field_naming": "WITSML-aligned field names | IADC NPT Taxonomy (not certified WITSML/OSDU schema compliance)",
     }
 
 

@@ -1,6 +1,76 @@
 # NWIS BACKEND REVERSE-ENGINEERING REPORT
 # (Audit for the planned standalone 2D/3D Offset Well Intelligence Visualization module)
 
+> **ADDENDUM (2026-10-01, same day, after a branch merge)** — This audit ran
+> against the `backend-working` branch in isolation. The repo has since been
+> merged into a new `fully-working` branch (`laukik` + `backend-working`,
+> zero commits missing either direction — confirmed via `git log A..B` both
+> ways). That merge changes several findings below materially, and the merge
+> itself introduced one real regression that was found and fixed the same
+> day:
+>
+> 1. **Regression found: the backend could not start at all.** The merge
+>    left `engines/risk_corridor_engine.py`'s `HazardRiskAssessment(...)`
+>    call with `m_ml_source=m_ml_source` passed twice (a hard Python
+>    `SyntaxError`, not a logic bug — the whole module failed to import).
+>    Fixed by removing the duplicate keyword argument. Every `.py` file in
+>    both Module 01 and Module 02 was then compile-checked
+>    (`py_compile.compile(..., doraise=True)`) to confirm no other merge
+>    artifacts of this kind exist — none found.
+>
+> 2. **§9/§17/§18/§21's "casing data does not exist" finding is now WRONG**
+>    for this merged branch. The `laukik` branch's real-data work (logger
+>    Steps 20-23) brought in `data_store.py` loading real casing records
+>    from `real_data/real_casing_records_all.json` — confirmed live at
+>    startup: `10 real casing records (2 real wells)`. The data was loading
+>    into memory correctly, but, consistent with this audit's own prior
+>    finding about `/api/v2/trajectory` once being internal-only, **nothing
+>    exposed it via the API**. Added `GET /api/v2/casing/{well_id}` and
+>    `GET /api/v2/casing` (mirroring the existing formations-endpoint
+>    pattern exactly) — both now RUNTIME VERIFIED working.
+>
+> 3. **A second, more serious regression/pre-existing bug was found while
+>    verifying the casing fix: every single-well endpoint in this API was
+>    unreachable for both real wells.** Well IDs `15/9-F-12` and `15/9-F-1`
+>    contain a literal `/`. FastAPI's default `{well_id}` path-parameter
+>    type does not match a slash even when URL-encoded as `%2F` (Starlette
+>    decodes it before routing) — so `GET /api/v2/wells/15%2F9-F-12` and
+>    every other `{well_id}`-shaped route 404'd for real wells. This was
+>    confirmed against routes that pre-date this audit entirely
+>    (`/wells/{id}`, `/formations/{id}`) — it is not something introduced
+>    by the merge or by the casing fix, it is a latent bug that nothing had
+>    exercised through the live API before (the PS compliance audit
+>    separately noted real-well verification had only ever been done via
+>    standalone scripts, never the live app — this is very likely why).
+>    **Fixed for all 12 affected routes** (`wells`, `trajectory`,
+>    `formations`, `casing`, `events`, `telemetry`,
+>    `stratigraphic_depth_track`, `offset_rank`, `analyze`, `corridors`,
+>    `ahead_of_bit`, `live/replay`) by changing the path parameter type from
+>    `{well_id}` to `{well_id:path}`. RUNTIME VERIFIED: `wells`, `casing`,
+>    `trajectory`, and `analyze` all now return real 200 responses for
+>    `15/9-F-12`, including a full `analyze()` run that correctly offset-
+>    ranks it against the other real well, `15/9-F-1`. The
+>    `/events/search`-before-`/events/{well_id:path}` registration-order
+>    protection documented in §14/§16 still holds — re-verified live,
+>    `/events/search` still resolves to the search handler, not a
+>    well-lookup with `well_id="search"`.
+>
+> 4. **Wells/events/formation-top counts in this merged branch are now
+>    higher than §3/§6/§7 state**: `/api/v2/health` now reports **14 wells,
+>    106 formation tops, 44 events** (vs. the audited branch's 12/97/39) —
+>    the 2 additional wells are the real Volve wells above; the extra
+>    tops/events are their real, extracted data (deduped against
+>    repeats — see `data_store.py`'s own startup log line: "Deduped 5 real
+>    events repeated across source documents"). The per-well tables in §3,
+>    §7, §19 below reflect the pre-merge 12-well state and should be read
+>    as "the synthetic baseline," not the full current picture.
+>
+> Everything else in this report — the DORS formula, the radius-doesn't-
+> filter behavior, the no-shared-coordinate-frame finding, the telemetry
+> scope, the `events/search` cold-start latency bug — was not re-verified
+> after the merge but has no reason to have changed (none of that code was
+> touched by either the merge or these fixes).
+
 Scope audited: `C:\Users\LAUKIK\Desktop\SIH121\modules\02_nwis_backend` (Module 02 only). Module 01 (`modules/01_document_intelligence`, port 8001) and Modules 04/05 were only touched where needed to confirm Module 02 has zero runtime dependency on them. Both source code and live runtime were inspected. Every claim below is tagged with how it was established.
 
 ---

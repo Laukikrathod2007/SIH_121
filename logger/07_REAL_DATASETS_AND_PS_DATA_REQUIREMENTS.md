@@ -72,7 +72,7 @@ When analyzing the problem statement text line-by-line, the system requires **6 
 ## 4. Synthesis & Realistic Alignment Strategy
 
 To prove the platform for SIH and Oil India:
-1. We synthesize a **15–20 well testbed** modeled faithfully on the **Upper Assam Basin** (Nahorkatiya & Moran fields).
-2. The data strictly conforms to international **Energistics WITSML 1.4/2.0** and **OSDU** schemas.
+1. We synthesize a 12-well testbed (verified count, `11_NWIS_BACKEND_VISUALIZATION_READINESS_AUDIT.md`) modeled on the **Upper Assam Basin** (Nahorkatiya, Moran, Baghjan, Hugrijan fields), plus 2 real Equinor Volve wells wired into the live store since logger Steps 20-24 — 14 wells live today.
+2. Field names follow **WITSML**-style naming conventions as an interoperability step — this is not a certified Energistics WITSML 1.4/2.0 or OSDU schema (verified by direct code audit, `11_NWIS_BACKEND_VISUALIZATION_READINESS_AUDIT.md`; see `09_VERIFIED_STATUS_ARCHITECTURE_BENCHMARKS_AND_TECHNICAL_REFERENCE.md` §5.1 for the correct framing).
 3. Sensor time-series distributions and hazard patterns mirror real benchmark dynamics from the **DataDrill** and **Equinor Volve** datasets.
 4. Historical event narratives and LCM mitigations match official **OISD (Oil Industry Safety Directorate)** and **OIL drilling engineering manuals**.

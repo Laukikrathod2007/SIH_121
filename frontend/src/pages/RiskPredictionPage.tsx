@@ -17,9 +17,11 @@ import { useApp } from '../context/AppContext';
 // values carried over from Prasad's original frontend — they were never
 // computed by a real benchmarking pass against our own model (the benchmark
 // report that produced similar-looking numbers in his branch was found to
-// contain fabricated metrics — see modules/03_physics_engine's integration
-// notes — so we deliberately did not port it). modules/03_physics_engine's
-// XGBoost classifier exists in this repo but has no HTTP endpoint yet, so
+// contain fabricated metrics — see modules/04_physics_engine's integration
+// notes — so we deliberately did not port it). modules/04_physics_engine's
+// XGBoost classifier exists in this repo (confirmed: real xgboost_classifier
+// object with fitted-state tracking, api/server.py) but has no HTTP endpoint
+// surfacing these specific figures yet, so
 // there is nothing live to measure these against. They are marked
 // "Illustrative" wherever shown below rather than presented as real.
 export const RiskPredictionPage: React.FC = () => {

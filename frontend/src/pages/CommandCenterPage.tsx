@@ -11,6 +11,10 @@ import { KPIStrip } from '../components/commandcenter/KPIStrip';
 import { OperationalDirective } from '../components/commandcenter/OperationalDirective';
 import { EventDeepDive } from '../components/commandcenter/EventDeepDive';
 import { BackendStatusStrip } from '../components/commandcenter/BackendStatusStrip';
+import { DorsBreakdownCard } from '../components/commandcenter/DorsBreakdownCard';
+import { ConfidencePillars } from '../components/commandcenter/ConfidencePillars';
+import { CasingProgramPanel } from '../components/commandcenter/CasingProgramPanel';
+import { AheadOfBitStrip } from '../components/commandcenter/AheadOfBitStrip';
 import { BasinMap } from '../components/BasinMap';
 import { downloadCSV } from '../lib/csvExport';
 import { DrillingEvent } from '../types';
@@ -34,10 +38,14 @@ export const CommandCenterPage: React.FC = () => {
   const {
     trajectory, formations, events, depth, setDepth, minDepth, maxDepth,
     analysis, analysisLoading, telemetry, offsetWell, offsetTrajectory, offsetEvents,
+    casing, aheadOfBit, aheadOfBitLoading,
   } = useCommandCenterData(activeWellId, radiusKm);
 
   const activeWell = wells.find((w) => w.well_id === activeWellId);
   const corridors = analysis?.active_risk_corridors ?? [];
+  const topHazard = analysis && analysis.hazard_assessments.length > 0
+    ? [...analysis.hazard_assessments].sort((a, b) => b.composite_score - a.composite_score)[0]
+    : null;
 
   const handleExportOffsets = () => {
     if (!analysis || analysis.offset_rankings.length === 0) return;
@@ -80,27 +88,35 @@ export const CommandCenterPage: React.FC = () => {
         <BackendStatusStrip />
       </div>
 
-      {/* KPI strip + operational directive */}
+      {/* Alert-first ordering (mission-control convention): the single
+          highest-severity directive and its confidence decomposition sit
+          above the glanceable KPI row, not below it. */}
       <div className="shrink-0 space-y-2">
-        <KPIStrip analysis={analysis} eventCount={events.length} />
         <OperationalDirective analysis={analysis} />
+        {topHazard && <ConfidencePillars hazard={topHazard} />}
+        <KPIStrip analysis={analysis} eventCount={events.length} />
       </div>
 
       {/* Main 3-column layout */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[240px_1fr_300px] gap-3 min-h-0">
-        <div className="min-h-[300px] lg:min-h-0">
-          <WellListPanel
-            wells={wells}
-            activeWellId={activeWellId}
-            onSelectWell={setActiveWellId}
-            offsetWell={offsetWell}
-            radiusKm={radiusKm}
-            onRadiusChange={setRadiusKm}
-            depth={depth}
-            minDepth={minDepth}
-            maxDepth={maxDepth}
-            onDepthChange={setDepth}
-          />
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[260px_1fr_320px] gap-3 min-h-0">
+        <div className="min-h-[300px] lg:min-h-0 flex flex-col gap-3">
+          <div className="flex-1 min-h-[200px]">
+            <WellListPanel
+              wells={wells}
+              activeWellId={activeWellId}
+              onSelectWell={setActiveWellId}
+              offsetWell={offsetWell}
+              radiusKm={radiusKm}
+              onRadiusChange={setRadiusKm}
+              depth={depth}
+              minDepth={minDepth}
+              maxDepth={maxDepth}
+              onDepthChange={setDepth}
+            />
+          </div>
+          <div className="h-[220px] shrink-0">
+            <CasingProgramPanel casing={casing} wellName={activeWell?.well_name ?? activeWellId} />
+          </div>
         </div>
 
         <div className="scada-panel overflow-hidden min-h-[360px] lg:min-h-0 flex flex-col">
@@ -149,9 +165,18 @@ export const CommandCenterPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="min-h-[300px] lg:min-h-0">
-          <LookAheadPanel analysis={analysis} loading={analysisLoading} />
+        <div className="min-h-[300px] lg:min-h-0 flex flex-col gap-2">
+          <DorsBreakdownCard offsetWell={offsetWell} />
+          <div className="flex-1 min-h-[200px]">
+            <LookAheadPanel analysis={analysis} loading={analysisLoading} />
+          </div>
         </div>
+      </div>
+
+      {/* Forward-looking risk projection -- real ahead_of_bit endpoint,
+          literally PS 26121's "proactive alert" requirement visualized. */}
+      <div className="shrink-0">
+        <AheadOfBitStrip corridor={aheadOfBit} loading={aheadOfBitLoading} />
       </div>
 
       {/* Bottom: depth correlation + telemetry HUD -- collapsible to

@@ -445,7 +445,6 @@ def assess_hazard(
         lead_time_meters=lead_time,
         recommended_action=recommended_actions.get(hazard_type, "Monitor closely"),
         evidence_events=evidence_event_ids,
-        m_ml_source=m_ml_source,
     )
 
 

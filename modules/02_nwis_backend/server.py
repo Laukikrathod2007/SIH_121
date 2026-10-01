@@ -9,6 +9,8 @@ Endpoints:
   GET  /api/v2/offset_rank/{well_id}     → DORS ranking only
   GET  /api/v2/telemetry/{well_id}       → Live telemetry stream
   GET  /api/v2/formations/{well_id}      → Formation tops
+  GET  /api/v2/casing/{well_id}          → Casing records (real data, 2 Volve wells)
+  GET  /api/v2/casing                    → Casing records across all wells
   GET  /api/v2/events/{well_id}          → Drilling events (for evidence modal)
   GET  /api/v2/events/search             → Free-text/semantic search over event narratives
   GET  /api/v2/corridors/{well_id}       → Risk corridors
@@ -81,7 +83,7 @@ app = FastAPI(
         "Stratigraphic Depth Correlator + "
         "Historical Risk Corridor Engine + "
         "4-Pillar Decoupled Confidence Evaluator. "
-        "100% air-gapped, WITSML 2.0 compliant."
+        "100% air-gapped, WITSML-aligned field naming."
     ),
     version="2.0.0",
     docs_url="/docs",
@@ -181,7 +183,7 @@ async def list_wells(
     }
 
 
-@app.get("/api/v2/wells/{well_id}", tags=["Wells"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v2/wells/{well_id:path}", tags=["Wells"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_well(well_id: str):
     """Get full details for a single well."""
     _require_store()
@@ -201,7 +203,7 @@ async def get_well(well_id: str):
     }
 
 
-@app.get("/api/v2/trajectory/{well_id}", tags=["Wells"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v2/trajectory/{well_id:path}", tags=["Wells"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_trajectory(well_id: str):
     """
     Full real survey-station list (md/inclination/azimuth/tvd/ns/ew/tvdss)
@@ -233,7 +235,7 @@ async def get_trajectory(well_id: str):
 # Formations
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/formations/{well_id}", tags=["Stratigraphy"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v2/formations/{well_id:path}", tags=["Stratigraphy"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_formations(well_id: str):
     """Get formation tops for a well — feed for the Stratigraphic Track."""
     _require_store()
@@ -259,6 +261,37 @@ async def get_all_formations(
             tops = [t for t in tops if formation_name.lower() in t.formation_name.lower()]
         all_tops.extend([t.model_dump() for t in tops])
     return {"total": len(all_tops), "formation_tops": all_tops}
+
+
+# ---------------------------------------------------------------------------
+# Casing
+#
+# store.casing_records_by_well has been loaded from real_data/ since logger
+# Step 20-23 (real casing/cementing records, 2 real Volve wells) but had no
+# route exposing it -- the data existed in memory with nothing serving it.
+# Mirrors the formations endpoint pair above exactly.
+# ---------------------------------------------------------------------------
+
+@app.get("/api/v2/casing/{well_id:path}", tags=["Casing"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+async def get_casing(well_id: str):
+    """Get casing records for a well. Real data exists for 2 Volve wells only — a well with no casing data returns an empty list, not a 404, since most wells (all synthetic ones) genuinely have none."""
+    _require_store()
+    records = store.casing_records_by_well.get(well_id, [])
+    return {
+        "well_id": well_id,
+        "total": len(records),
+        "casing_records": [r.model_dump() for r in records],
+    }
+
+
+@app.get("/api/v2/casing", tags=["Casing"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+async def get_all_casing():
+    """Get all casing records across all wells that have them."""
+    _require_store()
+    all_records = []
+    for records in store.casing_records_by_well.values():
+        all_records.extend([r.model_dump() for r in records])
+    return {"total": len(all_records), "wells_with_casing": len(store.casing_records_by_well), "casing_records": all_records}
 
 
 # ---------------------------------------------------------------------------
@@ -318,7 +351,7 @@ async def search_events_semantic(
     }
 
 
-@app.get("/api/v2/events/{well_id}", tags=["Drilling Events"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v2/events/{well_id:path}", tags=["Drilling Events"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_well_events(well_id: str):
     """Get all drilling events for a well (for the Evidence Proof Modal)."""
     _require_store()
@@ -412,7 +445,7 @@ async def search_events(
 # Telemetry
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/telemetry/{well_id}", tags=["Telemetry"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v2/telemetry/{well_id:path}", tags=["Telemetry"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_telemetry(
     well_id: str,
     depth: float = Query(..., ge=0, description="Current drill bit depth (m MD)"),
@@ -442,7 +475,7 @@ async def get_telemetry(
 # codebase until this endpoint was added)
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/stratigraphic_depth_track/{well_id}", tags=["Stratigraphy"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v2/stratigraphic_depth_track/{well_id:path}", tags=["Stratigraphy"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def stratigraphic_depth_track(
     well_id: str,
     depth: float = Query(..., ge=0, description="Active bit depth (m MD)"),
@@ -504,7 +537,7 @@ async def stratigraphic_depth_track(
 # DORS Offset Ranking
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/offset_rank/{well_id}", tags=["DORS Engine"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v2/offset_rank/{well_id:path}", tags=["DORS Engine"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def rank_offsets(
     well_id: str,
     depth: float = Query(..., ge=0, description="Current bit depth (m MD)"),
@@ -553,7 +586,7 @@ async def rank_offsets(
 # Full Intelligence Analysis
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/analyze/{well_id}", tags=["NWIS Intelligence"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v2/analyze/{well_id:path}", tags=["NWIS Intelligence"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def analyze_well(
     well_id: str,
     depth: float = Query(..., ge=0, description="Current bit depth (m MD)"),
@@ -587,7 +620,7 @@ async def analyze_well(
 # Risk Corridors
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/corridors/{well_id}", tags=["Risk Corridors"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v2/corridors/{well_id:path}", tags=["Risk Corridors"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_risk_corridors(
     well_id: str,
     depth: float = Query(..., ge=0, description="Current bit depth (m MD)"),
@@ -654,7 +687,7 @@ async def get_risk_corridors(
 # Ahead-of-Bit Projected Corridor (new — 0-200m lookahead in 10m steps)
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/ahead_of_bit/{well_id}", tags=["Risk Corridors"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v2/ahead_of_bit/{well_id:path}", tags=["Risk Corridors"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_ahead_of_bit_corridor(
     well_id: str,
     depth: float = Query(..., ge=0, description="Current bit depth (m MD)"),
@@ -748,7 +781,7 @@ async def get_map_wells():
 # Live Replay Simulation (real-time alert stream)
 # ---------------------------------------------------------------------------
 
-@app.get("/api/v2/live/replay/{well_id}", tags=["Live Replay"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v2/live/replay/{well_id:path}", tags=["Live Replay"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def live_replay(
     request: Request,
     well_id: str,

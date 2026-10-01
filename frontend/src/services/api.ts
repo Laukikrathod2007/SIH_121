@@ -22,6 +22,8 @@ import {
   RiskEvaluation,
   AlertAdvisory,
   SimulationStatus,
+  CasingRecord,
+  AheadOfBitCorridor,
 } from '../types';
 
 // ============================================================================
@@ -108,7 +110,7 @@ export const api = {
     return res.data;
   },
 
-  /** GET /api/v1/results/{doc_id} — full WITSML-compliant extraction result. */
+  /** GET /api/v1/results/{doc_id} — full extraction result, WITSML-aligned field naming (not a certified WITSML schema). */
   getResult: async (docId: string): Promise<DocumentExtractionResult> => {
     const res = await m01.get(`/results/${docId}`);
     return res.data;
@@ -265,6 +267,18 @@ export const api = {
     return res.data;
   },
 
+  /**
+   * GET /api/v2/casing/{well_id} — real casing records. Only 2 real Volve
+   * wells have any (10 records total) — every synthetic well correctly
+   * returns an empty list, not a 404 (this endpoint didn't exist until it
+   * was added directly in this session; the data was already loaded in
+   * data_store.py with nothing serving it).
+   */
+  getCasing: async (wellId: string): Promise<CasingRecord[]> => {
+    const res = await m02.get(`/casing/${wellId}`);
+    return res.data?.casing_records ?? [];
+  },
+
   /** GET /api/v2/stratigraphic_depth_track/{well_id} — Engine 2: offset horizon alignment at current bit depth. */
   getStratigraphicDepthTrack: async (wellId: string, depth: number, topN: number = 10): Promise<StratigraphicAlignmentResponse> => {
     const res = await m02.get(`/stratigraphic_depth_track/${wellId}`, { params: { depth, top_n: topN } });
@@ -279,6 +293,24 @@ export const api = {
     topN: number = 10,
   ): Promise<{ active_well_id: string; formation_at_bit: string | null; rankings: OffsetWellRanking[]; dors_formula: string }> => {
     const res = await m02.get(`/offset_rank/${wellId}`, { params: { depth, radius_km: radiusKm, top_n: topN } });
+    return res.data;
+  },
+
+  /**
+   * GET /api/v2/ahead_of_bit/{well_id} — 0..max_lookahead_m projected risk
+   * density ahead of the bit, mapped into offset wells per step. Real,
+   * working endpoint (engines/risk_corridor_engine.py's
+   * compute_ahead_of_bit_corridor) with no prior frontend consumer.
+   */
+  getAheadOfBit: async (
+    wellId: string,
+    depth: number,
+    maxLookaheadM: number = 200,
+    stepM: number = 10,
+  ): Promise<AheadOfBitCorridor> => {
+    const res = await m02.get(`/ahead_of_bit/${wellId}`, {
+      params: { depth, max_lookahead_m: maxLookaheadM, step_m: stepM },
+    });
     return res.data;
   },
 

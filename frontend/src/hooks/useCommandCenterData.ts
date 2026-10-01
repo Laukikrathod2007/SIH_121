@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../services/api';
 import {
   WellTrajectory, FormationTop, DrillingEvent, TelemetryRecord,
-  NWISAnalysisResponse, OffsetWellRanking,
+  NWISAnalysisResponse, OffsetWellRanking, CasingRecord, AheadOfBitCorridor,
 } from '../types';
 
 // Real-data source for the command-center view, deliberately independent
@@ -37,6 +37,9 @@ export interface CommandCenterData {
   offsetWell: OffsetWellRanking | null;
   offsetTrajectory: WellTrajectory | null;
   offsetEvents: DrillingEvent[];
+  casing: CasingRecord[];
+  aheadOfBit: AheadOfBitCorridor | null;
+  aheadOfBitLoading: boolean;
 }
 
 export function useCommandCenterData(wellId: string, radiusKm: number = 25): CommandCenterData {
@@ -50,6 +53,9 @@ export function useCommandCenterData(wellId: string, radiusKm: number = 25): Com
   const [telemetry, setTelemetry] = useState<TelemetryRecord | null>(null);
   const [offsetTrajectory, setOffsetTrajectory] = useState<WellTrajectory | null>(null);
   const [offsetEvents, setOffsetEvents] = useState<DrillingEvent[]>([]);
+  const [casing, setCasing] = useState<CasingRecord[]>([]);
+  const [aheadOfBit, setAheadOfBit] = useState<AheadOfBitCorridor | null>(null);
+  const [aheadOfBitLoading, setAheadOfBitLoading] = useState(false);
 
   const minDepth = trajectory?.stations[0]?.md_m ?? 0;
   const maxDepth = trajectory?.stations[trajectory.stations.length - 1]?.md_m ?? 4000;
@@ -63,11 +69,13 @@ export function useCommandCenterData(wellId: string, radiusKm: number = 25): Com
       api.getTrajectory(wellId).catch(() => null),
       api.getFormations(wellId).catch(() => []),
       api.getWellEvents(wellId).catch(() => []),
-    ]).then(([traj, forms, evts]) => {
+      api.getCasing(wellId).catch(() => []),
+    ]).then(([traj, forms, evts, casingRecords]) => {
       if (cancelled) return;
       setTrajectory(traj);
       setFormations(forms);
       setEvents(evts);
+      setCasing(casingRecords);
       setTrajectoryLoading(false);
       if (traj && traj.stations.length > 0) {
         const deepest = traj.stations[traj.stations.length - 1].md_m;
@@ -125,7 +133,26 @@ export function useCommandCenterData(wellId: string, radiusKm: number = 25): Com
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wellId, depthBucket, !!trajectory]);
 
-  // 4. Top DORS offset well's real trajectory, if it has one (many offset
+  // 4. Ahead-of-bit projected risk density (0-200m ahead), bucketed by depth
+  // same as analysis above. Real endpoint, zero prior frontend consumer.
+  useEffect(() => {
+    if (!trajectory) return;
+    let cancelled = false;
+    setAheadOfBitLoading(true);
+    api.getAheadOfBit(wellId, depth).then((res) => {
+      if (cancelled) return;
+      setAheadOfBit(res);
+      setAheadOfBitLoading(false);
+    }).catch(() => {
+      if (cancelled) return;
+      setAheadOfBit(null);
+      setAheadOfBitLoading(false);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wellId, depthBucket, !!trajectory]);
+
+  // 5. Top DORS offset well's real trajectory, if it has one (many offset
   // ranks are synthetic wells with no real survey data -- that's fine,
   // just no 3D offset trajectory to draw for those).
   const offsetWell = analysis?.offset_rankings?.[0] ?? null;
@@ -157,6 +184,8 @@ export function useCommandCenterData(wellId: string, radiusKm: number = 25): Com
     trajectory, trajectoryLoading, formations, events,
     depth, setDepth: setDepthClamped, minDepth, maxDepth,
     analysis, analysisLoading, telemetry, offsetWell, offsetTrajectory, offsetEvents,
+    casing, aheadOfBit, aheadOfBitLoading,
   }), [trajectory, trajectoryLoading, formations, events, depth, setDepthClamped,
-      minDepth, maxDepth, analysis, analysisLoading, telemetry, offsetWell, offsetTrajectory, offsetEvents]);
+      minDepth, maxDepth, analysis, analysisLoading, telemetry, offsetWell, offsetTrajectory, offsetEvents,
+      casing, aheadOfBit, aheadOfBitLoading]);
 }

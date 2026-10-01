@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
     print("\n" + "=" * 60)
     print("  NWIS Document Intelligence API")
-    print("  Module 01: 6-Layer OCR + NER + Physics Validation")
+    print("  Module 01: 6-Layer OCR + Rules-Based Extraction + Physics Validation")
     print("=" * 60)
     print(f"  Mode:    {'production' if is_prod else 'dev'} (set NWIS_ENV=production to deploy)")
     print(f"  Server:  http://{host}:{port}")

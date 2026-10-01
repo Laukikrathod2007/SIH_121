@@ -919,7 +919,7 @@ header nav > div.lg\:flex > div {
   #predictive-risk::before,
   #lookahead-alerts::before,
   #command-cockpit::before {
-    content: "( " counter(dw-section, decimal-leading-zero) " / 09 )";
+    content: "( " counter(dw-section, decimal-leading-zero) " / 10 )";
     position: absolute;
     left: -28px;
     top: 4px;
@@ -932,12 +932,26 @@ header nav > div.lg\:flex > div {
     pointer-events: none;
   }
 
+  #casing-program,
   #real-benchmarks,
   #technical-foundation {
     position: relative;
   }
+  #casing-program::before {
+    content: "( 08 / 10 )";
+    position: absolute;
+    left: -28px;
+    top: 4px;
+    font-family: dmMono, monospace;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    color: var(--dw-muted);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    pointer-events: none;
+  }
   #real-benchmarks::before {
-    content: "( 08 / 09 )";
+    content: "( 09 / 10 )";
     position: absolute;
     left: 8px;
     top: 24px;
@@ -950,7 +964,7 @@ header nav > div.lg\:flex > div {
     pointer-events: none;
   }
   #technical-foundation::before {
-    content: "( 09 / 09 )";
+    content: "( 10 / 10 )";
     position: absolute;
     left: 8px;
     top: 24px;
