@@ -1,0 +1,299 @@
+[
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "MUD_LOSS",
+    "hazard_type": "MUD_LOSS",
+    "depth_start_md_m": 3035.0,
+    "severity": "HIGH",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "MUD_LOSS",
+    "hazard_type": "MUD_LOSS",
+    "depth_start_md_m": 43.0,
+    "severity": "CRITICAL",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "KICK",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 2927.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "LOST_CIRCULATION",
+    "hazard_type": "MUD_LOSS",
+    "depth_start_md_m": 5.0,
+    "severity": "HIGH",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "MUD_LOSS",
+    "hazard_type": "MUD_LOSS",
+    "depth_start_md_m": 3248.0,
+    "severity": "CRITICAL",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "STUCK_PIPE",
+    "hazard_type": "STUCK_PIPE",
+    "depth_start_md_m": 3160.0,
+    "severity": "HIGH",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "LOST_CIRCULATION",
+    "hazard_type": "MUD_LOSS",
+    "depth_start_md_m": 3220.0,
+    "severity": "HIGH",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "WELLBORE_INSTABILITY",
+    "hazard_type": "WELLBORE_INSTABILITY",
+    "depth_start_md_m": 2.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "STUCK_PIPE",
+    "hazard_type": "STUCK_PIPE",
+    "depth_start_md_m": 3824.0,
+    "severity": "HIGH",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "WELLBORE_INSTABILITY",
+    "hazard_type": "WELLBORE_INSTABILITY",
+    "depth_start_md_m": 3341.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "STUCK_PIPE",
+    "hazard_type": "STUCK_PIPE",
+    "depth_start_md_m": 4037.0,
+    "severity": "HIGH",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "WELLBORE_INSTABILITY",
+    "hazard_type": "WELLBORE_INSTABILITY",
+    "depth_start_md_m": 2783.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-19B_END_OF_WELL_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "STUCK_PIPE",
+    "hazard_type": "STUCK_PIPE",
+    "depth_start_md_m": 3405.0,
+    "severity": "HIGH",
+    "well_id": "15/9-19B"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-12_COMPLETION.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "LOST_CIRCULATION",
+    "hazard_type": "MUD_LOSS",
+    "depth_start_md_m": 4062.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-12"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-12_COMPLETION.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "EQUIPMENT_FAILURE",
+    "hazard_type": null,
+    "depth_start_md_m": 12.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-12"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-12_COMPLETION.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "LOST_CIRCULATION",
+    "hazard_type": "MUD_LOSS",
+    "depth_start_md_m": 453.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-12"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-12_COMPLETION.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "EQUIPMENT_FAILURE",
+    "hazard_type": null,
+    "depth_start_md_m": 224.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-12"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-12_COMPLETION.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "EQUIPMENT_FAILURE",
+    "hazard_type": null,
+    "depth_start_md_m": 224.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-12"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-12_COMPLETION.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "EQUIPMENT_FAILURE",
+    "hazard_type": null,
+    "depth_start_md_m": 454.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-12"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-12_COMPLETION.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "EQUIPMENT_FAILURE",
+    "hazard_type": null,
+    "depth_start_md_m": 454.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-12"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-12_COMPLETION.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "EQUIPMENT_FAILURE",
+    "hazard_type": null,
+    "depth_start_md_m": 454.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-12"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-12_COMPLETION.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "EQUIPMENT_FAILURE",
+    "hazard_type": null,
+    "depth_start_md_m": 4682.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-12"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-1C_DRILLING_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "WELLBORE_INSTABILITY",
+    "hazard_type": "WELLBORE_INSTABILITY",
+    "depth_start_md_m": 15.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-1C"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-1C_DRILLING_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "STUCK_PIPE",
+    "hazard_type": "STUCK_PIPE",
+    "depth_start_md_m": 2843.0,
+    "severity": "HIGH",
+    "well_id": "15/9-F-1C"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-1C_DRILLING_REPORT.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "STUCK_PIPE",
+    "hazard_type": "STUCK_PIPE",
+    "depth_start_md_m": 2780.0,
+    "severity": "HIGH",
+    "well_id": "15/9-F-1C"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-1_MUD_LOG.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "WELLBORE_INSTABILITY",
+    "hazard_type": "WELLBORE_INSTABILITY",
+    "depth_start_md_m": 2980.0,
+    "severity": "LOW",
+    "well_id": "15/9-F-1"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-1_MUD_LOG.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "STUCK_PIPE",
+    "hazard_type": "STUCK_PIPE",
+    "depth_start_md_m": 1245.0,
+    "severity": "HIGH",
+    "well_id": "15/9-F-1"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-1_MUD_LOG.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "STUCK_PIPE",
+    "hazard_type": "STUCK_PIPE",
+    "depth_start_md_m": 30.0,
+    "severity": "HIGH",
+    "well_id": "15/9-F-1"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-1_MUD_LOG.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "WELLBORE_INSTABILITY",
+    "hazard_type": "WELLBORE_INSTABILITY",
+    "depth_start_md_m": 2980.0,
+    "severity": "LOW",
+    "well_id": "15/9-F-1"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-1_MUD_LOG_COMBINED.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "WELLBORE_INSTABILITY",
+    "hazard_type": "WELLBORE_INSTABILITY",
+    "depth_start_md_m": 2980.0,
+    "severity": "LOW",
+    "well_id": "15/9-F-1"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-1_MUD_LOG_COMBINED.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "STUCK_PIPE",
+    "hazard_type": "STUCK_PIPE",
+    "depth_start_md_m": 1245.0,
+    "severity": "HIGH",
+    "well_id": "15/9-F-1"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-1_MUD_LOG_COMBINED.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "STUCK_PIPE",
+    "hazard_type": "STUCK_PIPE",
+    "depth_start_md_m": 30.0,
+    "severity": "HIGH",
+    "well_id": "15/9-F-1"
+  },
+  {
+    "source_file": "volve\\WELL-15_9-F-1_MUD_LOG_COMBINED.pdf",
+    "well_guess": "volve\\15",
+    "event_type": "WELLBORE_INSTABILITY",
+    "hazard_type": "WELLBORE_INSTABILITY",
+    "depth_start_md_m": 2980.0,
+    "severity": "LOW",
+    "well_id": "15/9-F-1"
+  }
+]

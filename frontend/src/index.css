@@ -1,0 +1,336 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-main: #0b0e14;
+  --bg-card: #121722;
+  --bg-card-hover: #182030;
+  --bg-elevated: #1e2638;
+  --border-subtle: #1e293b;
+  --border-active: #334155;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --accent-cyan: #06b6d4;
+  --accent-amber: #f59e0b;
+  --accent-emerald: #10b981;
+  --accent-rose: #ef4444;
+  --accent-purple: #8b5cf6;
+}
+
+/* Light theme -- cream/warm-white background + dark near-black text +
+   warm orange accent (matching our own DrillWise brand orange), per the
+   drillers.ai landing-page reference. Applied via [data-theme="light"] on
+   <html>. Existing components already use Tailwind's slate-9xx/-8xx/etc.
+   AND cyan-4xx/5xx utility classes directly (not CSS-variable-driven), so
+   rather than rewrite every component, the actual generated Tailwind
+   classes are overridden here, scoped to this attribute -- same visual
+   result, far less invasive than a full component rewrite. Elevation
+   hierarchy is preserved by inversion (the darkest dark-mode tone becomes
+   the lightest light-mode tone, not a literal per-shade swap), so
+   base-vs-card-vs-hover relationships stay correct in both themes. cyan,
+   the app's primary functional accent in dark mode, becomes this warm
+   orange in light mode -- not a random substitution, cyan reads poorly
+   against a cream background and orange is literally our own brand color. */
+[data-theme='light'] {
+  --bg-main: #f7f5f0;
+  --bg-card: #fefdfb;
+  --bg-card-hover: #f0ece1;
+  --bg-elevated: #ece6d8;
+  --border-subtle: #e6e0d0;
+  --border-active: #d6cdb5;
+  --text-main: #1a1a1a;
+  --text-muted: #57534e;
+  --text-dim: #8a8578;
+  --accent-cyan: #ea580c;
+}
+
+[data-theme='light'] body { background-color: var(--bg-main); color: var(--text-main); }
+
+/* Backgrounds -- darkest dark-mode shade -> lightest light-mode shade */
+[data-theme='light'] .bg-slate-950 { background-color: #f7f5f0; }
+[data-theme='light'] .bg-slate-950\/90 { background-color: rgba(247, 245, 240, 0.9); }
+[data-theme='light'] .bg-slate-950\/95 { background-color: rgba(247, 245, 240, 0.95); }
+[data-theme='light'] .bg-slate-950\/80 { background-color: rgba(247, 245, 240, 0.8); }
+[data-theme='light'] .bg-slate-900 { background-color: #fefdfb; }
+[data-theme='light'] .bg-slate-900\/90 { background-color: rgba(254, 253, 251, 0.92); }
+[data-theme='light'] .bg-slate-900\/80 { background-color: rgba(254, 253, 251, 0.92); }
+[data-theme='light'] .bg-slate-900\/70 { background-color: rgba(240, 236, 225, 0.9); }
+[data-theme='light'] .bg-slate-900\/60 { background-color: rgba(240, 236, 225, 0.85); }
+[data-theme='light'] .bg-slate-900\/50 { background-color: rgba(240, 236, 225, 0.8); }
+[data-theme='light'] .bg-slate-900\/40 { background-color: rgba(240, 236, 225, 0.7); }
+[data-theme='light'] .bg-slate-800 { background-color: #e6e0d0; }
+[data-theme='light'] .bg-slate-800\/60 { background-color: rgba(230, 224, 208, 0.7); }
+[data-theme='light'] .bg-slate-800\/50 { background-color: rgba(230, 224, 208, 0.6); }
+[data-theme='light'] .bg-slate-700 { background-color: #d6cdb5; }
+[data-theme='light'] .bg-slate-600 { background-color: #a89f8a; }
+[data-theme='light'] .bg-slate-500 { background-color: #8a8578; }
+
+/* Text -- brightest dark-mode text -> darkest light-mode text */
+[data-theme='light'] .text-slate-100 { color: #1a1a1a; }
+[data-theme='light'] .text-slate-200 { color: #262624; }
+[data-theme='light'] .text-slate-300 { color: #3f3b34; }
+[data-theme='light'] .text-slate-400 { color: #57534e; }
+[data-theme='light'] .text-slate-500 { color: #8a8578; }
+[data-theme='light'] .text-slate-600 { color: #c2baa4; }
+/* text-slate-950 intentionally left alone -- it's used as dark text ON a
+   bright colored chip (e.g. bg-cyan-500 text-slate-950), which needs to
+   stay dark in both themes for contrast, not inverted. */
+
+/* Borders */
+[data-theme='light'] .border-slate-800 { border-color: #e6e0d0; }
+[data-theme='light'] .border-slate-800\/80 { border-color: rgba(230, 224, 208, 0.9); }
+[data-theme='light'] .border-slate-800\/60 { border-color: rgba(230, 224, 208, 0.8); }
+[data-theme='light'] .border-slate-700 { border-color: #d6cdb5; }
+[data-theme='light'] .border-slate-500 { border-color: #8a8578; }
+[data-theme='light'] .border-slate-500\/40 { border-color: rgba(138, 133, 120, 0.5); }
+
+/* Primary accent: cyan -> warm orange (brand color) */
+[data-theme='light'] .text-cyan-400 { color: #ea580c; }
+[data-theme='light'] .text-cyan-300 { color: #c2410c; }
+[data-theme='light'] .text-cyan-200 { color: #9a3412; }
+[data-theme='light'] .bg-cyan-500 { background-color: #ea580c; }
+[data-theme='light'] .bg-cyan-500\/20 { background-color: rgba(234, 88, 12, 0.15); }
+[data-theme='light'] .bg-cyan-500\/15 { background-color: rgba(234, 88, 12, 0.12); }
+[data-theme='light'] .bg-cyan-500\/10 { background-color: rgba(234, 88, 12, 0.08); }
+[data-theme='light'] .bg-cyan-400 { background-color: #f97316; }
+[data-theme='light'] .bg-cyan-600 { background-color: #c2410c; }
+[data-theme='light'] .bg-cyan-950\/30 { background-color: rgba(234, 88, 12, 0.08); }
+[data-theme='light'] .border-cyan-500 { border-color: #ea580c; }
+[data-theme='light'] .border-cyan-500\/50 { border-color: rgba(234, 88, 12, 0.5); }
+[data-theme='light'] .border-cyan-500\/40 { border-color: rgba(234, 88, 12, 0.4); }
+[data-theme='light'] .border-cyan-500\/30 { border-color: rgba(234, 88, 12, 0.3); }
+
+/* Scrollbar */
+[data-theme='light'] ::-webkit-scrollbar-track { background: #ece6d8; }
+[data-theme='light'] ::-webkit-scrollbar-thumb { background: #d6cdb5; }
+[data-theme='light'] ::-webkit-scrollbar-thumb:hover { background: #a89f8a; }
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  overflow-x: hidden;
+  user-select: none;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Custom Industrial Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* SCADA Card & Panel Utility Styles */
+.scada-panel {
+  background: linear-gradient(180deg, #131926 0%, #0f1420 100%);
+  border: 1px solid #1e293b;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  border-radius: 6px;
+}
+
+.scada-panel-glow {
+  background: linear-gradient(180deg, #131926 0%, #0f1420 100%);
+  border: 1px solid #0891b2;
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+  border-radius: 6px;
+}
+
+.scada-panel-danger {
+  background: linear-gradient(180deg, #201318 0%, #150d12 100%);
+  border: 1px solid #ef4444;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+}
+
+.scada-panel-warning {
+  background: linear-gradient(180deg, #221a10 0%, #171109 100%);
+  border: 1px solid #f59e0b;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+  border-radius: 6px;
+}
+
+[data-theme='light'] .scada-panel {
+  background: #fefdfb;
+  border: 1px solid #e6e0d0;
+  box-shadow: 0 1px 3px rgba(26, 26, 26, 0.06), 0 1px 2px rgba(26, 26, 26, 0.03);
+}
+[data-theme='light'] .scada-panel-glow {
+  background: #fefdfb;
+  border: 1px solid #ea580c;
+  box-shadow: 0 0 12px rgba(234, 88, 12, 0.15);
+}
+[data-theme='light'] .scada-panel-danger {
+  background: #fff5f5;
+  border: 1px solid #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.12);
+}
+[data-theme='light'] .scada-panel-warning {
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.12);
+}
+
+/* Grid Line Background for Drilling Cockpit */
+.bg-grid-scada {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(30, 41, 59, 0.3) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 41, 59, 0.3) 1px, transparent 1px);
+}
+
+/* Pulsing Status Indicators */
+@keyframes pulse-emerald {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.15); }
+}
+
+@keyframes pulse-rose {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(1.2); }
+}
+
+.pulse-green {
+  animation: pulse-emerald 2s infinite ease-in-out;
+}
+
+.pulse-red {
+  animation: pulse-rose 1s infinite ease-in-out;
+}
+
+/* Gauge Needle Transition */
+.needle-transition {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Custom Tooltip */
+.tooltip-scada {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+[data-theme='light'] .tooltip-scada {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #f8fafc;
+}
+
+/* Panel hover depth: subtle lift + brightened border, no layout shift */
+.scada-panel,
+.scada-panel-glow,
+.scada-panel-danger,
+.scada-panel-warning {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.scada-panel:hover {
+  border-color: #334155;
+  box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(51, 65, 85, 0.4);
+}
+[data-theme='light'] .scada-panel:hover {
+  border-color: #a89f8a;
+  box-shadow: 0 8px 24px -4px rgba(26, 26, 26, 0.1), 0 0 0 1px rgba(168, 159, 138, 0.25);
+}
+
+/* Skeleton loading shimmer -- use in place of a bare "—" while data is
+   in flight, so loading reads as "in progress" rather than "broken". */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+.skeleton {
+  display: inline-block;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #1e293b 0%, #2a374d 50%, #1e293b 100%);
+  background-size: 200px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  color: transparent !important;
+}
+
+/* Page enter transition -- applied once per route via App.tsx */
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-transition {
+  animation: page-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Consistent focus ring for keyboard nav, doesn't rely on browser default */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 1px;
+}
+
+/* Slider (range input) -- SCADA-styled, used by the offset-radius control */
+input[type='range'].scada-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #06b6d4 var(--slider-fill, 50%), #1e293b var(--slider-fill, 50%));
+  outline: none;
+}
+input[type='range'].scada-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #06b6d4;
+  border: 2px solid #e0f2fe;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+input[type='range'].scada-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+input[type='range'].scada-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #06b6d4;
+  border: 2px solid #e0f2fe;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+  cursor: pointer;
+}
+
+[data-theme='light'] input[type='range'].scada-slider {
+  background: linear-gradient(to right, #ea580c var(--slider-fill, 50%), #e6e0d0 var(--slider-fill, 50%));
+}
+[data-theme='light'] input[type='range'].scada-slider::-webkit-slider-thumb {
+  background: #ea580c;
+  border: 2px solid #fefdfb;
+  box-shadow: 0 0 8px rgba(234, 88, 12, 0.5);
+}
+[data-theme='light'] input[type='range'].scada-slider::-moz-range-thumb {
+  background: #ea580c;
+  border: 2px solid #fefdfb;
+  box-shadow: 0 0 8px rgba(234, 88, 12, 0.5);
+}

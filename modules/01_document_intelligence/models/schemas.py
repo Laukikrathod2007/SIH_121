@@ -34,6 +34,21 @@ class EventType(str, Enum):
     LOST_CIRCULATION = "LOST_CIRCULATION"
     DEVIATION = "DEVIATION_CONTROL"
     NPT_OPERATIONAL = "NPT_OPERATIONAL"
+    # Added after re-reading PS 26121 word-by-word: outcome (v) names
+    # "overpressure zones" explicitly alongside mud loss/stuck pipe/torque
+    # spikes/cementing, and none of the existing 10 values covered it.
+    # Confirmed real, not speculative — real Volve completion reports
+    # describe genuine overpressure findings in bar-vs-field-gradient terms
+    # (e.g. "~12 bar overpressure compared to initial main field oil
+    # gradient", WELL-15_9-F-1A_COMPLETION.pdf).
+    OVERPRESSURE_ZONE = "OVERPRESSURE_ZONE"
+    # Also named explicitly in the PS's own relevant-data list (item ix),
+    # alongside mud losses/kicks/stuck pipe/NPT. Added for schema
+    # completeness; honestly disclosed in the benchmark log that the
+    # current real-data pull (14 Volve documents) has zero fishing-operation
+    # narratives to validate this extraction against — unlike the other
+    # additions here, this one is not yet real-data-verified.
+    FISHING_OPERATION = "FISHING_OPERATION"
     UNKNOWN = "UNKNOWN"
 
 
@@ -260,6 +275,12 @@ class FormationTop(BaseModel):
     top_tvd_m: Optional[ExtractedField] = None
     base_md_m: Optional[ExtractedField] = None
     lithology_description: Optional[str] = None
+    # Matches module 02's FormationTop.porosity_pct/permeability_md/
+    # water_saturation_pct addition — PS 26121 problem-description item
+    # (iii) asks to correlate "reservoir characteristics" across wells.
+    porosity_pct: Optional[ExtractedField] = None
+    permeability_md: Optional[ExtractedField] = None
+    water_saturation_pct: Optional[ExtractedField] = None
     confidence: float = Field(ge=0.0, le=1.0, default=0.0)
 
     @property
@@ -436,6 +457,11 @@ class DocumentExtractionResult(BaseModel):
     all_drilling_events: List[DrillingEvent] = Field(default_factory=list)
     all_casing_records: List[CasingRecord] = Field(default_factory=list)
     mud_properties: List[MudProperties] = Field(default_factory=list)
+    # Well-level headline porosity/permeability/water-saturation reading
+    # (see extract_reservoir_properties' docstring for why this is a plain
+    # dict, not per-formation). Keys: porosity_pct, permeability_md,
+    # water_saturation_pct -- any subset may be present.
+    reservoir_properties: dict = Field(default_factory=dict)
 
     # Cloud fallback audit trail (see pipeline/cloud_fallback.py). Stays at
     # zero/empty for every document unless NWIS_REDUCTO_API_KEY or

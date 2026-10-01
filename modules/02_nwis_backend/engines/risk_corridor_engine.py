@@ -146,6 +146,7 @@ def _build_corridor(
         HazardType.WELLBORE_INSTABILITY: "Raise KCl inhibitor; increase mud weight; ream frequently",
         HazardType.TORQUE_SPIKE: "Reduce WOB; reciprocate string; check stabilizer size",
         HazardType.CEMENTING_FAILURE: "Review cement design; verify centralizer placement; re-run caliper",
+        HazardType.OVERPRESSURE_ZONE: "Increase mud weight ahead of the transition zone; monitor d-exponent trend and connection gas; reduce ROP through the interval",
     }
 
     formation = max(events, key=lambda e: severity_to_numeric(e.severity)).formation
@@ -226,6 +227,24 @@ def compute_sensor_anomaly(
     elif hazard_type == HazardType.TORQUE_SPIKE:
         torques = [r.torque_kn_m for r in records]
         return round(z_score_latest(torques), 4)
+
+    elif hazard_type == HazardType.OVERPRESSURE_ZONE:
+        # Real, standard petroleum-engineering overpressure indicator: the
+        # d-exponent (normalized ROP for WOB/RPM) trends DOWN below the
+        # normal compaction trend line when entering an undercompacted,
+        # overpressured zone -- this is directional (a decrease matters, an
+        # increase doesn't), unlike the undirected z-scores used above, so
+        # it's computed as a real trend comparison, not borrowed from
+        # z_score_latest.
+        d_exps = [r.d_exponent for r in records]
+        if len(d_exps) < 10:
+            return 0.0
+        baseline = sum(d_exps[:-5]) / len(d_exps[:-5])
+        recent = sum(d_exps[-5:]) / 5
+        if baseline <= 0:
+            return 0.0
+        drop_fraction = max(0.0, (baseline - recent) / baseline)
+        return round(min(1.0, drop_fraction / 0.30), 4)  # normalize: 30% drop -> 1.0
 
     return 0.0
 
@@ -408,6 +427,7 @@ def assess_hazard(
         HazardType.WELLBORE_INSTABILITY: "Increase KCl inhibitor concentration; raise MW to 11.0 ppg; limit drilling breaks",
         HazardType.TORQUE_SPIKE: "Reduce WOB by 30%; check top-drive parameters; prepare for string reciprocation",
         HazardType.CEMENTING_FAILURE: "Review centralizer spacing; ensure caliper data; use foam cement for narrow annuli",
+        HazardType.OVERPRESSURE_ZONE: "Raise mud weight ahead of the predicted transition; track d-exponent and connection-gas trend; have kill mud staged",
     }
 
     evidence_event_ids = [e.event_id for e in top_offset_events if e.event_type == hazard_type][:10]
@@ -419,6 +439,7 @@ def assess_hazard(
         p_history=p_history,
         a_sensor=a_sensor,
         m_ml=m_ml,
+        m_ml_source=m_ml_source,
         confidence=confidence,
         active_corridor=active_corridor,
         lead_time_meters=lead_time,

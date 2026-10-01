@@ -36,6 +36,11 @@ class HazardType(str, Enum):
     WELLBORE_INSTABILITY = "WELLBORE_INSTABILITY"
     TORQUE_SPIKE = "TORQUE_SPIKE"
     CEMENTING_FAILURE = "CEMENTING_FAILURE"
+    # Added to match module 01's EventType.OVERPRESSURE_ZONE addition — PS
+    # 26121 outcome (v) names "overpressure zones" explicitly alongside the
+    # other five hazards above, and this module had no equivalent despite
+    # already carrying pore_pressure_gradient_ppg on FormationTop.
+    OVERPRESSURE_ZONE = "OVERPRESSURE_ZONE"
 
 
 class RiskLevel(str, Enum):
@@ -128,7 +133,40 @@ class FormationTop(BaseModel):
     thickness_m: float
     pore_pressure_gradient_ppg: float = 9.0
     lithology: Optional[str] = None
+    # Added after re-reading PS 26121 word-by-word: problem-description item
+    # (iii) asks to correlate "reservoir characteristics" across wells, and
+    # this model had none — lithology and pore pressure aren't the same
+    # thing. All three are real, commonly-reported log-derived properties
+    # (not invented) — confirmed present in real Volve petrophysical/
+    # completion reports (e.g. WELL-15_9-F-1_PETROPHYSICAL.pdf: 28 porosity
+    # mentions, 28 permeability, 14 water-saturation, real percentages).
+    # Optional and None by default since most formation tops in the existing
+    # synthetic testbed were never given these values — added for real
+    # documents that report them, not retrofitted as a universal requirement.
+    porosity_pct: Optional[float] = None
+    permeability_md: Optional[float] = None
+    water_saturation_pct: Optional[float] = None
     confidence: float = Field(ge=0.0, le=1.0, default=0.90)
+
+
+class CasingRecord(BaseModel):
+    """
+    Real casing string data (size, shoe depth, top-of-cement), so casing
+    programs and cementing practices are correlatable across wells per PS
+    26121 problem-description item (iii). Mirrors module 01's CasingRecord
+    (which does real extraction now — logger Step 20) but as plain fields,
+    matching this module's style, rather than ExtractedField-wrapped.
+
+    NOTE, stated honestly: this model exists so module 02 CAN serve/
+    correlate casing data, but nothing currently populates it from module
+    01's real extraction output -- the two modules aren't connected (see
+    logger/09_VERIFIED_STATUS...md §2.3). That's the separately-scoped
+    Postgres/integration work, not silently implied as done here.
+    """
+    well_id: str
+    casing_size_inches: Optional[float] = None
+    shoe_depth_md_m: float
+    top_of_cement_md_m: Optional[float] = None
 
 
 # ---------------------------------------------------------------------------
