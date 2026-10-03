@@ -14,29 +14,35 @@ import path from 'node:path';
 // http://localhost:5173 by default (see their `_default_origins`), so no
 // proxy is needed for local dev.
 
-// Serves the static marketing landing page (public/landing/index.html) at
-// the exact root path "/", while leaving every other path -- including
-// "/app" and all its sub-routes -- to Vite's normal SPA fallback (which
-// serves the React app's own index.html). Vite only has one built-in HTML
-// entry, so without this the root path would always show the React shell
-// instead of the static page. Only intercepts the exact "/" request; the
-// React Router app itself is untouched.
+// Serves static marketing pages (public/landing/*.html) at clean top-level
+// paths -- "/" for index.html, "/benchmarks" for benchmarks.html -- while
+// leaving every other path, including "/app" and all its sub-routes, to
+// Vite's normal SPA fallback (which serves the React app's own index.html).
+// Vite only has one built-in HTML entry, so without this these paths would
+// always show the React shell instead of the static pages. Only intercepts
+// these exact requests; the React Router app itself is untouched.
+const STATIC_PAGES: Record<string, string> = {
+  '/': 'index.html',
+  '/benchmarks': 'benchmarks.html',
+};
+
 function landingPageAtRoot(): Plugin {
   return {
     name: 'landing-page-at-root',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (req.url === '/') {
+        const file = STATIC_PAGES[req.url ?? ''];
+        if (file) {
           const landingHtml = fs.readFileSync(
-            path.resolve(__dirname, 'public/landing/index.html'),
+            path.resolve(__dirname, 'public/landing', file),
             'utf-8',
           );
           // The file's own relative asset paths (href="assets/css/...", no
           // leading slash) are correct for its real location, /landing/ --
-          // but it's being served here AT "/", so the browser would resolve
-          // them against the wrong base and every stylesheet/script/image
-          // 404s. Injecting <base href="/landing/"> fixes resolution without
-          // touching the file on disk or its own paths at all.
+          // but it's being served here at a different path, so the browser
+          // would resolve them against the wrong base and every
+          // stylesheet/script/image 404s. Injecting <base href="/landing/">
+          // fixes resolution without touching the file on disk at all.
           const withBase = landingHtml.replace(
             /<head>/i,
             '<head><base href="/landing/">',
