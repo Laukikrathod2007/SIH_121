@@ -27,13 +27,17 @@ import {
 } from '../types';
 
 // ============================================================================
-// Two real backends + one placeholder.
+// Two real backends + one real-but-thin backend.
 //
 //  - Module 01 (Document Intelligence)  -> http://localhost:8001/api/v1/*
-//  - Module 02 (NWIS Backend Intel.)     -> http://localhost:8012/api/v2/*
-//  - Module 03 (Physics Digital Twin)    -> http://localhost:8003 (PLACEHOLDER —
-//    modules/03_physics_engine/ has no FastAPI routes exposed yet; see the
-//    "MODULE 03" section at the bottom of this file.)
+//  - Module 02 (NWIS Backend Intel.)     -> http://localhost:8002/api/v2/*
+//  - Module 03 (Physics Digital Twin)    -> http://localhost:8003/api/v3/* —
+//    served by modules/04_physics_engine/api/server.py (which imports
+//    modules/05_predictive_analytics's predictive/ code into itself via a
+//    sys.path insert; module 05 has no server of its own). Routes exist and
+//    the server runs, but the ML models it serves are typically UNFITTED on a
+//    fresh checkout (no trained .joblib artifacts) — see the "MODULE 03"
+//    section at the bottom of this file and AUDIT/02_CORE_INTEGRATION.md.
 //
 // Both real backends require an `X-API-Key` header on every route except
 // health/root when NWIS_API_KEY is configured server-side (see
@@ -48,7 +52,7 @@ import {
 // ============================================================================
 
 const M01_BASE = (import.meta.env.VITE_M01_API_BASE as string | undefined) || 'http://localhost:8001';
-const M02_BASE = (import.meta.env.VITE_M02_API_BASE as string | undefined) || 'http://localhost:8012';
+const M02_BASE = (import.meta.env.VITE_M02_API_BASE as string | undefined) || 'http://localhost:8002';
 const M03_BASE = (import.meta.env.VITE_M03_API_BASE as string | undefined) || 'http://localhost:8003';
 
 const M01_KEY = (import.meta.env.VITE_M01_API_KEY as string | undefined) || '';
