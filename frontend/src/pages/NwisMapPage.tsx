@@ -18,6 +18,19 @@ import { useNwisMapData } from '../components/nwis-map/useNwisMapData';
 // can't set.
 const EVIDENCE_SERVER = (import.meta.env.VITE_EVIDENCE_SERVER as string | undefined) || 'http://localhost:4100/evidence';
 
+// Some events' real `source_document` values (real_data/real_events_depth_tagged_fresh.json,
+// generated on a Windows machine) carry a Windows-style relative path prefix,
+// e.g. "volve\WELL-15_9-F-1_MUD_LOG.pdf", rather than a bare filename. The
+// vendored EvidenceViewer/WellDetailPanel (nwis-map-package, copied in
+// unchanged) pass this straight through as the `name` query param, and
+// evidence-server's own path-traversal guard rejects any `/`/`\` in it --
+// so the raw value always 400s there. Strip any directory prefix (forward
+// or back slash) here, at the real-data boundary, rather than editing the
+// vendored component or the committed source JSON.
+function basenameOf(path: string): string {
+  return path.split(/[\\/]/).pop() ?? path;
+}
+
 export const NwisMapPage: React.FC = () => {
   const { activeWellId, setActiveWellId } = useApp();
   const { wells, eventsByWell, loading } = useNwisMapData();
@@ -48,7 +61,7 @@ export const NwisMapPage: React.FC = () => {
           well={selected}
           events={eventsByWell[selected.well_id] ?? []}
           onBack={() => setSelected(null)}
-          onOpenEvidence={(doc, page, title) => setEvidence({ doc, page, title })}
+          onOpenEvidence={(doc, page, title) => setEvidence({ doc: basenameOf(doc), page, title })}
           onSetActive={() => setActiveWellId(selected.well_id)}
         />
       )}

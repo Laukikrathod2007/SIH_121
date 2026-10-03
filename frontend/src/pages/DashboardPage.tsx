@@ -12,6 +12,7 @@ import { OffsetWellRanking, FormationTop, HorizonAlignmentEntry } from '../types
 import { Link } from 'react-router-dom';
 import { LiveValue } from '../components/LiveValue';
 import { MiniSparkline } from '../components/MiniSparkline';
+import { BackendStatusStrip } from '../components/commandcenter/BackendStatusStrip';
 
 export const DashboardPage: React.FC = () => {
   const {
@@ -117,15 +118,11 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Backend Connectivity Bus */}
-      <div className="scada-panel px-3 py-2 flex items-center justify-between text-[11px] font-mono overflow-x-auto text-slate-300">
-        <span className="text-slate-400 uppercase tracking-widest text-[10px] mr-2">BACKEND STATUS:</span>
-        <div className="flex items-center space-x-4">
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400"></span> Module 01: Document Intelligence (8001)</span>
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400"></span> Module 02: NWIS Backend (8012)</span>
-          <span className="flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${isWsConnected ? 'bg-emerald-400' : 'bg-slate-600'}`}></span> Module 03: Physics Twin (not yet wired)</span>
-        </div>
-      </div>
+      {/* 2. Backend Connectivity Bus -- real health-checked strip (see
+          BackendStatusStrip's own header comment); this used to be a
+          hardcoded-green block that never reflected actual backend health,
+          found during the core-integration pass (AUDIT/02_CORE_INTEGRATION.md). */}
+      <BackendStatusStrip />
 
       {/* 3. Operational Critical Alert & Mitigation Card (If Active — module 03 placeholder) */}
       {criticalAlert && (
@@ -152,7 +149,7 @@ export const DashboardPage: React.FC = () => {
               <span>APPLY MITIGATION</span>
             </button>
             <Link
-              to="/alerts"
+              to="/app/alerts"
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded transition font-mono border border-slate-700"
             >
               DETAILS →
@@ -171,7 +168,7 @@ export const DashboardPage: React.FC = () => {
                 <Layers className="w-4 h-4 text-amber-400" />
                 <span className="font-semibold text-sm text-slate-100">Stratigraphic Correlation</span>
               </div>
-              <Link to="/correlation" className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1">
+              <Link to="/app/correlation" className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1">
                 Full Cross-Section <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -225,7 +222,7 @@ export const DashboardPage: React.FC = () => {
                 <Compass className="w-4 h-4 text-cyan-400" />
                 <span className="font-semibold text-sm text-slate-100">Nearby Offset Wells (DORS)</span>
               </div>
-              <Link to="/wells" className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1">
+              <Link to="/app/wells" className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1">
                 Field GIS Map <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -271,7 +268,7 @@ export const DashboardPage: React.FC = () => {
                 <Gauge className="w-4 h-4 text-emerald-400" />
                 <span className="font-semibold text-sm text-slate-100">Live Drilling Cockpit</span>
               </div>
-              <Link to="/drilling" className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1">
+              <Link to="/app/drilling" className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1">
                 Full Cockpit <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
@@ -332,7 +329,7 @@ export const DashboardPage: React.FC = () => {
                 <ShieldAlert className="w-4 h-4 text-rose-400" />
                 <span className="font-semibold text-sm text-slate-100">Multi-Signal Hazard Forecast</span>
               </div>
-              <Link to="/risk" className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1">
+              <Link to="/app/risk" className="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1">
                 Risk Details <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
