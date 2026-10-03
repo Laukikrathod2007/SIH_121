@@ -39,10 +39,10 @@ renumbered. See logger Step 12 for the full history.
 
 ## Directory guide
 
-- `modules/01_document_intelligence/` — OCR + NLP extraction pipeline (FastAPI, port 8001/8011)
-- `modules/02_nwis_backend/` — DORS ranking, stratigraphic correlation, knowledge search, risk corridors, alerts (FastAPI, port 8012)
-- `modules/04_physics_engine/` — drilling-physics digital twin + ML data pipeline (no standalone server; imported by module 05's API)
-- `modules/05_predictive_analytics/` — rule engine + isolation forest + XGBoost hazard fusion, exposed over `/api/v3` (FastAPI + WebSocket, port 8003)
+- `modules/01_document_intelligence/` — OCR + NLP extraction pipeline (FastAPI, port 8001)
+- `modules/02_nwis_backend/` — DORS ranking, stratigraphic correlation, knowledge search, risk corridors, alerts (FastAPI, port 8002)
+- `modules/04_physics_engine/` — drilling-physics digital twin + ML data pipeline; **this module owns the actual FastAPI app and WebSocket** exposed over `/api/v3` (port 8003) — it imports module 05's predictive code into itself via a `sys.path` insert in `api/server.py`
+- `modules/05_predictive_analytics/` — rule engine + isolation forest + XGBoost hazard fusion; **no standalone server of its own** — its `predictive/` package is imported into and served by module 04's process (see above; this corrects an earlier, backwards version of this line — verified in `AUDIT/01_CODEBASE_MAP.md` §4 and `AUDIT/02_CORE_INTEGRATION.md`)
 - `frontend/` — the React cockpit, talking to all three backends above
 - `database/` — PostgreSQL/PostGIS/pgvector/TimescaleDB schema (OSDU/WITSML/PPDM-aligned), **not yet wired into modules 01/02's live storage** — a standalone, verified-working layer for a future migration, not a live cutover
 - `real_data/` — real Equinor Volve field documents/trajectories pulled for benchmarking, plus the parsing/validation scripts used against them
@@ -54,9 +54,14 @@ renumbered. See logger Step 12 for the full history.
 Each module runs independently:
 
 ```bash
-cd modules/01_document_intelligence && python run_server.py   # :8001 (or :8011, see logger Step 15)
-cd modules/02_nwis_backend && NWIS_PORT=8012 python run_server.py  # :8012 (moved from 8002 -- orphaned-socket issue on this machine, see logger)
-cd modules/04_physics_engine/api && python -m modules.04_physics_engine.run_server  # :8003 (see that module's run_server.py)
+cd modules/01_document_intelligence && python run_server.py   # :8001 (documented default; verified by actually running it — see AUDIT/02_CORE_INTEGRATION.md)
+cd modules/02_nwis_backend && python run_server.py             # :8002 (documented default; verified clean, no port conflict on this machine as of this check)
+cd modules/04_physics_engine && python run_server.py           # :8003 — run from THIS directory, not from repo root with `-m`.
+                                                                #   The previously-documented `cd modules/04_physics_engine/api && python -m modules.04_physics_engine.run_server`
+                                                                #   is verified BROKEN (raises `ModuleNotFoundError: No module named 'modules'`) because no
+                                                                #   `modules/__init__.py` exists — `modules` only resolves as an implicit namespace package
+                                                                #   from the repo root, not from inside modules/04_physics_engine/api. Plain `python run_server.py`
+                                                                #   from inside modules/04_physics_engine/ works directly; see AUDIT/02_CORE_INTEGRATION.md.
 cd frontend && npm run dev                                     # :5173
 cd database && docker compose up -d                            # :5433 (Postgres — not yet consumed by 01/02)
 ```
