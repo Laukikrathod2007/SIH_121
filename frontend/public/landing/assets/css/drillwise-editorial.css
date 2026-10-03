@@ -2,6 +2,64 @@
    Keep this layer separate from the imported page styles so the visual system
    can evolve without changing copy, page content, or interaction scripts. */
 
+/* The header is fixed (h-14/h-16), but nothing ever told the browser to
+   account for it when jumping to a hash target -- every anchor link on the
+   page (mega-menu items, footer links, nav pills) landed with the
+   destination's own heading hidden directly behind the header. One line
+   fixes every anchor on the site at once, no per-section changes needed. */
+html {
+  scroll-padding-top: 76px;
+}
+
+/* Mobile slide-down menu: extracted from the same server-rendered React page
+   as the desktop mega-menu, its closed/hidden state depended on three
+   Tailwind classes that never made it into this page's precompiled CSS --
+   lg:hidden, -translate-y-[calc(100%+56px)], and top-14.25 (all absent from
+   main-styles.css/global-styles.css; same root cause as the mega-menu and
+   the pipeline-tabs grid earlier). With none of those doing anything, the
+   panel sat permanently visible and badly positioned, overlapping whatever
+   else was on screen -- including the desktop mega-menu once that got
+   wired up, which is what produced the garbled double-text. Replaced here
+   with real CSS driven by our own .dw-mobile-nav-open toggle class. */
+.z-navbar-mobile-menu {
+  top: 56px;
+}
+
+/* Modules mega-menu: previously lived here as CSS patches on top of
+   inherited Radix/React markup (#_R_t99fkdb_) -- three rounds of fixes
+   (panel width, then min-width:0, then an explicit grid) each solved part
+   of the layout but a click still landed on the wrong destination every
+   time, which turned out to be the real container (panel minus its
+   decorative image sidebar) never matching what the CSS assumed. The panel
+   was rebuilt from scratch as plain inline-styled markup instead
+   (dw-mega-menu.js + the markup itself), so none of those patches are
+   needed anymore. */
+
+/* Benchmark-report cards' <details> chevron: group-open:rotate-180 is
+   another arbitrary Tailwind variant this precompiled stylesheet never
+   generated. <details>/<summary> are native, so expand/collapse already
+   works with zero JS either way -- this just restores the chevron spin. */
+details[open] summary svg {
+  transform: rotate(180deg);
+}
+summary svg {
+  transition: transform 0.2s ease;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .z-navbar-mobile-menu { display: none !important; }
+}
+@media (max-width: 1023px) {
+  .z-navbar-mobile-menu nav {
+    transform: translateY(calc(-100% - 56px));
+  }
+  .z-navbar-mobile-menu.dw-mobile-nav-open nav {
+    transform: translateY(0);
+  }
+}
+
 :root {
   --dw-paper: #fbfaf8;
   --dw-panel: #fffefd;
@@ -1024,4 +1082,258 @@ header nav > div.lg\:flex > div {
 .dw-reveal.dw-in-view {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* "FIG.0X" illustration frame, in extend.ai's visual language (grid-paper
+   background, dashed border, numbered corner label, floating sequential
+   callout bubbles) -- but the callout text is our own real pipeline
+   stages (orchestrator.py, read word-by-word before building this), not
+   an invented demo. Reuses the brand's own orange rather than their blue. */
+.dw-fig-frame {
+  position: relative;
+  background-image:
+    linear-gradient(to right, rgba(201, 106, 18, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(201, 106, 18, 0.06) 1px, transparent 1px);
+  background-size: 18px 18px;
+  background-color: #fbf9f5;
+  border: 1px dashed #d7cfc2 !important;
+  padding: 14px;
+}
+.dw-fig-frame::after {
+  content: "( FIG." attr(data-fig) " )";
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  font-family: dmMono, monospace;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: #a8a29e;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.dw-fig-callout {
+  position: absolute;
+  z-index: 3;
+  background: #ffffff;
+  border: 1px solid #e5e2de;
+  border-radius: 5px;
+  box-shadow: 0 4px 14px rgba(30, 28, 25, 0.1);
+  padding: 4px 9px;
+  font-family: dmMono, monospace;
+  font-size: 10px;
+  color: #514d48;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  animation: dwFigCalloutCycle 10s ease-in-out infinite;
+}
+@keyframes dwFigCalloutCycle {
+  0%, 4% { opacity: 0; transform: translateY(4px); }
+  7%, 16% { opacity: 1; transform: translateY(0); }
+  19%, 100% { opacity: 0; transform: translateY(-4px); }
+}
+.dw-fig-callout-1 { top: 10px; left: 10px; animation-delay: 0s; }
+.dw-fig-callout-2 { top: 10px; right: 10px; animation-delay: 2s; }
+.dw-fig-callout-3 { top: 46%; right: 6px; animation-delay: 4s; }
+.dw-fig-callout-4 { bottom: 34px; right: 10px; animation-delay: 6s; }
+.dw-fig-callout-5 { bottom: 34px; left: 10px; animation-delay: 8s; }
+
+/* One accent per section instead of a neutral-gray bubble everywhere --
+   matched to the color each section's own header indicator dot already
+   uses, so the floating callouts read as that section's own voice rather
+   than a generic rainbow repeated across the page. Section 02's map got
+   the fuller beam-to-anchor treatment directly in its SVG instead, since
+   it has real point coordinates to connect to; these five are HTML-card
+   layouts (search results, stratigraphy columns, gauges) with no single
+   coordinate space to draw a precise line into, so the lighter accent-only
+   treatment is the honest version of the same idea for them. */
+[data-fig="03"] .dw-fig-callout { border-left: 3px solid #06b6d4; }
+[data-fig="04"] .dw-fig-callout { border-left: 3px solid #059669; }
+[data-fig="05"] .dw-fig-callout { border-left: 3px solid #f59e0b; }
+[data-fig="06"] .dw-fig-callout { border-left: 3px solid #ea580c; }
+[data-fig="08"] .dw-fig-callout { border-left: 3px solid #10b981; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dw-fig-callout { animation: none !important; opacity: 0 !important; }
+}
+@media (max-width: 640px) {
+  .dw-fig-callout { display: none; }
+}
+
+/* Data Extraction pipeline showcase -- a 3-column click-to-switch tab
+   system (left nav / center figure / right capabilities), same structural
+   idea as extend.ai's /parse /extract /split... pattern, rebuilt with our
+   own 5 real pipeline layers (modules/01's orchestrator.py, read word by
+   word before building this) rather than their content or assets.
+
+   The column widths are set here, in plain CSS, rather than via a Tailwind
+   arbitrary-value class (lg:grid-cols-[22%_52%_26%]) in the HTML: this
+   page's Tailwind is a precompiled bundle (main-styles.css/global-styles.css),
+   not an in-browser JIT compiler, so a brand-new utility class invented
+   after that build never gets generated and silently does nothing --
+   which is why this was rendering as a single stacked column. */
+.dw-pipeline-tabs {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+@media (min-width: 1024px) {
+  .dw-pipeline-tabs {
+    grid-template-columns: 22% 52% 26%;
+    gap: 0;
+  }
+  /* Same uncompiled-utility problem hit the per-column lg:border-r/lg:pr-6/
+     lg:border-l/lg:pl-6/lg:px-8 classes on these three columns -- replaced
+     here too, targeted by column position since they share no own class. */
+  .dw-pipeline-tabs > div:nth-child(1) {
+    border-right: 1px solid #e7e5e4;
+    padding-right: 1.5rem;
+  }
+  .dw-pipeline-tabs > div:nth-child(2) {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+  .dw-pipeline-tabs > div:nth-child(3) {
+    border-left: 1px solid #e7e5e4;
+    padding-left: 1.5rem;
+  }
+}
+
+.dw-pt-nav-item {
+  cursor: pointer;
+  padding: 16px 0;
+  border-bottom: 1px solid #e5e2de;
+}
+.dw-pt-nav-item:first-child { padding-top: 0; }
+.dw-pt-bar,
+.dw-pt-num,
+.dw-pt-desc {
+  display: none;
+}
+.dw-pt-title {
+  font-family: 'abcFavorit', ui-sans-serif, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #a8a29e;
+  transition: color 0.2s ease, font-size 0.2s ease;
+}
+.dw-pt-nav-item:hover .dw-pt-title {
+  color: #57524b;
+}
+.dw-pt-nav-item.dw-pt-active .dw-pt-bar {
+  display: block;
+  height: 2px;
+  width: 36px;
+  background: #c96a12;
+  margin-bottom: 14px;
+}
+.dw-pt-nav-item.dw-pt-active .dw-pt-num {
+  display: block;
+  font-family: dmMono, monospace;
+  font-size: 11px;
+  color: #a8a29e;
+  margin-bottom: 4px;
+}
+.dw-pt-nav-item.dw-pt-active .dw-pt-desc {
+  display: block;
+  color: #78716c;
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin-top: 8px;
+  max-width: 34ch;
+}
+.dw-pt-nav-item.dw-pt-active .dw-pt-title {
+  font-size: 23px;
+  font-weight: 700;
+  color: #1c1917;
+}
+
+.dw-pt-fig { display: none; }
+.dw-pt-fig.dw-pt-active { display: block; }
+
+/* Motion for the illustration: the whole figure eases in on tab switch
+   (display:none -> block naturally restarts a CSS animation, so this
+   replays every click with no JS needed); the pointer-line from content to
+   tag "draws" on a loop via a traveling dash; the origin dot pulses. Paths
+   and dots are targeted by their stroke-width/r attributes rather than a
+   class, since every leader line in all 5 figures shares stroke-width:1.25
+   and every anchor dot shares r:2.5, while icon strokes (checkmarks,
+   magnifiers, warning glyphs) use other widths and are left untouched. */
+.dw-pt-fig.dw-pt-active svg {
+  animation: dwPtFigIn 0.5s ease-out both;
+}
+@keyframes dwPtFigIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.dw-pt-fig.dw-pt-active path[stroke-width="1.25"] {
+  stroke-dasharray: 5 4;
+  animation: dwPtFlow 1s linear infinite;
+}
+@keyframes dwPtFlow {
+  to { stroke-dashoffset: -18; }
+}
+.dw-pt-fig.dw-pt-active circle[r="2.5"] {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dwPtDotPulse 1.6s ease-in-out infinite;
+}
+@keyframes dwPtDotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.7); }
+}
+.dw-pt-caps.dw-pt-active {
+  animation: dwPtFigIn 0.5s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dw-pt-fig.dw-pt-active svg,
+  .dw-pt-fig.dw-pt-active path[stroke-width="1.25"],
+  .dw-pt-fig.dw-pt-active circle[r="2.5"],
+  .dw-pt-caps.dw-pt-active {
+    animation: none !important;
+  }
+}
+
+/* Isometric illustration canvas for this showcase only -- same structural
+   idea as extend.ai's tilted-paper-stack figures with a top-left FIG chip
+   and curved pointer-line tags, rebuilt from scratch in our own geometry,
+   colors and content (real pipeline stages), not their artwork. Scoped to
+   .dw-pipeline-tabs so every other section keeps the original cream
+   bottom-left-label frame. */
+.dw-pipeline-tabs .dw-fig-frame {
+  background-image:
+    linear-gradient(to right, rgba(201, 106, 18, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(201, 106, 18, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-color: #f3ead9;
+  border: 1px solid #e0d5c0 !important;
+  border-radius: 10px;
+  padding: 0;
+  overflow: hidden;
+}
+.dw-pipeline-tabs .dw-fig-frame::after {
+  top: 10px;
+  bottom: auto;
+  left: 10px;
+  background: #fffdf9;
+  border: 1px solid #e0d5c0;
+  border-radius: 4px;
+  padding: 3px 7px;
+}
+
+.dw-pt-caps { display: none; }
+.dw-pt-caps.dw-pt-active { display: block; }
+
+@media (max-width: 1023px) {
+  .dw-pt-nav-item .dw-pt-bar,
+  .dw-pt-nav-item .dw-pt-num,
+  .dw-pt-nav-item .dw-pt-desc,
+  .dw-pt-nav-item .dw-pt-title {
+    display: block !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    color: #1c1917 !important;
+  }
+  .dw-pt-fig, .dw-pt-caps { display: block !important; }
 }
