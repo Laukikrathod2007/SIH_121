@@ -20,6 +20,7 @@ Endpoints:
 """
 
 from __future__ import annotations
+import asyncio
 import json
 import os
 import sys
@@ -71,6 +72,20 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Data store load failed: {e}")
         logger.warning("Run: python data/synthetic/generate_testbed.py to generate data")
+
+    # Pre-warm the semantic search embedding model in the background, same
+    # pattern as module 01's Docling pre-warm. Without this, _get_model()
+    # lazy-loads sentence-transformers (and its torch/protobuf import chain)
+    # on whichever request happens to call GET /api/v2/events/search first
+    # -- a real, reproducible 60-120s stall on a live demo's first search,
+    # confirmed in logger/11's backend audit. Pre-warming here moves that
+    # cost to server startup, where it's invisible to a user.
+    try:
+        from search.knowledge_search import _get_model
+        asyncio.get_event_loop().run_in_executor(None, _get_model)
+        logger.info("Knowledge-search embedding model pre-warm initiated in background")
+    except Exception as exc:
+        logger.warning(f"Knowledge-search pre-warm skipped: {exc}")
 
     yield
     logger.info("NWIS Backend shutting down")

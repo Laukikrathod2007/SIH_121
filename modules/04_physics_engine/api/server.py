@@ -508,7 +508,7 @@ async def predictive_evaluate(body: EvaluateRequest):
     return fused_output
 
 
-@app.get("/api/v3/predictive/alerts/{well_id}", tags=["Predictive"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+@app.get("/api/v3/predictive/alerts/{well_id:path}", tags=["Predictive"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def predictive_get_alerts(well_id: str):
     alerts = risk_service.get_active_alerts(well_id)
     return [_alert_to_advisory(a) for a in alerts]
