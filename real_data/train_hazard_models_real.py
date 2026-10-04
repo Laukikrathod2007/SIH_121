@@ -24,13 +24,13 @@ import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(REPO_ROOT / "modules" / "02_nwis_backend"))
+sys.path.insert(0, str(REPO_ROOT / "Backend"))  # makes the canonical `app.modules.nwis` package importable
 
-from models.schemas import (
+from app.modules.nwis.models.schemas import (
     Well, WellType, WellTrajectory, SurveyStation, FormationTop,
     DrillingEvent, HazardType,
 )
-from ml.feature_engineering import build_features, MIN_POSITIVE_SAMPLES, FEATURE_NAMES
+from app.modules.nwis.ml.feature_engineering import build_features, MIN_POSITIVE_SAMPLES, FEATURE_NAMES
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline

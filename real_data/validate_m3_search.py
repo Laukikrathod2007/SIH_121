@@ -11,10 +11,14 @@ smaller since only 119 real events exist to query against right now).
 """
 import sys
 import json
-sys.path.insert(0, ".")
+from pathlib import Path  # noqa: E402
 
-from models.schemas import DrillingEvent, HazardType
-from search.knowledge_search import search_events
+# Canonical `app.modules.nwis` package lives under Backend/ (no longer
+# dependent on the current working directory).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "Backend"))
+
+from app.modules.nwis.models.schemas import DrillingEvent, HazardType
+from app.modules.nwis.search.knowledge_search import search_events
 
 raw_events = json.load(open("../../real_data/real_events_module01.json", encoding="utf-8"))
 

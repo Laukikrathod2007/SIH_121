@@ -18,11 +18,15 @@ Two things are checked, both against REAL data, not synthetic:
 """
 import sys
 import json
-sys.path.insert(0, ".")
+from pathlib import Path  # noqa: E402
 
-from models.schemas import WellTrajectory
-from engines.stratigraphic_correlator import tvd_at_md, inclination_at_md, azimuth_at_md
-from engines.dors_engine import score_trajectory
+# Canonical `app.modules.nwis` package lives under Backend/ (no longer
+# dependent on the current working directory).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "Backend"))
+
+from app.modules.nwis.models.schemas import WellTrajectory
+from app.modules.nwis.engines.stratigraphic_correlator import tvd_at_md, inclination_at_md, azimuth_at_md
+from app.modules.nwis.engines.dors_engine import score_trajectory
 
 data = json.load(open("../../real_data/real_trajectories.json", encoding="utf-8"))
 trajectories = {t["well_id"]: WellTrajectory(**t) for t in data}
