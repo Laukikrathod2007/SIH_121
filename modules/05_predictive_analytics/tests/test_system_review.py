@@ -14,17 +14,17 @@ import math
 import pytest
 from datetime import datetime, timezone
 
-from simulation.engine import DrillingPhysicsEngine
-from simulation.faults import ScenarioType
-from models.config import SimulatorConfig
-from models.state import FormationParams
-from predictive.realtime_inference import RealTimeRiskInferenceService
+from app.modules.physics.simulation.engine import DrillingPhysicsEngine
+from app.modules.physics.simulation.faults import ScenarioType
+from app.modules.physics.models.config import SimulatorConfig
+from app.modules.physics.models.state import FormationParams
+from app.modules.predictive_analytics.predictive.realtime_inference import RealTimeRiskInferenceService
 # rank_offset_wells/compute_dors (Module 4 offset ranking) are not exercised by
 # this file and live in the well_intelligence module, which is out of scope for
 # this port -- see data_pipeline/xi_correlator.py for why compute_xi/xi_to_tvdss
 # were reproduced locally instead of imported cross-module.
-from data_pipeline.xi_correlator import compute_xi, xi_to_tvdss
-from data_pipeline.splitter import DatasetSplitter
+from app.modules.physics.data_pipeline.xi_correlator import compute_xi, xi_to_tvdss
+from app.modules.physics.data_pipeline.splitter import DatasetSplitter
 
 
 @pytest.fixture

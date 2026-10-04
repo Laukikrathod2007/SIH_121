@@ -15,17 +15,17 @@ import time
 import pytest
 from typing import Dict, Any
 
-from predictive.baseline_hazard_rules import (
+from app.modules.predictive_analytics.predictive.baseline_hazard_rules import (
     BaselineHazardRules,
     DebounceState,
 )
-from predictive.anomaly_detector import DrillingAnomalyDetector
-from predictive.xgboost_classifier import (
+from app.modules.predictive_analytics.predictive.anomaly_detector import DrillingAnomalyDetector
+from app.modules.predictive_analytics.predictive.xgboost_classifier import (
     XGBoostHazardClassifier,
     HAZARD_TARGET_MAP,
 )
-from predictive.risk_fusion_engine import RiskFusionEngine
-from predictive.realtime_inference import RealTimeRiskInferenceService
+from app.modules.predictive_analytics.predictive.risk_fusion_engine import RiskFusionEngine
+from app.modules.predictive_analytics.predictive.realtime_inference import RealTimeRiskInferenceService
 
 
 class TestBaselineHazardRules:

@@ -22,18 +22,14 @@ from typing import Dict, Any, List, Optional
 # engineering -- the only cross-module dependency in this port, matching the
 # real coupling: predictive risk fusion consumes the same trailing-window
 # features the offline training pipeline (data_pipeline/feature_engine.py)
-# computes. Each module in this project deploys independently (own
-# requirements.txt, own run_server.py if any), so this is an explicit sibling
-# path insert rather than a shared installed package.
-_MODULE_04_ROOT = Path(__file__).resolve().parents[2] / "04_physics_engine"
-if str(_MODULE_04_ROOT) not in sys.path:
-    sys.path.insert(0, str(_MODULE_04_ROOT))
+# computes. That dependency is now an ordinary package import
+# (app.modules.physics.*) rather than a sibling-path sys.path insert.
 
-from data_pipeline.feature_engine import FeatureEngine
-from predictive.baseline_hazard_rules import BaselineHazardRules
-from predictive.anomaly_detector import DrillingAnomalyDetector
-from predictive.xgboost_classifier import XGBoostHazardClassifier
-from predictive.risk_fusion_engine import RiskFusionEngine
+from app.modules.physics.data_pipeline.feature_engine import FeatureEngine
+from app.modules.predictive_analytics.predictive.baseline_hazard_rules import BaselineHazardRules
+from app.modules.predictive_analytics.predictive.anomaly_detector import DrillingAnomalyDetector
+from app.modules.predictive_analytics.predictive.xgboost_classifier import XGBoostHazardClassifier
+from app.modules.predictive_analytics.predictive.risk_fusion_engine import RiskFusionEngine
 
 # Pre-trained model artifacts, if present, live alongside this module rather
 # than under a shared settings.DATA_DIR (there is no cross-cutting settings
@@ -68,7 +64,7 @@ class RealTimeRiskInferenceService:
         if xgb_path.exists():
             self.xgboost_classifier.load(xgb_path)
 
-        from predictive.alert_advisory_engine import AlertAdvisoryEngine
+        from app.modules.predictive_analytics.predictive.alert_advisory_engine import AlertAdvisoryEngine
         self.alert_engine = AlertAdvisoryEngine()
 
         self.fusion_engine = RiskFusionEngine(

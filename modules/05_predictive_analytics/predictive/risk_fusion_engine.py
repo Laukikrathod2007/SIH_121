@@ -22,9 +22,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
 
-from predictive.baseline_hazard_rules import BaselineHazardRules
-from predictive.anomaly_detector import DrillingAnomalyDetector
-from predictive.xgboost_classifier import XGBoostHazardClassifier
+from app.modules.predictive_analytics.predictive.baseline_hazard_rules import BaselineHazardRules
+from app.modules.predictive_analytics.predictive.anomaly_detector import DrillingAnomalyDetector
+from app.modules.predictive_analytics.predictive.xgboost_classifier import XGBoostHazardClassifier
 
 
 class RiskFusionEngine:
