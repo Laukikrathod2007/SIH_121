@@ -1,0 +1,54 @@
+# =============================================================================
+# NWIS Unified Backend -- THE authoritative backend dependency manifest.
+#
+#   python -m venv .venv
+#   .venv\Scripts\activate            (Windows)   |   source .venv/bin/activate
+#   pip install -r requirements.txt   (run from Backend/)
+#   python run.py
+#
+# This file replaces the four per-module manifests
+# (modules/01_document_intelligence, 02_nwis_backend, 04_physics_engine,
+# 05_predictive_analytics), which are kept only as historical reference.
+#
+# Derived from an AST scan of every third-party import actually performed by
+# the integrated code (not copied from the old manifests). Packages the code
+# never imports -- aiofiles, orjson, pydantic-settings, Pillow -- are
+# deliberately NOT listed; anything that needs one pulls it in itself.
+#
+# Constraints are lower bounds at the oldest version the modules were built
+# against, with an upper bound only where a major/minor jump is known to
+# change behaviour this app depends on (FastAPI/Starlette). Exact old pins
+# (numpy==1.26.4, scikit-learn==1.5.2, ...) were written for Python 3.11 and
+# have no wheels for newer interpreters, so they are not reproduced here.
+#
+# Optional capabilities live in requirements-optional.txt; test tooling in
+# requirements-dev.txt. The app starts and reports truthful degraded status
+# without the optional set.
+# =============================================================================
+
+# --- Web framework / server (REST + WebSocket telemetry stream) ---
+fastapi>=0.115.0,<0.116
+uvicorn[standard]>=0.30.6,<0.33    # [standard] brings `websockets`, needed by /api/v3/physics/stream
+python-multipart>=0.0.9            # required by FastAPI for the PDF upload endpoint (/api/v1/ingest)
+pydantic>=2.9,<3
+
+# --- Configuration / logging ---
+python-dotenv>=1.0.1
+loguru>=0.7.2
+
+# --- Document intelligence: PDF parsing + optional cloud-fallback HTTP calls ---
+pymupdf>=1.24.9
+httpx>=0.27.2
+
+# --- Machine learning: hazard models, anomaly detection, risk fusion ---
+numpy>=1.26.4
+scikit-learn>=1.5.2
+joblib>=1.4.2
+xgboost>=2.1.1
+
+# --- Historical knowledge search (semantic embeddings) ---
+sentence-transformers>=3.3.0
+
+# --- PostgreSQL / PostGIS data access (active only when NWIS_DATABASE_URL / NWIS_DB_* is set) ---
+psycopg[binary]>=3.2.0
+psycopg_pool>=3.2.0

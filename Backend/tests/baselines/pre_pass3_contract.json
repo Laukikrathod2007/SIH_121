@@ -1,0 +1,309 @@
+{
+  "_comment": "Captured from the running unified backend BEFORE the Pass 3 import-architecture refactor (Pass 2 harvesting mechanism). The refactor must not change any of this.",
+  "operations": [
+    "DELETE /api/v3/physics/scenario",
+    "GET /",
+    "GET /api/evidence",
+    "GET /api/evidence/health",
+    "GET /api/v1/documents/{doc_id}/file",
+    "GET /api/v1/health",
+    "GET /api/v1/jobs",
+    "GET /api/v1/jobs/{job_id}",
+    "GET /api/v1/results",
+    "GET /api/v1/results/{doc_id}",
+    "GET /api/v1/results/{doc_id}/benchmark",
+    "GET /api/v1/results/{doc_id}/events",
+    "GET /api/v1/results/{doc_id}/formations",
+    "GET /api/v1/results/{doc_id}/npt",
+    "GET /api/v1/review/queue",
+    "GET /api/v1/review/{doc_id}",
+    "GET /api/v1/templates",
+    "GET /api/v2/ahead_of_bit/{well_id}",
+    "GET /api/v2/analyze/{well_id}",
+    "GET /api/v2/casing",
+    "GET /api/v2/casing/{well_id}",
+    "GET /api/v2/corridors/{well_id}",
+    "GET /api/v2/events",
+    "GET /api/v2/events/search",
+    "GET /api/v2/events/{well_id}",
+    "GET /api/v2/formations",
+    "GET /api/v2/formations/{well_id}",
+    "GET /api/v2/health",
+    "GET /api/v2/live/replay/{well_id}",
+    "GET /api/v2/map/wells",
+    "GET /api/v2/offset_rank/{well_id}",
+    "GET /api/v2/stratigraphic_depth_track/{well_id}",
+    "GET /api/v2/telemetry/{well_id}",
+    "GET /api/v2/trajectory/{well_id}",
+    "GET /api/v2/wells",
+    "GET /api/v2/wells/{well_id}",
+    "GET /api/v3/health",
+    "GET /api/v3/physics/historian",
+    "GET /api/v3/physics/status",
+    "GET /api/v3/predictive/alerts/{well_id}",
+    "GET /api/v3/predictive/models",
+    "GET /health",
+    "GET /ready",
+    "POST /api/v1/ingest",
+    "POST /api/v1/review/{doc_id}/annotate",
+    "POST /api/v1/review/{doc_id}/decision",
+    "POST /api/v3/physics/operator-inputs",
+    "POST /api/v3/physics/pause",
+    "POST /api/v3/physics/reset",
+    "POST /api/v3/physics/scenario",
+    "POST /api/v3/physics/speed",
+    "POST /api/v3/physics/start",
+    "POST /api/v3/physics/step",
+    "POST /api/v3/predictive/alerts/mitigate",
+    "POST /api/v3/predictive/evaluate"
+  ],
+  "declared_parameters": {
+    "POST /api/v1/ingest": [
+      "X-API-Key:header"
+    ],
+    "GET /api/v1/jobs/{job_id}": [
+      "X-API-Key:header",
+      "job_id:path"
+    ],
+    "GET /api/v1/jobs": [
+      "X-API-Key:header"
+    ],
+    "GET /api/v1/results/{doc_id}": [
+      "X-API-Key:header",
+      "doc_id:path"
+    ],
+    "GET /api/v1/results/{doc_id}/events": [
+      "X-API-Key:header",
+      "doc_id:path"
+    ],
+    "GET /api/v1/results/{doc_id}/formations": [
+      "X-API-Key:header",
+      "doc_id:path"
+    ],
+    "GET /api/v1/results/{doc_id}/npt": [
+      "X-API-Key:header",
+      "doc_id:path"
+    ],
+    "GET /api/v1/results/{doc_id}/benchmark": [
+      "X-API-Key:header",
+      "doc_id:path"
+    ],
+    "GET /api/v1/results": [
+      "X-API-Key:header"
+    ],
+    "GET /api/v1/documents/{doc_id}/file": [
+      "X-API-Key:header",
+      "doc_id:path"
+    ],
+    "GET /api/v1/review/queue": [
+      "X-API-Key:header"
+    ],
+    "GET /api/v1/review/{doc_id}": [
+      "X-API-Key:header",
+      "doc_id:path"
+    ],
+    "POST /api/v1/review/{doc_id}/decision": [
+      "X-API-Key:header",
+      "doc_id:path"
+    ],
+    "POST /api/v1/review/{doc_id}/annotate": [
+      "X-API-Key:header",
+      "doc_id:path"
+    ],
+    "GET /api/v1/health": [],
+    "GET /api/v1/templates": [
+      "X-API-Key:header"
+    ],
+    "GET /api/v2/health": [],
+    "GET /api/v2/wells": [
+      "X-API-Key:header",
+      "field:query",
+      "status:query"
+    ],
+    "GET /api/v2/wells/{well_id}": [
+      "X-API-Key:header",
+      "well_id:path"
+    ],
+    "GET /api/v2/trajectory/{well_id}": [
+      "X-API-Key:header",
+      "well_id:path"
+    ],
+    "GET /api/v2/formations/{well_id}": [
+      "X-API-Key:header",
+      "well_id:path"
+    ],
+    "GET /api/v2/formations": [
+      "X-API-Key:header",
+      "formation_name:query"
+    ],
+    "GET /api/v2/casing/{well_id}": [
+      "X-API-Key:header",
+      "well_id:path"
+    ],
+    "GET /api/v2/casing": [
+      "X-API-Key:header"
+    ],
+    "GET /api/v2/events/search": [
+      "X-API-Key:header",
+      "depth_max:query",
+      "depth_min:query",
+      "formation:query",
+      "hazard_type:query",
+      "min_severity:query",
+      "query:query",
+      "top_n:query"
+    ],
+    "GET /api/v2/events/{well_id}": [
+      "X-API-Key:header",
+      "well_id:path"
+    ],
+    "GET /api/v2/events": [
+      "X-API-Key:header",
+      "depth_max:query",
+      "depth_min:query",
+      "formation:query",
+      "hazard_type:query",
+      "min_severity:query"
+    ],
+    "GET /api/v2/telemetry/{well_id}": [
+      "X-API-Key:header",
+      "depth:query",
+      "well_id:path",
+      "window:query"
+    ],
+    "GET /api/v2/stratigraphic_depth_track/{well_id}": [
+      "X-API-Key:header",
+      "depth:query",
+      "top_n:query",
+      "well_id:path"
+    ],
+    "GET /api/v2/offset_rank/{well_id}": [
+      "X-API-Key:header",
+      "depth:query",
+      "max_distance_km:query",
+      "radius_km:query",
+      "top_n:query",
+      "well_id:path"
+    ],
+    "GET /api/v2/analyze/{well_id}": [
+      "X-API-Key:header",
+      "depth:query",
+      "mud_weight_ppg:query",
+      "radius_km:query",
+      "well_id:path"
+    ],
+    "GET /api/v2/corridors/{well_id}": [
+      "X-API-Key:header",
+      "depth:query",
+      "hazard_type:query",
+      "well_id:path"
+    ],
+    "GET /api/v2/ahead_of_bit/{well_id}": [
+      "X-API-Key:header",
+      "depth:query",
+      "max_lookahead_m:query",
+      "step_m:query",
+      "top_n:query",
+      "well_id:path"
+    ],
+    "GET /api/v2/map/wells": [
+      "X-API-Key:header",
+      "center_well_id:query",
+      "radius_km:query"
+    ],
+    "GET /api/v2/live/replay/{well_id}": [
+      "X-API-Key:header",
+      "end_depth_m:query",
+      "n_ticks:query",
+      "start_depth_m:query",
+      "tick_seconds:query",
+      "well_id:path"
+    ],
+    "GET /api/v3/health": [],
+    "GET /api/v3/physics/status": [
+      "X-API-Key:header"
+    ],
+    "POST /api/v3/physics/start": [
+      "X-API-Key:header"
+    ],
+    "POST /api/v3/physics/pause": [
+      "X-API-Key:header"
+    ],
+    "POST /api/v3/physics/step": [
+      "X-API-Key:header"
+    ],
+    "POST /api/v3/physics/reset": [
+      "X-API-Key:header"
+    ],
+    "POST /api/v3/physics/speed": [
+      "X-API-Key:header"
+    ],
+    "POST /api/v3/physics/scenario": [
+      "X-API-Key:header"
+    ],
+    "DELETE /api/v3/physics/scenario": [
+      "X-API-Key:header"
+    ],
+    "POST /api/v3/physics/operator-inputs": [
+      "X-API-Key:header"
+    ],
+    "GET /api/v3/physics/historian": [
+      "X-API-Key:header",
+      "limit:query"
+    ],
+    "POST /api/v3/predictive/evaluate": [
+      "X-API-Key:header"
+    ],
+    "GET /api/v3/predictive/alerts/{well_id}": [
+      "X-API-Key:header",
+      "well_id:path"
+    ],
+    "POST /api/v3/predictive/alerts/mitigate": [
+      "X-API-Key:header"
+    ],
+    "GET /api/v3/predictive/models": [
+      "X-API-Key:header"
+    ],
+    "GET /api/evidence/health": [],
+    "GET /api/evidence": [
+      "name:query"
+    ],
+    "GET /": [],
+    "GET /health": [],
+    "GET /ready": []
+  },
+  "health_top_level_keys": {
+    "/api/v1/health": [
+      "components",
+      "jobs_in_queue",
+      "status"
+    ],
+    "/api/v2/health": [
+      "auth",
+      "data_store",
+      "database",
+      "engines",
+      "service",
+      "status",
+      "version"
+    ],
+    "/api/v3/health": [
+      "auth",
+      "engine",
+      "predictive",
+      "service",
+      "status",
+      "version"
+    ],
+    "/health": [
+      "modules",
+      "status"
+    ]
+  },
+  "aggregate_health_module_keys": [
+    "document_intelligence",
+    "evidence",
+    "nwis_backend",
+    "physics_predictive"
+  ]
+}

@@ -1,0 +1,18 @@
+# Optional backend capabilities. None of these is needed to start the app;
+# each one that is missing is reported truthfully as "not_installed" /
+# degraded by the corresponding /health entry instead of breaking anything.
+#
+#   pip install -r requirements-optional.txt
+
+# Layout-aware OCR (Tier 2) for scanned/raster PDF pages. Without it, scanned
+# pages fall back to plain-text extraction; native digital PDFs are unaffected.
+docling>=2.130.0
+docling-core>=2.99.0
+
+# Informational only: /api/v1/health reports whether spaCy is present. The
+# extraction pipeline (Tier 3) is pure regex/rules and never imports it.
+spacy>=3.7.6
+
+# Pretty CLI summary tables in pipeline/orchestrator.py's print helper
+# (never used on the API request path).
+rich>=13.8.1

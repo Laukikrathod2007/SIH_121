@@ -1,0 +1,16 @@
+# Local environment / secrets (root .gitignore also covers .env; repeated here
+# so Backend/ stays safe if it is ever extracted on its own)
+.env
+.env.*
+!.env.example
+
+# Virtual environments created per Backend/README.md
+.venv/
+venv/
+
+# Generated at runtime
+data/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.log

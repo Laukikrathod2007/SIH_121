@@ -1,0 +1,10 @@
+# Development / test tooling on top of the runtime manifest.
+#
+#   pip install -r requirements-dev.txt     (includes requirements.txt)
+
+-r requirements.txt
+
+# This pair is the verified-working combination: pytest 8.0 + pytest-asyncio
+# 0.23 crashes at collection ("'Package' object has no attribute 'obj'").
+pytest>=8.3.4,<9
+pytest-asyncio>=0.24.0,<0.25
