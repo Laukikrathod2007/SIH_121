@@ -13,8 +13,8 @@ and directional wells drilling through the same geological formation.
 from __future__ import annotations
 import math
 from typing import List, Optional, Dict
-from models.schemas import Well, WellTrajectory, FormationTop, SurveyStation
-from engines.trajectory_engine import compute_dogleg_angle, compute_ratio_factor
+from app.modules.nwis.models.schemas import Well, WellTrajectory, FormationTop, SurveyStation
+from app.modules.nwis.engines.trajectory_engine import compute_dogleg_angle, compute_ratio_factor
 
 
 # ---------------------------------------------------------------------------

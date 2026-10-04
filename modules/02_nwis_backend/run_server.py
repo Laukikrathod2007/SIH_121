@@ -12,8 +12,13 @@ import sys
 import os
 from pathlib import Path
 
+# STANDALONE debug/CLI launcher. The product runs as ONE backend
+# (Backend/run.py). This module's code is imported through its canonical
+# package `app.modules.nwis` (see Backend/app/modules/), so Backend/ -- which
+# holds that `app` package -- is put on the path once, here, at launcher start.
 MODULE_ROOT = Path(__file__).parent
-sys.path.insert(0, str(MODULE_ROOT))
+BACKEND_ROOT = MODULE_ROOT.parents[1] / "Backend"
+sys.path.insert(0, str(BACKEND_ROOT))
 
 # ---------------------------------------------------------------------------
 # Generate testbed data
@@ -30,7 +35,7 @@ if "--gen" in sys.argv:
 # Train hazard prediction models (see ml/train_hazard_models.py)
 # ---------------------------------------------------------------------------
 if "--train-ml" in sys.argv:
-    from ml.train_hazard_models import main as train_ml_main
+    from app.modules.nwis.ml.train_hazard_models import main as train_ml_main
     train_ml_main()
     sys.exit(0)
 
@@ -53,7 +58,7 @@ if "--validate" in sys.argv:
         print("  Run: python run_server.py --gen")
         sys.exit(1)
 
-    from data_store import NWISDataStore
+    from app.modules.nwis.data_store import NWISDataStore
     store = NWISDataStore()
     store.load(data_dir)
 
@@ -64,8 +69,8 @@ if "--validate" in sys.argv:
     print(f"       Telemetry: {s['telemetry_records']} records")
 
     # Test DORS engine
-    from engines.dors_engine import rank_offset_wells
-    from engines.stratigraphic_correlator import formation_at_depth
+    from app.modules.nwis.engines.dors_engine import rank_offset_wells
+    from app.modules.nwis.engines.stratigraphic_correlator import formation_at_depth
 
     active_well = store.all_wells[0]
     test_depth = 2500.0
@@ -88,7 +93,7 @@ if "--validate" in sys.argv:
         print(f"       Top offset: {r.well_name} | DORS={r.dors_score:.3f} | Dist={r.distance_km:.1f}km")
 
     # Test Risk Corridor Engine
-    from orchestrator import NWISOrchestrator
+    from app.modules.nwis.orchestrator import NWISOrchestrator
     orchestrator = NWISOrchestrator(store)
     result = orchestrator.analyze(active_well.well_id, test_depth)
 
@@ -181,10 +186,11 @@ if __name__ == "__main__":
     print("=" * 60 + "\n")
 
     if is_prod:
-        uvicorn.run("server:app", host=host, port=port, reload=False, log_level="info")
+        uvicorn.run("app.modules.nwis.server:app", app_dir=str(BACKEND_ROOT), host=host, port=port, reload=False, log_level="info")
     else:
         uvicorn.run(
-            "server:app",
+            "app.modules.nwis.server:app",
+            app_dir=str(BACKEND_ROOT),
             host=host,
             port=port,
             reload=True,

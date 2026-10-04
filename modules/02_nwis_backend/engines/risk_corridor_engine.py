@@ -13,14 +13,14 @@ import math
 from collections import defaultdict
 from typing import List, Optional, Dict
 
-from models.schemas import (
+from app.modules.nwis.models.schemas import (
     DrillingEvent, HazardType, RiskLevel, RiskCorridor,
     HazardRiskAssessment, FourPillarConfidence, EvidenceStrength,
     TelemetryRecord, OffsetWellRanking,
     Well, WellTrajectory, FormationTop,
     AheadOfBitCorridor, AheadOfBitCorridorPoint,
 )
-from ml.hazard_predictor import MLScoreResult
+from app.modules.nwis.ml.hazard_predictor import MLScoreResult
 
 # ---------------------------------------------------------------------------
 # Risk Aggregation Weights
@@ -276,7 +276,7 @@ def compute_ml_score(
     existing direct caller that doesn't have them yet still gets a score (via
     the heuristic path) instead of a hard error.
     """
-    from ml.hazard_predictor import predict_ml_score
+    from app.modules.nwis.ml.hazard_predictor import predict_ml_score
     return predict_ml_score(
         hazard_type=hazard_type,
         current_depth_m=current_depth_m,
@@ -519,7 +519,7 @@ def compute_ahead_of_bit_corridor(
     Gracefully degrades (formation/hazard fields left None/0.0) when
     active_traj or formation-top data is missing, rather than raising.
     """
-    from engines.stratigraphic_correlator import (
+    from app.modules.nwis.engines.stratigraphic_correlator import (
         tvd_at_md, tvdss_at_md, formation_at_depth, stratigraphic_depth, md_at_tvd,
     )
 

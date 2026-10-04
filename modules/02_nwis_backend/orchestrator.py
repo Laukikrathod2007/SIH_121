@@ -17,14 +17,14 @@ from __future__ import annotations
 from typing import Optional, List
 from loguru import logger
 
-from data_store import NWISDataStore
-from models.schemas import (
+from app.modules.nwis.data_store import NWISDataStore
+from app.modules.nwis.models.schemas import (
     NWISAnalysisResponse, HazardType, RiskLevel,
     DrillingEvent, TelemetryRecord
 )
-from engines.dors_engine import rank_offset_wells
-from engines.stratigraphic_correlator import formation_at_depth
-from engines.risk_corridor_engine import assess_hazard, identify_risk_corridors
+from app.modules.nwis.engines.dors_engine import rank_offset_wells
+from app.modules.nwis.engines.stratigraphic_correlator import formation_at_depth
+from app.modules.nwis.engines.risk_corridor_engine import assess_hazard, identify_risk_corridors
 
 import datetime
 
@@ -50,7 +50,14 @@ ALL_HAZARDS = [
 
 
 class NWISOrchestrator:
-    def __init__(self, store: NWISDataStore):
+    def __init__(self, store):
+        """`store` duck-types NWISDataStore's read surface (wells_by_id,
+        all_wells, all_trajectories, formation_tops_by_well, events_by_well,
+        get_events_for_top_wells, get_telemetry_at) — the real in-memory
+        singleton, or (Pass 5) app.modules.nwis.db.service.DbStoreSnapshot
+        when NWIS_DATABASE_URL is configured. No isinstance check: nothing
+        below uses NWISDataStore-specific behavior, only this shared
+        surface, so either object works identically here."""
         self.store = store
 
     def analyze(

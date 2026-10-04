@@ -17,7 +17,7 @@ from typing import List, Dict, Optional
 
 from loguru import logger
 
-from models.schemas import (
+from app.modules.nwis.models.schemas import (
     Well, WellTrajectory, SurveyStation, FormationTop, DrillingEvent,
     TelemetryRecord, HazardType, WellType, WellStatus, CasingRecord
 )

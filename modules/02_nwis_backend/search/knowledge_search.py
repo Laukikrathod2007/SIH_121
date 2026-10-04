@@ -31,7 +31,7 @@ from typing import List, Optional, Tuple
 from dataclasses import dataclass
 
 from loguru import logger
-from models.schemas import DrillingEvent
+from app.modules.nwis.models.schemas import DrillingEvent
 
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 

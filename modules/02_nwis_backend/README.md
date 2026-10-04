@@ -84,6 +84,89 @@ API Docs: **http://localhost:8002/docs**
 | Kopili | 2500–2900m | **Lost Circulation** (fractured) |
 | Sylhet Limestone | 2900–3200m | **Kick + Mud Loss** (prolific) |
 
+## Canonical Database Layer (Phase 1 foundation, 2026-10-04)
+
+Module 02 now has an OPT-IN, database-backed path for one representative
+vertical slice: **active well lookup -> nearby wells -> well metadata**
+(`GET /api/v2/wells/{id}` and `GET /api/v2/map/wells`). Everything else in
+this module — DORS ranking, risk corridors, telemetry, semantic search,
+live replay — is unchanged and still runs entirely off the in-memory
+`NWISDataStore` described above.
+
+**Architecture:** `server.py` route -> `db/service.py` (business logic,
+response shaping, audit logging) -> `db/repositories.py` (the only file
+with raw SQL) -> PostgreSQL/PostGIS (`database/schema.sql`).
+
+**Why PostgreSQL is the source of truth for this one path:** nearby-well
+lookup is fundamentally a geospatial query, and `engines/dors_engine.py`'s
+`haversine_km()` float-math loop over every well in memory does not scale
+and cannot use an index. PostGIS's `geography` column + GiST index lets
+`ST_DWithin`/`ST_Distance` do the same geodesic distance calculation
+database-side, indexed — the actual reason this slice, and not some other
+endpoint, was chosen to prove the architecture (task's own reasoning, not
+retrofitted).
+
+**Enabling it** — set one of these (`.env` or process environment) and
+restart the server:
+```
+NWIS_DATABASE_URL=postgresql://nwis:nwis_dev_password@localhost:5433/nwis
+# or: NWIS_DB_HOST=localhost (+ NWIS_DB_PORT/NWIS_DB_NAME/NWIS_DB_USER/NWIS_DB_PASSWORD)
+```
+Leaving both unset reproduces the exact pre-migration behavior — every
+route (migrated or not) is served by the in-memory store, as before this
+pass. `GET /api/v2/health`'s `"database"` field reports whether a DB is
+configured and currently reachable (`{"configured": true, "reachable":
+false, "error": "<ExceptionClassName>"}` on failure — the exception's
+class name only, never the full exception text, so a client-facing
+payload never carries connection details like host/port/user); the two
+migrated routes report which backend actually served a given response via
+`"data_source"` (`"postgres"` or `"memory"`) in their JSON body.
+
+**Database-failure behavior (Pass 2 hardening, 2026-10-04):** if the
+database is configured but a request to it fails (connection refused,
+timeout, SQL error), `GET /api/v2/wells/{id}` and `GET /api/v2/map/wells`
+now return a genuine `503 Service Unavailable` instead of silently falling
+back to the in-memory store. This was changed deliberately — the earlier
+behavior (warn-and-fall-through to memory data) could present
+possibly-stale or incomplete in-memory data as if the request had
+succeeded normally, with no client-visible signal besides the
+easy-to-miss `"data_source"` field. A `WellNotFoundError` (the well
+genuinely doesn't exist) is unaffected and still returns `404`. If the
+database is simply unconfigured, the in-memory path is unchanged, normal
+dev-mode behavior — this 503 only applies when a DB is configured
+(`NWIS_DATABASE_URL`/`NWIS_DB_*` is set) and the attempt to reach it fails.
+
+**Local database setup, migration, and seeding** — see
+`database/README.md`. Short version:
+```bash
+cd ../../database
+docker compose up -d --build
+pip install -r requirements.txt
+python migrate_seed.py        # idempotent -- safe to run again
+```
+
+**Tests** — `pytest tests/` (`tests/test_db_foundation.py` exercises the
+repository layer directly against a live DB, plus a pure-unit test of
+`healthcheck()`'s error-field laundering that needs no DB at all;
+`tests/test_api_well_endpoints.py` covers the in-memory fallback contract,
+the DB-backed contract, AND the DB-configured-but-UNREACHABLE contract —
+the last of these points `NWIS_DATABASE_URL` at an unreachable port and
+asserts the new `503` behavior, needing no real Postgres/Docker either;
+`tests/test_analyze_well_error_handling.py` proves `GET /api/v2/analyze/{id}`
+no longer leaks raw exception text on failure). DB-dependent tests that
+genuinely need a live, seeded database skip cleanly (not fail) if none is
+reachable, so `pytest` still passes on a machine with no Docker running.
+
+**What is NOT migrated**: trajectory station counts, formation tops, and
+event counts/search returned by `GET /api/v2/wells/{id}` still come from
+the in-memory store even when the DB path serves the well's own identity
+fields — those entities have canonical tables in `database/schema.sql`
+(`trajectory_stations`, `formation_tops`, `drilling_events`) but migrating
+their *read* paths is separately-scoped follow-up work, not silently
+implied as done here. DORS ranking, stratigraphic correlation, risk
+corridors, live replay, and semantic search are entirely unmigrated and
+continue to read only from `NWISDataStore`.
+
 ## Project Structure
 
 ```

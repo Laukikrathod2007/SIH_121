@@ -32,14 +32,17 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from contextlib import asynccontextmanager
 from loguru import logger
 
-# Ensure module root is in path
+# Imports below use the canonical `app.modules.nwis` package (an adapter whose
+# __path__ points at this directory -- see Backend/app/modules/nwis/__init__.py),
+# so no sys.path manipulation is needed or performed.
 MODULE_ROOT = Path(__file__).parent
-sys.path.insert(0, str(MODULE_ROOT))
 
-from data_store import NWISDataStore
-from orchestrator import NWISOrchestrator
-from models.schemas import HazardType
-from auth import require_api_key, rate_limit, auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
+from app.modules.nwis.data_store import NWISDataStore
+from app.modules.nwis.orchestrator import NWISOrchestrator
+from app.modules.nwis.models.schemas import HazardType
+from app.modules.nwis.db.connection import is_configured as db_is_configured, healthcheck as db_healthcheck
+from app.modules.nwis.db import service as db_service
+from app.modules.nwis.auth import require_api_key, rate_limit, auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
 
 store = NWISDataStore()
 
@@ -81,7 +84,7 @@ async def lifespan(app: FastAPI):
     # confirmed in logger/11's backend audit. Pre-warming here moves that
     # cost to server startup, where it's invisible to a user.
     try:
-        from search.knowledge_search import _get_model
+        from app.modules.nwis.search.knowledge_search import _get_model
         asyncio.get_event_loop().run_in_executor(None, _get_model)
         logger.info("Knowledge-search embedding model pre-warm initiated in background")
     except Exception as exc:
@@ -142,6 +145,34 @@ def _require_store():
         )
 
 
+def _get_data_source():
+    """
+    Pass 5: the single entry point every historical-events/DORS/corridors/
+    analyze route uses to pick its data source, following the exact
+    DB-first/memory-fallback/503 contract Pass 4 established for
+    get_well/get_trajectory/get_formations/get_casing.
+
+    Returns (source, data_source_label). `source` exposes the same
+    attribute/method surface as the real in-memory `store` (wells_by_id,
+    all_wells, all_trajectories, formation_tops_by_well,
+    casing_records_by_well, events_by_well, all_events,
+    get_events_for_top_wells) -- either DbStoreSnapshot (built fresh from
+    Postgres) or the real NWISDataStore singleton. Callers never branch on
+    which one they got; that's the entire point of the shared surface.
+
+    Raises HTTPException(503) if the database is configured but the
+    snapshot build fails (connection refused, query error, etc.) -- never
+    silently falls back to memory data captioned as if it were current.
+    """
+    if db_is_configured():
+        try:
+            return db_service.build_store_snapshot(active_well_id=store.active_well_id), "postgres"
+        except Exception as exc:
+            logger.error(f"DB-backed store snapshot failed (DB configured but unreachable/erroring): {exc}")
+            raise HTTPException(503, detail="Database is configured but currently unavailable. Try again shortly.")
+    return store, "memory"
+
+
 # ---------------------------------------------------------------------------
 # Health
 # ---------------------------------------------------------------------------
@@ -153,6 +184,12 @@ async def health():
         "version": "2.0.0",
         "status": "healthy" if store.is_loaded() else "degraded",
         "data_store": store.status(),
+        # Phase 1 foundation: the canonical PostgreSQL/PostGIS layer
+        # (database/schema.sql) is opt-in via NWIS_DATABASE_URL / NWIS_DB_*
+        # env vars. "configured": False here means every endpoint below is
+        # still served entirely by the in-memory NWISDataStore, exactly as
+        # before this pass -- nothing regresses by leaving it unset.
+        "database": db_healthcheck(),
         "engines": ["DORS", "StratigraphicCorrelator", "RiskCorridorEngine", "4PillarConfidence"],
         "auth": {
             "status": "enabled" if auth_enabled() else "disabled",
@@ -200,21 +237,59 @@ async def list_wells(
 
 @app.get("/api/v2/wells/{well_id:path}", tags=["Wells"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_well(well_id: str):
-    """Get full details for a single well."""
+    """
+    Get full details for a single well. This is the "active well lookup"
+    leg of the Phase 1 migrated vertical slice: when the database is
+    configured (NWIS_DATABASE_URL/NWIS_DB_*), the well's own identity/
+    metadata fields come from PostgreSQL (db/service.py); trajectory
+    station count, formation tops, and event count are not yet migrated
+    (task requirement #9 is well + nearby-well lookup specifically) and
+    still come from the in-memory store either way, same as before.
+
+    Database-failure behavior (Pass 2 hardening, 2026-10-04): if the
+    database is configured but the call fails (connection refused, timeout,
+    SQL error -- anything other than "well not found"), this now raises a
+    genuine 503 instead of silently falling back to the in-memory store.
+    The in-memory data can be stale or incomplete relative to Postgres, so
+    serving it as if the request had succeeded would misrepresent what
+    actually happened. If the database is simply unconfigured, the
+    in-memory path below is the normal, unchanged dev-mode behavior.
+    """
     _require_store()
-    well = store.wells_by_id.get(well_id)
-    if not well:
-        raise HTTPException(404, f"Well '{well_id}' not found")
 
     traj = store.all_trajectories.get(well_id)
     tops = store.formation_tops_by_well.get(well_id, [])
     events = store.events_by_well.get(well_id, [])
+
+    if db_is_configured():
+        try:
+            well_dict = db_service.get_well(well_id)
+            return {
+                "well": well_dict,
+                "trajectory_stations": len(traj.stations) if traj else 0,
+                "formation_tops": [t.model_dump() for t in tops],
+                "total_events": len(events),
+                "data_source": "postgres",
+            }
+        except db_service.WellNotFoundError:
+            raise HTTPException(404, f"Well '{well_id}' not found")
+        except Exception as exc:
+            logger.error(f"DB-backed get_well failed (DB configured but unreachable/erroring): {exc}")
+            raise HTTPException(
+                status_code=503,
+                detail="Database is configured but currently unavailable. Try again shortly.",
+            )
+
+    well = store.wells_by_id.get(well_id)
+    if not well:
+        raise HTTPException(404, f"Well '{well_id}' not found")
 
     return {
         "well": well.model_dump(),
         "trajectory_stations": len(traj.stations) if traj else 0,
         "formation_tops": [t.model_dump() for t in tops],
         "total_events": len(events),
+        "data_source": "memory",
     }
 
 
@@ -227,8 +302,29 @@ async def get_trajectory(well_id: str):
     scoring, stratigraphic depth track) but never exposed for a client to
     actually render the 3D path itself -- this powers the 3D trajectory
     viewer with the same real station data those engines already consume.
+
+    Pass 4: database-backed when NWIS_DATABASE_URL is configured (reads
+    trajectory_stations, seeded by database/migrate_seed.py), same 503-on-
+    unreachable contract as get_well/get_map_wells. Falls back to the
+    in-memory store only when the database is unconfigured.
     """
     _require_store()
+
+    if db_is_configured():
+        try:
+            traj_dict = db_service.get_trajectory(well_id)
+            if traj_dict is None:
+                raise HTTPException(404, f"No trajectory data for well '{well_id}'")
+            traj_dict["data_source"] = "postgres"
+            return traj_dict
+        except db_service.WellNotFoundError:
+            raise HTTPException(404, f"Well '{well_id}' not found")
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.error(f"DB-backed get_trajectory failed (DB configured but unreachable/erroring): {exc}")
+            raise HTTPException(503, detail="Database is configured but currently unavailable. Try again shortly.")
+
     well = store.wells_by_id.get(well_id)
     if not well:
         raise HTTPException(404, f"Well '{well_id}' not found")
@@ -243,6 +339,7 @@ async def get_trajectory(well_id: str):
         "method": traj.method,
         "well_type": traj.well_type,
         "stations": [s.model_dump() for s in traj.stations],
+        "data_source": "memory",
     }
 
 
@@ -252,8 +349,26 @@ async def get_trajectory(well_id: str):
 
 @app.get("/api/v2/formations/{well_id:path}", tags=["Stratigraphy"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_formations(well_id: str):
-    """Get formation tops for a well — feed for the Stratigraphic Track."""
+    """Get formation tops for a well — feed for the Stratigraphic Track.
+
+    Pass 4: database-backed when NWIS_DATABASE_URL is configured (reads
+    formation_tops); falls back to the in-memory store when unconfigured,
+    and raises 503 (never silent memory fallback) if configured but
+    unreachable/erroring — same contract as get_well/get_trajectory."""
     _require_store()
+
+    if db_is_configured():
+        try:
+            tops = db_service.get_formations_for_well(well_id)
+            if tops is None:
+                raise HTTPException(404, f"No formation data for well '{well_id}'")
+            return {"well_id": well_id, "total": len(tops), "formation_tops": tops, "data_source": "postgres"}
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.error(f"DB-backed get_formations failed: {exc}")
+            raise HTTPException(503, detail="Database is configured but currently unavailable. Try again shortly.")
+
     tops = store.formation_tops_by_well.get(well_id)
     if tops is None:
         raise HTTPException(404, f"No formation data for well '{well_id}'")
@@ -261,6 +376,7 @@ async def get_formations(well_id: str):
         "well_id": well_id,
         "total": len(tops),
         "formation_tops": [t.model_dump() for t in tops],
+        "data_source": "memory",
     }
 
 
@@ -268,14 +384,25 @@ async def get_formations(well_id: str):
 async def get_all_formations(
     formation_name: str = Query(None, description="Filter by formation name"),
 ):
-    """Get all formation tops across all wells."""
+    """Get all formation tops across all wells.
+
+    Pass 4: database-backed when NWIS_DATABASE_URL is configured."""
     _require_store()
+
+    if db_is_configured():
+        try:
+            all_tops = db_service.get_all_formations(formation_name=formation_name)
+            return {"total": len(all_tops), "formation_tops": all_tops, "data_source": "postgres"}
+        except Exception as exc:
+            logger.error(f"DB-backed get_all_formations failed: {exc}")
+            raise HTTPException(503, detail="Database is configured but currently unavailable. Try again shortly.")
+
     all_tops = []
     for tops in store.formation_tops_by_well.values():
         if formation_name:
             tops = [t for t in tops if formation_name.lower() in t.formation_name.lower()]
         all_tops.extend([t.model_dump() for t in tops])
-    return {"total": len(all_tops), "formation_tops": all_tops}
+    return {"total": len(all_tops), "formation_tops": all_tops, "data_source": "memory"}
 
 
 # ---------------------------------------------------------------------------
@@ -289,24 +416,49 @@ async def get_all_formations(
 
 @app.get("/api/v2/casing/{well_id:path}", tags=["Casing"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_casing(well_id: str):
-    """Get casing records for a well. Real data exists for 2 Volve wells only — a well with no casing data returns an empty list, not a 404, since most wells (all synthetic ones) genuinely have none."""
+    """Get casing records for a well. Real data exists for 2 Volve wells only — a well with no casing data returns an empty list, not a 404, since most wells (all synthetic ones) genuinely have none.
+
+    Pass 4: database-backed when NWIS_DATABASE_URL is configured (reads
+    casing_programs)."""
     _require_store()
+
+    if db_is_configured():
+        try:
+            records = db_service.get_casing_for_well(well_id)
+            return {"well_id": well_id, "total": len(records), "casing_records": records, "data_source": "postgres"}
+        except Exception as exc:
+            logger.error(f"DB-backed get_casing failed: {exc}")
+            raise HTTPException(503, detail="Database is configured but currently unavailable. Try again shortly.")
+
     records = store.casing_records_by_well.get(well_id, [])
     return {
         "well_id": well_id,
         "total": len(records),
         "casing_records": [r.model_dump() for r in records],
+        "data_source": "memory",
     }
 
 
 @app.get("/api/v2/casing", tags=["Casing"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_all_casing():
-    """Get all casing records across all wells that have them."""
+    """Get all casing records across all wells that have them.
+
+    Pass 4: database-backed when NWIS_DATABASE_URL is configured."""
     _require_store()
+
+    if db_is_configured():
+        try:
+            all_records = db_service.get_all_casing()
+            wells_with_casing = len({r["well_id"] for r in all_records})
+            return {"total": len(all_records), "wells_with_casing": wells_with_casing, "casing_records": all_records, "data_source": "postgres"}
+        except Exception as exc:
+            logger.error(f"DB-backed get_all_casing failed: {exc}")
+            raise HTTPException(503, detail="Database is configured but currently unavailable. Try again shortly.")
+
     all_records = []
     for records in store.casing_records_by_well.values():
         all_records.extend([r.model_dump() for r in records])
-    return {"total": len(all_records), "wells_with_casing": len(store.casing_records_by_well), "casing_records": all_records}
+    return {"total": len(all_records), "wells_with_casing": len(store.casing_records_by_well), "casing_records": all_records, "data_source": "memory"}
 
 
 # ---------------------------------------------------------------------------
@@ -343,11 +495,16 @@ async def search_events_semantic(
     `search_mode` in the response tells you whether ranking was genuinely
     semantic (sentence-transformers loaded) or a keyword-match fallback (not
     installed / failed to load) — never silently one or the other.
+
+    Pass 5: database-backed when NWIS_DATABASE_URL is configured and
+    reachable (reads drilling_events), same DB-first/memory-fallback/503
+    contract as every other migrated route — see _get_data_source().
     """
     _require_store()
-    from search.knowledge_search import search_events as run_search
+    from app.modules.nwis.search.knowledge_search import search_events as run_search
 
-    candidates = _filter_events_structured(store.all_events, hazard_type, formation, min_severity, depth_min, depth_max)
+    source, data_source = _get_data_source()
+    candidates = _filter_events_structured(source.all_events, hazard_type, formation, min_severity, depth_min, depth_max)
     ranked, mode = run_search(query, candidates, top_n=top_n)
 
     return {
@@ -363,19 +520,24 @@ async def search_events_semantic(
             {"relevance_score": round(score, 4), "event": event.model_dump()}
             for event, score in ranked
         ],
+        "data_source": data_source,
     }
 
 
 @app.get("/api/v2/events/{well_id:path}", tags=["Drilling Events"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def get_well_events(well_id: str):
-    """Get all drilling events for a well (for the Evidence Proof Modal)."""
+    """Get all drilling events for a well (for the Evidence Proof Modal).
+
+    Pass 5: database-backed when configured — see _get_data_source()."""
     _require_store()
-    events = store.events_by_well.get(well_id, [])
+    source, data_source = _get_data_source()
+    events = source.events_by_well.get(well_id, [])
     return {
         "well_id": well_id,
         "total": len(events),
         "total_npt_hours": round(sum(e.npt_hours for e in events), 2),
         "events": [e.model_dump() for e in events],
+        "data_source": data_source,
     }
 
 
@@ -442,15 +604,19 @@ async def search_events(
     type, formation, depth, severity). For free-text search over the actual
     narrative/lessons-learned/mitigation text, see GET /api/v2/events/search.
     Implements PS 26121 requirement iii: searchable historical knowledge base.
+
+    Pass 5: database-backed when configured — see _get_data_source().
     """
     _require_store()
-    events = _filter_events_structured(store.all_events, hazard_type, formation, min_severity, depth_min, depth_max)
+    source, data_source = _get_data_source()
+    events = _filter_events_structured(source.all_events, hazard_type, formation, min_severity, depth_min, depth_max)
 
     return {
         "total": len(events),
         "total_npt_hours": round(sum(e.npt_hours for e in events), 2),
         "facets": _compute_facets(events),
         "events": [e.model_dump() for e in events[:100]],  # cap at 100 for API response
+        "data_source": data_source,
     }
 
 
@@ -501,33 +667,40 @@ async def stratigraphic_depth_track(
     each top-ranked offset well — powers the "Stratigraphic Depth Track"
     visualization and eliminates the "Trajectory Trap" (false MD comparisons
     between vertical and directional wells) per PS 26121 requirement iv.
+
+    Pass 5: database-backed when configured — see _get_data_source(). Every
+    store.* reference below was traced and replaced, not just the final
+    align_horizons_across_wells() call — the earlier active_well/active_traj/
+    active_tops/offset_wells lookups all come from the same source now too.
     """
     _require_store()
-    from engines.dors_engine import rank_offset_wells
-    from engines.stratigraphic_correlator import formation_at_depth, align_horizons_across_wells
+    from app.modules.nwis.engines.dors_engine import rank_offset_wells
+    from app.modules.nwis.engines.stratigraphic_correlator import formation_at_depth, align_horizons_across_wells
 
-    active_well = store.wells_by_id.get(well_id)
+    source, data_source = _get_data_source()
+
+    active_well = source.wells_by_id.get(well_id)
     if not active_well:
         raise HTTPException(404, f"Well '{well_id}' not found")
 
-    active_traj = store.all_trajectories.get(well_id)
+    active_traj = source.all_trajectories.get(well_id)
     if active_traj is None:
         raise HTTPException(404, f"No trajectory data for well '{well_id}'")
 
-    active_tops = store.formation_tops_by_well.get(well_id, [])
+    active_tops = source.formation_tops_by_well.get(well_id, [])
     active_fm = formation_at_depth(active_tops, depth)
 
     rankings = rank_offset_wells(
         active_well=active_well,
         active_depth_m=depth,
         active_formation=active_fm.formation_name if active_fm else None,
-        all_wells=store.all_wells,
-        all_trajectories=store.all_trajectories,
-        all_formation_tops=store.formation_tops_by_well,
-        all_events=store.events_by_well,
+        all_wells=source.all_wells,
+        all_trajectories=source.all_trajectories,
+        all_formation_tops=source.formation_tops_by_well,
+        all_events=source.events_by_well,
         top_n=top_n,
     )
-    offset_wells = [store.wells_by_id[r.well_id] for r in rankings if r.well_id in store.wells_by_id]
+    offset_wells = [source.wells_by_id[r.well_id] for r in rankings if r.well_id in source.wells_by_id]
 
     alignment = align_horizons_across_wells(
         active_md=depth,
@@ -535,8 +708,8 @@ async def stratigraphic_depth_track(
         active_traj=active_traj,
         active_tops=active_tops,
         offset_wells=offset_wells,
-        offset_trajs=store.all_trajectories,
-        offset_tops_map=store.formation_tops_by_well,
+        offset_trajs=source.all_trajectories,
+        offset_tops_map=source.formation_tops_by_well,
     )
 
     return {
@@ -545,6 +718,7 @@ async def stratigraphic_depth_track(
         "formation_at_bit": active_fm.formation_name if active_fm else None,
         "wells_aligned": len(alignment),
         "alignment": alignment,
+        "data_source": data_source,
     }
 
 
@@ -574,26 +748,33 @@ async def rank_offsets(
     ranked list back, not a filtered one). Pass max_distance_km if you
     specifically need wells beyond a distance excluded from the response —
     this is new, additive, and opt-in; omitting it changes nothing.
+
+    Pass 5: database-backed when configured — see _get_data_source(). Every
+    store.* reference below (not just the rank_offset_wells() call) now
+    comes from the same resolved source — verified to produce byte-identical
+    rankings/scores against the memory path for the same inputs before this
+    was wired in (see AUDIT/13_PRODUCT_COMPLETION.md).
     """
     _require_store()
-    active_well = store.wells_by_id.get(well_id)
+    source, data_source = _get_data_source()
+    active_well = source.wells_by_id.get(well_id)
     if not active_well:
         raise HTTPException(404, f"Well '{well_id}' not found")
 
-    from engines.dors_engine import rank_offset_wells, haversine_km
-    from engines.stratigraphic_correlator import formation_at_depth
+    from app.modules.nwis.engines.dors_engine import rank_offset_wells, haversine_km
+    from app.modules.nwis.engines.stratigraphic_correlator import formation_at_depth
 
-    active_tops = store.formation_tops_by_well.get(well_id, [])
+    active_tops = source.formation_tops_by_well.get(well_id, [])
     active_fm = formation_at_depth(active_tops, depth)
 
     rankings = rank_offset_wells(
         active_well=active_well,
         active_depth_m=depth,
         active_formation=active_fm.formation_name if active_fm else None,
-        all_wells=store.all_wells,
-        all_trajectories=store.all_trajectories,
-        all_formation_tops=store.formation_tops_by_well,
-        all_events=store.events_by_well,
+        all_wells=source.all_wells,
+        all_trajectories=source.all_trajectories,
+        all_formation_tops=source.formation_tops_by_well,
+        all_events=source.events_by_well,
         r_max_km=radius_km,
         top_n=top_n,
     )
@@ -613,6 +794,7 @@ async def rank_offsets(
         "total_ranked": len(rankings),
         "rankings": [r.model_dump() for r in rankings],
         "dors_formula": "DORS = 0.20·S_spatial + 0.30·S_formation + 0.20·S_depth + 0.15·S_trajectory + 0.15·S_hazard",
+        "data_source": data_source,
     }
 
 
@@ -631,23 +813,39 @@ async def analyze_well(
     FULL NWIS Intelligence Analysis at a given bit depth.
     Runs: DORS → Stratigraphy → Risk Corridors → 4-Pillar Confidence
     Returns complete NWISAnalysisResponse.
+
+    Pass 5: database-backed when configured — see _get_data_source().
+    NWISOrchestrator itself is unmodified; it's handed a DbStoreSnapshot
+    (same attribute/method surface as the real in-memory store, including
+    get_telemetry_at — see that method's own docstring for why telemetry
+    specifically stays sourced from the in-memory singleton either way).
     """
     _require_store()
-    if well_id not in store.wells_by_id:
+    source, data_source = _get_data_source()
+    if well_id not in source.wells_by_id:
         raise HTTPException(404, f"Well '{well_id}' not found")
 
     try:
-        orchestrator = NWISOrchestrator(store)
+        orchestrator = NWISOrchestrator(source)
         result = orchestrator.analyze(
             active_well_id=well_id,
             current_depth_m=depth,
             r_max_km=radius_km,
             mud_weight_ppg=mud_weight_ppg,
         )
-        return result.model_dump()
+        result_dict = result.model_dump()
+        result_dict["data_source"] = data_source
+        return result_dict
     except Exception as e:
-        logger.error(f"Analysis failed: {e}")
-        raise HTTPException(500, f"Analysis error: {str(e)}")
+        # Pass 2 hardening: was `HTTPException(500, f"Analysis error: {str(e)}")`,
+        # which put raw exception text in the client-facing response --
+        # inconsistent with the global exception_handler's "log full detail
+        # server-side, return a generic message" pattern used everywhere
+        # else in this module. This route catches Exception itself and
+        # raises HTTPException before the global handler ever sees it, so
+        # it needed its own explicit fix.
+        logger.exception(f"Analysis failed for well '{well_id}': {e}")
+        raise HTTPException(500, detail="An unexpected error occurred while running the analysis.")
 
 
 # ---------------------------------------------------------------------------
@@ -663,33 +861,40 @@ async def get_risk_corridors(
     """
     Get all historical risk corridors ahead of current bit depth.
     Implements PS 26121 requirement v: predictive risk analytics.
+
+    Pass 5: database-backed when configured — see _get_data_source(). Every
+    store.* reference below (active_well, active_tops, the DORS inputs, AND
+    get_events_for_top_wells) now comes from the same resolved source —
+    verified to produce the same corridor set as the memory path for the
+    same inputs before this was wired in.
     """
     _require_store()
-    from engines.risk_corridor_engine import identify_risk_corridors
+    from app.modules.nwis.engines.risk_corridor_engine import identify_risk_corridors
 
-    active_well = store.wells_by_id.get(well_id)
+    source, data_source = _get_data_source()
+    active_well = source.wells_by_id.get(well_id)
     if not active_well:
         raise HTTPException(404, f"Well '{well_id}' not found")
 
     # Get top 10 offset wells
-    from engines.dors_engine import rank_offset_wells
-    from engines.stratigraphic_correlator import formation_at_depth
+    from app.modules.nwis.engines.dors_engine import rank_offset_wells
+    from app.modules.nwis.engines.stratigraphic_correlator import formation_at_depth
 
-    active_tops = store.formation_tops_by_well.get(well_id, [])
+    active_tops = source.formation_tops_by_well.get(well_id, [])
     active_fm = formation_at_depth(active_tops, depth)
     rankings = rank_offset_wells(
         active_well=active_well,
         active_depth_m=depth,
         active_formation=active_fm.formation_name if active_fm else None,
-        all_wells=store.all_wells,
-        all_trajectories=store.all_trajectories,
-        all_formation_tops=store.formation_tops_by_well,
-        all_events=store.events_by_well,
+        all_wells=source.all_wells,
+        all_trajectories=source.all_trajectories,
+        all_formation_tops=source.formation_tops_by_well,
+        all_events=source.events_by_well,
         r_max_km=25.0,
         top_n=10,
     )
 
-    top_events = store.get_events_for_top_wells([r.well_id for r in rankings])
+    top_events = source.get_events_for_top_wells([r.well_id for r in rankings])
 
     hazards_to_check = [HazardType(hazard_type)] if hazard_type else list(HazardType)
     all_corridors = []
@@ -714,6 +919,7 @@ async def get_risk_corridors(
         "formation_at_bit": active_fm.formation_name if active_fm else None,
         "total_corridors": len(all_corridors),
         "corridors": [c.model_dump() for c in all_corridors],
+        "data_source": data_source,
     }
 
 
@@ -738,9 +944,9 @@ async def get_ahead_of_bit_corridor(
     at or behind, or barely ahead of, the bit).
     """
     _require_store()
-    from engines.dors_engine import rank_offset_wells
-    from engines.stratigraphic_correlator import formation_at_depth
-    from engines.risk_corridor_engine import compute_ahead_of_bit_corridor
+    from app.modules.nwis.engines.dors_engine import rank_offset_wells
+    from app.modules.nwis.engines.stratigraphic_correlator import formation_at_depth
+    from app.modules.nwis.engines.risk_corridor_engine import compute_ahead_of_bit_corridor
 
     active_well = store.wells_by_id.get(well_id)
     if not active_well:
@@ -788,20 +994,48 @@ async def get_map_wells(
     radius_km: float = Query(None, description="Hard exclusion radius in km from center_well_id. Requires center_well_id. A well strictly outside this radius is NOT returned — this is a real spatial filter, unlike offset_rank's radius_km (see that endpoint's docstring)."),
 ):
     """
-    Get wells with surface coordinates for the interactive GIS map.
+    Get wells with surface coordinates for the interactive GIS map. This is
+    the "nearby wells" leg of the Phase 1 migrated vertical slice — active
+    well lookup -> nearby wells -> well metadata (task requirement #9).
     Implements PS 26121 requirement ii: map-based well visualization.
 
-    Radius semantics (Priority 2 fix, 2026-10-04): by default (no params)
-    returns every well, exactly as before this fix — no existing caller's
-    behavior changes. When BOTH center_well_id and radius_km are given, this
-    endpoint now applies a genuine Haversine hard filter and excludes wells
-    outside the radius. This is a real filter, deliberately distinct from
-    offset_rank's radius_km, which is a scoring decay divisor, not an
-    exclusion boundary — see that endpoint's docstring for why the two are
-    not the same contract.
+    Radius semantics (Priority 2 fix, 2026-10-04; preserved exactly, task
+    requirement #10): by default (no params) returns every well — no
+    existing caller's behavior changes. When BOTH center_well_id and
+    radius_km are given, this endpoint applies a genuine hard filter and
+    excludes wells outside the radius. This is a real filter, deliberately
+    distinct from offset_rank's radius_km, which is a scoring decay divisor,
+    not an exclusion boundary — see that endpoint's docstring.
+
+    When the database is configured (NWIS_DATABASE_URL/NWIS_DB_*), the hard
+    filter runs as a PostGIS ST_DWithin geodesic query (db/repositories.py)
+    instead of the in-memory Haversine loop below — same semantics, same
+    response shape, database-side filtering per task requirement #4/#9.
+
+    Database-failure behavior (Pass 2 hardening, 2026-10-04): if the
+    database is configured but the call fails, this raises a genuine 503
+    instead of silently falling back to the in-memory store -- see
+    get_well's docstring above for the full rationale (same policy here).
     """
     _require_store()
-    from engines.dors_engine import haversine_km
+    from app.modules.nwis.engines.dors_engine import haversine_km
+
+    if db_is_configured():
+        try:
+            result = db_service.get_map_wells(center_well_id=center_well_id, radius_km=radius_km)
+            for w in result["wells"]:
+                w["is_active"] = w["well_id"] == store.active_well_id
+            result["active_well_id"] = store.active_well_id
+            result["data_source"] = "postgres"
+            return result
+        except db_service.WellNotFoundError:
+            raise HTTPException(404, f"Well '{center_well_id}' not found")
+        except Exception as exc:
+            logger.error(f"DB-backed get_map_wells failed (DB configured but unreachable/erroring): {exc}")
+            raise HTTPException(
+                status_code=503,
+                detail="Database is configured but currently unavailable. Try again shortly.",
+            )
 
     center_well = None
     if center_well_id is not None:
@@ -835,6 +1069,7 @@ async def get_map_wells(
         "active_well_id": store.active_well_id,
         "radius_filter_applied": center_well_id is not None and radius_km is not None,
         "wells": map_data,
+        "data_source": "memory",
     }
 
 
@@ -872,7 +1107,7 @@ async def live_replay(
     if well_id not in store.all_trajectories:
         raise HTTPException(404, f"No trajectory data for well '{well_id}' — cannot replay")
 
-    from live.replay_engine import replay_well
+    from app.modules.nwis.live.replay_engine import replay_well
 
     async def event_stream():
         try:

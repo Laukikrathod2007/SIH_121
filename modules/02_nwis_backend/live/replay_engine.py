@@ -30,8 +30,8 @@ import asyncio
 from typing import AsyncGenerator, Optional
 
 from loguru import logger
-from data_store import NWISDataStore
-from orchestrator import NWISOrchestrator
+from app.modules.nwis.data_store import NWISDataStore
+from app.modules.nwis.orchestrator import NWISOrchestrator
 
 DEFAULT_TICKS = 80          # how many depth steps across the full replay
 DEFAULT_TICK_SECONDS = 0.5  # real seconds between pushed updates

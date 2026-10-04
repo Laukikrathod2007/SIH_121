@@ -29,7 +29,12 @@ import sys
 from pathlib import Path
 
 MODULE_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(MODULE_ROOT))
+if __name__ == "__main__":
+    # Only when run directly as a script: make the canonical `app` package
+    # (Backend/app/modules/nwis -> this module) importable. When this file is
+    # imported as app.modules.nwis.ml.train_hazard_models, `app` is already
+    # importable and nothing here touches sys.path.
+    sys.path.insert(0, str(MODULE_ROOT.parents[1] / "Backend"))
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -39,9 +44,9 @@ from sklearn.metrics import roc_auc_score
 import joblib
 from loguru import logger
 
-from data_store import NWISDataStore
-from models.schemas import HazardType
-from ml.feature_engineering import build_training_dataset, MIN_POSITIVE_SAMPLES, FEATURE_NAMES
+from app.modules.nwis.data_store import NWISDataStore
+from app.modules.nwis.models.schemas import HazardType
+from app.modules.nwis.ml.feature_engineering import build_training_dataset, MIN_POSITIVE_SAMPLES, FEATURE_NAMES
 
 MODELS_DIR = MODULE_ROOT / "data" / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)

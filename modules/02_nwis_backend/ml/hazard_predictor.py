@@ -43,8 +43,8 @@ from dataclasses import dataclass
 import joblib
 from loguru import logger
 
-from models.schemas import HazardType, WellTrajectory, FormationTop
-from ml.feature_engineering import build_features, FEATURE_NAMES
+from app.modules.nwis.models.schemas import HazardType, WellTrajectory, FormationTop
+from app.modules.nwis.ml.feature_engineering import build_features, FEATURE_NAMES
 
 MODELS_DIR = Path(__file__).parent.parent / "data" / "models"
 REAL_MODELS_DIR = Path(__file__).parent.parent.parent.parent / "real_data" / "real_trained_models"

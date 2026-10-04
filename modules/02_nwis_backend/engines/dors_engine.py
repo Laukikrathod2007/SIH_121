@@ -13,11 +13,11 @@ import math
 from typing import List, Optional
 from loguru import logger
 
-from models.schemas import (
+from app.modules.nwis.models.schemas import (
     Well, WellTrajectory, FormationTop, DrillingEvent,
     DORSComponentScores, OffsetWellRanking, HazardType
 )
-from engines.stratigraphic_correlator import inclination_at_md, azimuth_at_md
+from app.modules.nwis.engines.stratigraphic_correlator import inclination_at_md, azimuth_at_md
 
 # Default DORS weights (sum = 1.0)
 WEIGHTS = {

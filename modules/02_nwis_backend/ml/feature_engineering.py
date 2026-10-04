@@ -33,9 +33,9 @@ from dataclasses import dataclass
 from typing import List, Optional
 import random
 
-from models.schemas import Well, WellTrajectory, FormationTop, DrillingEvent, HazardType
-from engines.dors_engine import ASSAM_FORMATION_GROUPS, _formation_group
-from engines.stratigraphic_correlator import formation_at_depth, inclination_at_md
+from app.modules.nwis.models.schemas import Well, WellTrajectory, FormationTop, DrillingEvent, HazardType
+from app.modules.nwis.engines.dors_engine import ASSAM_FORMATION_GROUPS, _formation_group
+from app.modules.nwis.engines.stratigraphic_correlator import formation_at_depth, inclination_at_md
 
 # Minimum positive examples required before we'll even attempt to train a model
 # for a hazard type. Below this, any train/test split is statistically
