@@ -91,6 +91,16 @@ EVENT_TYPE_TO_HAZARD_TYPE: dict["EventType", Optional[str]] = {
     EventType.DEVIATION: None,
     EventType.NPT_OPERATIONAL: None,
     EventType.UNKNOWN: None,
+    # module 02 gained a FISHING_OPERATION HazardType member for storage/
+    # search purposes (Priority 5, 2026-10-04 remediation pass), so unlike
+    # when this dict was first written, a mapping now exists. Still not fed
+    # into hazard-prediction/scoring (a fishing job is a remedial action
+    # after an incident, not a predictable geological hazard — see the full
+    # reasoning on HazardType.FISHING_OPERATION itself); this mapping only
+    # lets a module-01-extracted fishing event be stored/searched as a
+    # historical record in module 02's event store, consistent with how
+    # every other mapped EventType here is used downstream.
+    EventType.FISHING_OPERATION: "FISHING_OPERATION",
 }
 
 
