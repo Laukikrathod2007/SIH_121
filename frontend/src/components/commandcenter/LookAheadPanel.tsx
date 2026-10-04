@@ -26,8 +26,8 @@ function HazardCard({ h }: { h: HazardRiskAssessment }) {
       <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
         <Sliders className="w-3 h-3" />
         M_ML {(h.m_ml * 100).toFixed(0)}%
-        <span className={`px-1 rounded border ${h.m_ml_source === 'trained_model' ? 'border-cyan-500/40 text-cyan-300' : 'border-slate-700 text-slate-400'}`}>
-          {h.m_ml_source === 'trained_model' ? 'TRAINED MODEL' : 'HEURISTIC'}
+        <span className={`px-1 rounded border ${h.m_ml_source === 'trained_model_real' ? 'border-emerald-500/40 text-emerald-300' : h.m_ml_source === 'trained_model' ? 'border-cyan-500/40 text-cyan-300' : 'border-slate-700 text-slate-400'}`}>
+          {h.m_ml_source === 'trained_model_real' ? 'REAL-DATA MODEL' : h.m_ml_source === 'trained_model' ? 'TRAINED MODEL' : 'HEURISTIC'}
         </span>
       </div>
       {h.lead_time_meters != null && (
@@ -59,6 +59,12 @@ export const LookAheadPanel: React.FC<{ analysis: NWISAnalysisResponse | null; l
       <div className="px-3 py-2 border-b border-slate-800 flex items-center gap-2 shrink-0">
         <Brain className="w-4 h-4 text-cyan-400" />
         <span className="text-xs font-mono font-bold text-slate-200 uppercase">Look-Ahead Intelligence</span>
+        <span
+          className="ml-auto text-[9px] font-mono text-slate-600 normal-case cursor-help"
+          title="Module 02's DORS/4-Pillar hazard scoring — an independent engine from the Risk & Prediction page's module 05 fusion score. Different formula, not reconciled. See AUDIT/11_RISK_ARCHITECTURE_DECISION.md."
+        >
+          module 02
+        </span>
       </div>
       <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
         {loading && <div className="text-[11px] font-mono text-slate-500 p-2">Analyzing...</div>}

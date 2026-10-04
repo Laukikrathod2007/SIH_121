@@ -26,8 +26,8 @@ export const OperationalDirective: React.FC<{ analysis: NWISAnalysisResponse | n
       <div className="flex items-center gap-2 text-xs font-mono font-bold text-slate-100">
         <AlertTriangle className="w-4 h-4" />
         OPERATIONAL DIRECTIVE — {top.risk_level} ({top.hazard_type.replace(/_/g, ' ')})
-        <span className={`ml-auto text-[9px] px-1.5 py-0.5 rounded border ${top.m_ml_source === 'trained_model' ? 'border-cyan-500/40 text-cyan-300' : 'border-slate-700 text-slate-400'}`}>
-          {top.m_ml_source === 'trained_model' ? 'TRAINED MODEL' : 'HEURISTIC ESTIMATE'}
+        <span className={`ml-auto text-[9px] px-1.5 py-0.5 rounded border ${top.m_ml_source === 'trained_model_real' ? 'border-emerald-500/40 text-emerald-300' : top.m_ml_source === 'trained_model' ? 'border-cyan-500/40 text-cyan-300' : 'border-slate-700 text-slate-400'}`}>
+          {top.m_ml_source === 'trained_model_real' ? 'REAL-DATA MODEL' : top.m_ml_source === 'trained_model' ? 'TRAINED MODEL' : 'HEURISTIC ESTIMATE'}
         </span>
       </div>
       <div className="text-[11px] font-mono text-slate-300 mt-1">

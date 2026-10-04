@@ -12,15 +12,24 @@ import { Well } from '../types';
 //
 // 3 basemap styles, matching the "different map visualizations" pattern
 // seen in a competitor's demo -- deliberately using free-tier providers
-// (CARTO, OpenStreetMap, Esri) rather than Google Maps, which needs a
-// billed API key that would be a real risk to depend on for a live demo.
+// (Esri, OpenStreetMap) rather than Google Maps, which needs a billed API
+// key that would be a real risk to depend on for a live demo.
+//
+// "dark" was CARTO's free anonymous basemaps.cartocdn.com/dark_all
+// endpoint, confirmed broken during the 3D-integration pass (CARTO retired
+// free/keyless access to these image basemaps -- every tile now renders an
+// "API KEY REQUIRED" watermark instead of the map, confirmed via a live
+// screenshot, not just reading about the deprecation). Swapped for Esri's
+// World_Dark_Gray_Base, the same free/keyless provider already used for
+// "satellite" (World_Imagery) below -- confirmed working with a direct
+// tile request (HTTP 200) before switching.
 type MapStyle = 'dark' | 'streets' | 'satellite';
 
 const MAP_STYLES: Record<MapStyle, { label: string; url: string; attribution: string }> = {
   dark: {
     label: 'Dark Vector',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, HERE, Garmin, FAO, NOAA, USGS',
   },
   streets: {
     label: 'Streets',
