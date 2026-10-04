@@ -32,7 +32,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from loguru import logger
 
-from models.schemas import ValidationStatus
+from app.modules.document_intelligence.models.schemas import ValidationStatus
 
 router = APIRouter()
 
@@ -149,11 +149,32 @@ async def submit_review_decision(doc_id: str, body: ReviewDecision):
     _save(doc_id, data)
 
     logger.info(f"Review decision on {doc_id}: {body.decision} by {body.reviewer}")
+
+    # Pass 4: write-through the review decision, then (only on approval)
+    # hand off this document's drilling events into the canonical
+    # drilling_events table — see db/service.py's handoff_events docstring
+    # for the exact, conservative eligibility rule. Best-effort: a database
+    # outage here must not fail a review decision that's already saved.
+    handoff_result = {}
+    try:
+        from app.modules.document_intelligence.db import service as db_sync
+        db_sync.sync_review(doc_id, data)
+        handoff_result = db_sync.handoff_events(data)
+        if handoff_result.get("migrated") or handoff_result.get("skipped"):
+            logger.info(
+                f"Event handoff for {doc_id}: {handoff_result.get('migrated', 0)} migrated, "
+                f"{handoff_result.get('skipped', 0)} skipped"
+            )
+    except Exception as exc:
+        logger.warning(f"Postgres review/handoff write-through for {doc_id} raised unexpectedly (non-fatal): {exc}")
+
     return {
         "document_id": doc_id,
         "reviewed": True,
         "decision": body.decision,
         "validation_status": data["validation_status"],
+        "events_migrated_to_knowledge_base": handoff_result.get("migrated", 0),
+        "events_skipped": handoff_result.get("skipped", 0),
     }
 
 
@@ -182,4 +203,11 @@ async def annotate_field(doc_id: str, body: FieldAnnotation):
     _save(doc_id, data)
 
     logger.info(f"Field annotation on {doc_id} ({body.field_path}) by {body.reviewer}")
+
+    try:
+        from app.modules.document_intelligence.db import service as db_sync
+        db_sync.sync_review(doc_id, data)
+    except Exception as exc:
+        logger.warning(f"Postgres annotation write-through for {doc_id} raised unexpectedly (non-fatal): {exc}")
+
     return {"document_id": doc_id, "total_annotations": len(annotations)}

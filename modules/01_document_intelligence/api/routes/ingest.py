@@ -13,7 +13,7 @@ from typing import Optional
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 from loguru import logger
 
-from models.schemas import IngestJobResponse, IngestJobStatus
+from app.modules.document_intelligence.models.schemas import IngestJobResponse, IngestJobStatus
 
 router = APIRouter()
 
@@ -105,7 +105,7 @@ async def _run_pipeline_background(job_id: str, upload_path: Path):
     Background task: runs the full 6-layer pipeline asynchronously.
     Updates JOB_STORE with progress so the polling endpoint can report live status.
     """
-    from pipeline.orchestrator import process_document
+    from app.modules.document_intelligence.pipeline.orchestrator import process_document
 
     JOB_STORE.update(job_id, status=IngestJobStatus.PROCESSING, message="Pipeline started")
 

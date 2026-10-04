@@ -25,9 +25,12 @@ if sys.platform == "win32":
         except Exception:
             pass
 
-# Add module root to path
+# Script mode only: make the canonical `app.modules.document_intelligence`
+# package (Backend/app/modules/) importable. Importing this file elsewhere
+# does not touch sys.path.
 MODULE_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(MODULE_ROOT))
+if __name__ == "__main__":
+    sys.path.insert(0, str(MODULE_ROOT.parents[1] / "Backend"))
 
 from rich.console import Console
 from rich.table import Table
@@ -39,7 +42,7 @@ console = Console()
 
 def run_benchmark(pdf_path: Path) -> dict:
     """Run pipeline on a PDF and calculate quality metrics."""
-    from pipeline.orchestrator import process_document
+    from app.modules.document_intelligence.pipeline.orchestrator import process_document
 
     console.print(f"\n[cyan]Running benchmark on:[/cyan] [yellow]{pdf_path.name}[/yellow]")
 

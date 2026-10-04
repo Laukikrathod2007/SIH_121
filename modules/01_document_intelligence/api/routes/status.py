@@ -5,7 +5,7 @@ GET /api/v1/jobs/{job_id} — Poll pipeline progress
 
 from __future__ import annotations
 from fastapi import APIRouter, HTTPException
-from models.schemas import JobStatusResponse, IngestJobStatus
+from app.modules.document_intelligence.models.schemas import JobStatusResponse, IngestJobStatus
 
 router = APIRouter()
 

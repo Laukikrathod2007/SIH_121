@@ -29,7 +29,7 @@ try:
 except ImportError:
     PYMUPDF_AVAILABLE = False
 
-from models.schemas import (
+from app.modules.document_intelligence.models.schemas import (
     DocumentExtractionResult,
     PageExtractionResult,
     DocumentType,
@@ -37,26 +37,26 @@ from models.schemas import (
     ValidationStatus,
     IngestJobStatus,
 )
-from pipeline.tier1_native_extractor import (
+from app.modules.document_intelligence.pipeline.tier1_native_extractor import (
     extract_page_native,
     detect_document_type,
     extract_document_metadata,
     get_word_bounding_boxes,
     is_page_scanned,
 )
-from pipeline.tier2_ocr_engine import (
+from app.modules.document_intelligence.pipeline.tier2_ocr_engine import (
     extract_document_with_docling,
     create_tier2_page_result,
 )
-from pipeline.tier3_entity_extractor import extract_all_entities
-from pipeline.layer4_template_learner import (
+from app.modules.document_intelligence.pipeline.tier3_entity_extractor import extract_all_entities
+from app.modules.document_intelligence.pipeline.layer4_template_learner import (
     learn_from_document,
     get_template_for_document,
 )
-from models.domain_rules import validate_field
-from models.schemas import ValidationStatus as VS
-from pipeline.layer5_physics_validator import run_physics_validation
-from pipeline.cloud_fallback import (
+from app.modules.document_intelligence.models.domain_rules import validate_field
+from app.modules.document_intelligence.models.schemas import ValidationStatus as VS
+from app.modules.document_intelligence.pipeline.layer5_physics_validator import run_physics_validation
+from app.modules.document_intelligence.pipeline.cloud_fallback import (
     should_use_cloud_fallback,
     get_cloud_parse_for_document,
 )
@@ -442,12 +442,30 @@ def process_document(
     # Save result to disk (JSON)
     # -----------------------------------------------------------------------
     output_path = OUTPUT_DIR / f"{result.document_id}.json"
+    result_dict = result.model_dump()
     try:
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(result.model_dump(), f, indent=2, default=str)
+            json.dump(result_dict, f, indent=2, default=str)
         logger.success(f"[{job_id}] Output saved: {output_path}")
     except Exception as exc:
         logger.error(f"[{job_id}] Failed to save output: {exc}")
+
+    # -----------------------------------------------------------------------
+    # Pass 4: best-effort write-through into the canonical PostgreSQL schema
+    # (database/schema.sql), alongside the JSON file above, which remains
+    # authoritative for this module's own routes regardless of whether this
+    # succeeds. See db/service.py's module docstring for why this never
+    # raises and never blocks on a database outage.
+    # -----------------------------------------------------------------------
+    try:
+        from app.modules.document_intelligence.db import service as db_sync
+        sync_result = db_sync.sync_document(result_dict)
+        if sync_result.get("synced"):
+            logger.info(f"[{job_id}] Postgres write-through OK ({sync_result.get('extractions_written', 0)} extracted fields, well_id={sync_result.get('well_id')})")
+        else:
+            logger.debug(f"[{job_id}] Postgres write-through skipped: {sync_result.get('reason')}")
+    except Exception as exc:
+        logger.warning(f"[{job_id}] Postgres write-through raised unexpectedly (non-fatal, JSON output is unaffected): {exc}")
 
     logger.success(
         f"[{job_id}] Pipeline complete: {result.pages_processed}/{total_pages} pages | "

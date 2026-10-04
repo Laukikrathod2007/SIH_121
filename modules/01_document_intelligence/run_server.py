@@ -26,9 +26,14 @@ if sys.platform == "win32":
         except Exception:
             pass
 
-# Add module root to Python path so imports work correctly
+# STANDALONE debug launcher. The product runs as ONE backend (Backend/run.py);
+# this script only exists to run/debug this module on its own. The module's
+# code is imported through its canonical package `app.modules.document_intelligence`
+# (see Backend/app/modules/), so the Backend/ directory -- which holds that
+# `app` package -- is put on the path once, here, at launcher start.
 MODULE_ROOT = Path(__file__).parent
-sys.path.insert(0, str(MODULE_ROOT))
+BACKEND_ROOT = MODULE_ROOT.parents[1] / "Backend"
+sys.path.insert(0, str(BACKEND_ROOT))
 
 # ---------------------------------------------------------------------------
 # Demo Mode (no server — direct pipeline run)
@@ -40,7 +45,7 @@ if "--demo" in sys.argv:
         sys.exit(1)
 
     pdf_path = sys.argv[idx + 1]
-    from pipeline.orchestrator import run_demo
+    from app.modules.document_intelligence.pipeline.orchestrator import run_demo
     run_demo(pdf_path)
     sys.exit(0)
 
@@ -52,7 +57,7 @@ if "--test" in sys.argv:
     if not test_pdf.exists():
         print(f"Test PDF not found at: {test_pdf}")
         sys.exit(1)
-    from pipeline.orchestrator import run_demo
+    from app.modules.document_intelligence.pipeline.orchestrator import run_demo
     run_demo(str(test_pdf))
     sys.exit(0)
 
@@ -105,7 +110,6 @@ def _ensure_api_key() -> str:
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, str(MODULE_ROOT))  # api.auth import below needs this
     _ensure_api_key()
     # NWIS_ENV controls dev vs. production behavior:
     #   dev (default)  -> auto-reload on code changes, single process
@@ -146,7 +150,8 @@ if __name__ == "__main__":
             )
             workers = 1
         uvicorn.run(
-            "api.server:app",
+            "app.modules.document_intelligence.api.server:app",
+            app_dir=str(BACKEND_ROOT),
             host=host,
             port=port,
             reload=False,
@@ -155,7 +160,8 @@ if __name__ == "__main__":
         )
     else:
         uvicorn.run(
-            "api.server:app",
+            "app.modules.document_intelligence.api.server:app",
+            app_dir=str(BACKEND_ROOT),
             host=host,
             port=port,
             reload=True,          # Auto-reload on code changes (dev mode)

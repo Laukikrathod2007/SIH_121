@@ -18,7 +18,11 @@ if sys.platform == "win32":
         pass
 
 MODULE_ROOT = Path(__file__).parent
-sys.path.insert(0, str(MODULE_ROOT))
+if __name__ == "__main__":
+    # Script mode only: make the canonical `app.modules.document_intelligence`
+    # package (Backend/app/modules/) importable. Importing this file elsewhere
+    # does not touch sys.path.
+    sys.path.insert(0, str(MODULE_ROOT.parents[1] / "Backend"))
 
 from rich.console import Console
 from rich.table import Table
@@ -30,7 +34,7 @@ console = Console(force_terminal=True, legacy_windows=False)
 def test_layer1_native_extraction():
     console.print("\n[bold cyan]-- Test 1: Layer 1 (Native Digital Text & Bounding Boxes) --[/bold cyan]")
     import fitz
-    from pipeline.tier1_native_extractor import (
+    from app.modules.document_intelligence.pipeline.tier1_native_extractor import (
         extract_page_native,
         detect_document_type,
         extract_document_metadata,
@@ -58,7 +62,7 @@ def test_layer1_native_extraction():
 
 def test_layer3_entity_extraction():
     console.print("\n[bold cyan]-- Test 2: Layer 3 (PetroNER & Domain Regex) --[/bold cyan]")
-    from pipeline.tier3_entity_extractor import extract_all_entities
+    from app.modules.document_intelligence.pipeline.tier3_entity_extractor import extract_all_entities
 
     sample_ddr_text = """
     DAILY DRILLING REPORT - WELL W-03
@@ -92,7 +96,7 @@ def test_layer3_entity_extraction():
 
 def test_layer4_template_learner():
     console.print("\n[bold cyan]-- Test 3: Layer 4 (Coordinate Template Learning) --[/bold cyan]")
-    from pipeline.layer4_template_learner import learn_from_document, get_template_for_document
+    from app.modules.document_intelligence.pipeline.layer4_template_learner import learn_from_document, get_template_for_document
     
     dummy_page_dict = {
         "width": 612.0,
@@ -119,8 +123,8 @@ def test_layer4_template_learner():
 
 def test_layer5_physics_validator():
     console.print("\n[bold cyan]-- Test 4: Layer 5 (Domain Physics Validator & OCR Slip Repair) --[/bold cyan]")
-    from models.schemas import MudProperties, DrillingEvent, WellboreFormation, DocumentExtractionResult, EventType, NPTRecord
-    from pipeline.layer5_physics_validator import run_physics_validation
+    from app.modules.document_intelligence.models.schemas import MudProperties, DrillingEvent, WellboreFormation, DocumentExtractionResult, EventType, NPTRecord
+    from app.modules.document_intelligence.pipeline.layer5_physics_validator import run_physics_validation
 
     # Test Case A: OCR slip dropped leading 1 (3.2 ppg instead of 13.2 ppg)
     # NOTE: density_ppg/viscosity_sec are convenience properties backed by the
@@ -149,7 +153,7 @@ def test_layer5_physics_validator():
     events = [
         DrillingEvent(event_type=EventType.MUD_LOSS, npt_hours=4.5, raw_narrative="Severe lost circulation in Tipam"),
     ]
-    from models.schemas import ExtractedField
+    from app.modules.document_intelligence.models.schemas import ExtractedField
     npt_records = [
         NPTRecord(
             description="Severe lost circulation in Tipam",
@@ -196,7 +200,7 @@ def test_layer5_physics_validator():
 
 def test_real_pdf_extraction_sample():
     console.print("\n[bold cyan]-- Test 5: Real Document Processing (Utah FORGE DDR Report) --[/bold cyan]")
-    from pipeline.orchestrator import process_document
+    from app.modules.document_intelligence.pipeline.orchestrator import process_document
     pdf_path = MODULE_ROOT.parent.parent / "Drilling Summary Well 16A(78)-32.pdf"
     
     t0 = time.time()

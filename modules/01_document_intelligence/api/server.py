@@ -27,9 +27,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
 
-from api.routes import ingest, status, results, review
-from api.job_store import SQLiteJobStore
-from api.auth import require_api_key, rate_limit_ingest, auth_enabled
+from app.modules.document_intelligence.api.routes import ingest, status, results, review
+from app.modules.document_intelligence.api.job_store import SQLiteJobStore
+from app.modules.document_intelligence.api.auth import require_api_key, rate_limit_ingest, auth_enabled
 
 # ---------------------------------------------------------------------------
 # Upload Directory
@@ -75,7 +75,7 @@ async def lifespan(app: FastAPI):
 
     # Pre-warm Docling converter (downloads model weights on first run)
     try:
-        from pipeline.tier2_ocr_engine import _get_docling_converter
+        from app.modules.document_intelligence.pipeline.tier2_ocr_engine import _get_docling_converter
         asyncio.get_event_loop().run_in_executor(None, _get_docling_converter)
         logger.info("Docling pre-warm initiated in background")
     except Exception as exc:
@@ -243,7 +243,7 @@ async def health():
     # key is configured. Surfaced here because this is the one component that
     # can send document content outside the air-gapped boundary — its status
     # should always be visible at a glance, not just discoverable in logs.
-    from pipeline.cloud_fallback import (
+    from app.modules.document_intelligence.pipeline.cloud_fallback import (
         CLOUD_FALLBACK_ENABLED,
         REDUCTO_API_KEY,
         EXTEND_API_KEY,
@@ -264,7 +264,7 @@ async def health():
     # Auth — deliberately not gated behind the API key itself (this endpoint
     # is intentionally public), but visible so it's obvious at a glance
     # whether the deployment is actually protected.
-    from api.auth import auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
+    from app.modules.document_intelligence.api.auth import auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
     checks["auth"] = {
         "status": "enabled" if auth_enabled() else "disabled",
         "required": False,
@@ -283,10 +283,10 @@ async def health():
     }
 
 
-@app.get("/api/v1/templates", tags=["Template Learning"])
+@app.get("/api/v1/templates", tags=["Template Learning"], dependencies=[Depends(require_api_key)])
 async def list_templates():
     """List all learned document coordinate templates."""
-    from pipeline.layer4_template_learner import get_all_templates_summary
+    from app.modules.document_intelligence.pipeline.layer4_template_learner import get_all_templates_summary
     templates = get_all_templates_summary()
     return {
         "total_templates": len(templates),

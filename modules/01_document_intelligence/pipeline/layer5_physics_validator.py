@@ -20,7 +20,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from loguru import logger
 
-from models.domain_rules import (
+from app.modules.document_intelligence.models.domain_rules import (
     DRILLING_DOMAIN_RULES,
     ASSAM_ARAKAN_FORMATIONS,
     validate_field,
@@ -29,7 +29,7 @@ from models.domain_rules import (
     MAX_BARITE_MUD_PPG,
     MAX_HOURS_PER_DAY,
 )
-from models.schemas import (
+from app.modules.document_intelligence.models.schemas import (
     ValidationStatus,
     MudProperties,
     DrillingEvent,

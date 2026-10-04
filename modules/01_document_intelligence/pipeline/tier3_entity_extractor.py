@@ -18,7 +18,7 @@ import time
 from typing import Optional, List, Tuple
 from loguru import logger
 
-from models.schemas import (
+from app.modules.document_intelligence.models.schemas import (
     MudProperties,
     DrillingParameters,
     FormationTop,
@@ -32,7 +32,7 @@ from models.schemas import (
     Severity,
     ValidationStatus,
 )
-from models.domain_rules import (
+from app.modules.document_intelligence.models.domain_rules import (
     validate_field,
     fuzzy_match_formation,
     IADC_NPT_CODES,
@@ -218,8 +218,8 @@ def _make_field(
     bbox: Optional[BoundingBox] = None,
 ) -> ExtractedField:
     """Build an ExtractedField with physics validation applied."""
-    from models.domain_rules import validate_field
-    from models.schemas import ValidationStatus
+    from app.modules.document_intelligence.models.domain_rules import validate_field
+    from app.modules.document_intelligence.models.schemas import ValidationStatus
     is_valid, status_str, message = validate_field(field_name, value)
 
     if status_str == "FAIL":

@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from typing import Optional, Tuple, List
-from models.schemas import ValidationStatus
+from app.modules.document_intelligence.models.schemas import ValidationStatus
 
 
 # ---------------------------------------------------------------------------

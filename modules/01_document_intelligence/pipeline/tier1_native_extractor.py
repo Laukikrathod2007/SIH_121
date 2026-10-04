@@ -18,7 +18,7 @@ except ImportError:
     PYMUPDF_AVAILABLE = False
     logger.warning("PyMuPDF not installed. Run: pip install pymupdf")
 
-from models.schemas import (
+from app.modules.document_intelligence.models.schemas import (
     PageExtractionResult,
     ExtractionTier,
     BoundingBox,

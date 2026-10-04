@@ -34,7 +34,7 @@ except ImportError:
         "Falling back to basic text extraction."
     )
 
-from models.schemas import PageExtractionResult, ExtractionTier
+from app.modules.document_intelligence.models.schemas import PageExtractionResult, ExtractionTier
 
 
 # ---------------------------------------------------------------------------
