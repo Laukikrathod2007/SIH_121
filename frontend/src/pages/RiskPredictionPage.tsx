@@ -67,6 +67,10 @@ export const RiskPredictionPage: React.FC = () => {
             <div className="text-xs text-slate-400 font-mono">
               Deterministic Rules (35%) + Isolation Forest (20%) + 6-Class XGBoost (30%) + Mod 4 Geology (15%)
             </div>
+            <div className="text-[10px] text-slate-500 font-mono mt-1" title="See AUDIT/11_RISK_ARCHITECTURE_DECISION.md for the full architecture note.">
+              Independent engine from Command Center's hazard cards (module 02's DORS/4-Pillar scoring) —
+              different formula, different taxonomy, deliberately not reconciled (hover for details).
+            </div>
           </div>
         </div>
 

@@ -13,7 +13,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { api } from '../services/api';
-import { DocumentExtractionResult, ExtractedField, JobStatusResponse } from '../types';
+import { DocumentExtractionResult, ExtractedField, JobStatusResponse, ReviewQueueItem } from '../types';
 import { PdfEvidenceViewer } from '../components/PdfEvidenceViewer';
 
 // Real upload -> job poll -> result flow against modules/01_document_intelligence:
@@ -43,6 +43,48 @@ export const DocumentIngestionPage: React.FC = () => {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewDecision, setReviewDecision] = useState<string | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
+
+  // Review Queue panel (Priority 6 remediation, 2026-10-04): surfaces
+  // GET /api/v1/review/queue, a real backend endpoint that previously had
+  // no frontend caller at all. Lists every document across past sessions
+  // that module 01 flagged for human review, not just the one just
+  // uploaded above. Reuses the exact same submitDecision() flow already
+  // wired for a freshly-uploaded document.
+  const [queue, setQueue] = useState<ReviewQueueItem[]>([]);
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [queueError, setQueueError] = useState<string | null>(null);
+
+  const loadQueue = useCallback(async () => {
+    setQueueLoading(true);
+    setQueueError(null);
+    try {
+      const res = await api.getReviewQueue();
+      setQueue(res.queue);
+    } catch (err) {
+      setQueueError('Could not reach /api/v1/review/queue on module 01.');
+      console.error(err);
+    } finally {
+      setQueueLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadQueue();
+  }, [loadQueue]);
+
+  const openQueuedDocument = useCallback(async (docId: string) => {
+    setError(null);
+    setReviewDecision(null);
+    try {
+      const doc = await api.getReviewDetail(docId);
+      setResult(doc);
+      setJobId(null);
+      setJobStatus(null);
+    } catch (err) {
+      setError(`Could not load review detail for ${docId}.`);
+      console.error(err);
+    }
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -113,6 +155,7 @@ export const DocumentIngestionPage: React.FC = () => {
     try {
       await api.submitReviewDecision(result.document_id, { reviewer: 'frontend-operator', decision });
       setReviewDecision(decision);
+      loadQueue(); // the decided document should drop out of the pending queue
     } catch (err) {
       console.error('Failed to submit review decision', err);
     } finally {
@@ -149,6 +192,62 @@ export const DocumentIngestionPage: React.FC = () => {
           <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
         </div>
       )}
+
+      {/* Review Queue -- real GET /api/v1/review/queue data, every document
+          module 01 has ever flagged across past sessions, not just the one
+          uploaded in this session. Click a row to load it below exactly as
+          if it had just been uploaded, reusing the same approve/reject flow. */}
+      <div className="scada-panel p-3">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+          <div className="text-xs font-mono font-bold text-slate-200 flex items-center gap-2">
+            DOCUMENT REVIEW QUEUE
+            <span className="text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded">
+              GET /api/v1/review/queue
+            </span>
+          </div>
+          <span className="text-[10px] text-slate-500 font-mono">{queue.length} pending</span>
+        </div>
+        {queueLoading && <div className="text-[11px] font-mono text-slate-500 p-2">Loading queue...</div>}
+        {queueError && <div className="text-[11px] font-mono text-rose-400 p-2">{queueError}</div>}
+        {!queueLoading && !queueError && queue.length === 0 && (
+          <div className="text-[11px] font-mono text-slate-500 p-2">No documents currently awaiting review.</div>
+        )}
+        {!queueLoading && queue.length > 0 && (
+          <div className="max-h-48 overflow-y-auto mt-1">
+            <table className="w-full text-[11px] font-mono">
+              <thead>
+                <tr className="text-slate-500 text-left">
+                  <th className="py-1 pr-2 font-normal">Document</th>
+                  <th className="py-1 pr-2 font-normal">Well</th>
+                  <th className="py-1 pr-2 font-normal">Status</th>
+                  <th className="py-1 pr-2 font-normal">Confidence</th>
+                  <th className="py-1 pr-2 font-normal">Violations</th>
+                  <th className="py-1 font-normal" />
+                </tr>
+              </thead>
+              <tbody>
+                {queue.map((item) => (
+                  <tr key={item.document_id} className="border-t border-slate-800/60 hover:bg-slate-900/40">
+                    <td className="py-1 pr-2 text-slate-300 truncate max-w-[220px]" title={item.source_filename}>{item.source_filename}</td>
+                    <td className="py-1 pr-2 text-slate-400">{item.well_name || '—'}</td>
+                    <td className="py-1 pr-2 text-amber-300">{item.validation_status}</td>
+                    <td className="py-1 pr-2 text-slate-300">{(item.overall_confidence * 100).toFixed(1)}%</td>
+                    <td className="py-1 pr-2 text-slate-300">{item.physics_violations_count}</td>
+                    <td className="py-1">
+                      <button
+                        onClick={() => openQueuedDocument(item.document_id)}
+                        className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded"
+                      >
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: Upload zone */}

@@ -250,36 +250,49 @@ export const SimulatorPage: React.FC = () => {
           <span className="text-[10px] text-cyan-400">Ground Truth Solver</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 text-xs font-mono">
-          <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
-            <div className="text-slate-400 text-[10px]">CURRENT BIT MD</div>
-            <div className="text-sm font-bold text-slate-100">{telemetry?.measured_depth_m.toFixed(2)} m</div>
-          </div>
-          <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
-            <div className="text-slate-400 text-[10px]">HYDROSTATIC HEAD</div>
-            <div className="text-sm font-bold text-slate-100">
-              {((telemetry?.ecd_gcc || 1.29) * 9.81 * (telemetry?.tvd_m || 2435) / 100).toFixed(1)} bar
+        {/* Priority 4 fix: these previously used `|| <constant>` fallbacks
+            inside the live derived-physics formulas themselves, so an idle/
+            disconnected simulator rendered a fully-computed-looking number
+            indistinguishable from a real reading -- including one path
+            (`measured_depth_m.toFixed` with no null guard) that would throw
+            if telemetry was ever null. Now: no telemetry -> explicit idle
+            state, not a silently substituted constant. */}
+        {telemetry ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 text-xs font-mono">
+            <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
+              <div className="text-slate-400 text-[10px]">CURRENT BIT MD</div>
+              <div className="text-sm font-bold text-slate-100">{telemetry.measured_depth_m.toFixed(2)} m</div>
+            </div>
+            <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
+              <div className="text-slate-400 text-[10px]">HYDROSTATIC HEAD</div>
+              <div className="text-sm font-bold text-slate-100">
+                {(telemetry.ecd_gcc * 9.81 * telemetry.tvd_m / 100).toFixed(1)} bar
+              </div>
+            </div>
+            <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
+              <div className="text-slate-400 text-[10px]">ANNULAR PRESS LOSS</div>
+              <div className="text-sm font-bold text-slate-100">
+                {(telemetry.bottomhole_pressure_bar - telemetry.tvd_m * 0.0981 * 1.22).toFixed(1)} bar
+              </div>
+            </div>
+            <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
+              <div className="text-slate-400 text-[10px]">CUTTINGS CONCENTRATION</div>
+              <div className="text-sm font-bold text-slate-100">{(telemetry.cuttings_concentration * 100).toFixed(2)}%</div>
+            </div>
+            <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
+              <div className="text-slate-400 text-[10px]">TEALE MSE RATIO</div>
+              <div className="text-sm font-bold text-slate-100">{(telemetry.mse_mpa / 45).toFixed(2)}x UCS</div>
+            </div>
+            <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
+              <div className="text-slate-400 text-[10px]">SENSOR NOISE FILTER</div>
+              <div className="text-sm font-bold text-emerald-400">1st-Order Lag (α=0.7)</div>
             </div>
           </div>
-          <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
-            <div className="text-slate-400 text-[10px]">ANNULAR PRESS LOSS</div>
-            <div className="text-sm font-bold text-slate-100">
-              {((telemetry?.bottomhole_pressure_bar || 242) - (telemetry?.tvd_m || 2435) * 0.0981 * 1.22).toFixed(1)} bar
-            </div>
+        ) : (
+          <div className="p-3 bg-slate-900/50 border border-dashed border-slate-700 rounded text-[11px] font-mono text-slate-500 italic text-center">
+            IDLE — no live telemetry. Start the simulator to see real solver state.
           </div>
-          <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
-            <div className="text-slate-400 text-[10px]">CUTTINGS CONCENTRATION</div>
-            <div className="text-sm font-bold text-slate-100">{((telemetry?.cuttings_concentration || 0.02) * 100).toFixed(2)}%</div>
-          </div>
-          <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
-            <div className="text-slate-400 text-[10px]">TEALE MSE RATIO</div>
-            <div className="text-sm font-bold text-slate-100">{((telemetry?.mse_mpa || 118) / 45).toFixed(2)}x UCS</div>
-          </div>
-          <div className="p-2 bg-slate-900/80 border border-slate-800 rounded">
-            <div className="text-slate-400 text-[10px]">SENSOR NOISE FILTER</div>
-            <div className="text-sm font-bold text-emerald-400">1st-Order Lag (α=0.7)</div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

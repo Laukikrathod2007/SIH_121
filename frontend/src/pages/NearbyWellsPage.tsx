@@ -16,6 +16,12 @@ import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
 import { Well, OffsetWellRanking, FormationTop, DrillingEvent } from '../types';
 import { BasinMap } from '../components/BasinMap';
+// Priority 7 remediation (2026-10-04): this page used to define its own
+// byte-identical copy of haversineKm; consolidated to the one canonical
+// implementation (also used by the 3D globe) so there's a single source of
+// truth for this formula across the app. No behavior change — confirmed
+// identical before removing the local copy.
+import { haversineKm } from '../lib/globeGeometry';
 
 // Lazy-loaded: pulls in three.js + @react-three/fiber (~800kB), only needed
 // when the user actually opens the 3D trajectory view, not on initial load
@@ -23,19 +29,6 @@ import { BasinMap } from '../components/BasinMap';
 const WellInspector3DModal = lazy(() =>
   import('../components/WellInspector3DModal').then((m) => ({ default: m.WellInspector3DModal }))
 );
-
-// Great-circle distance between two lat/lon points, matching the backend's
-// own Haversine radius filter (module 02 DORS spatial factor) so the map's
-// radius circle and the well list agree with what the ranking table shows.
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
 
 export const NearbyWellsPage: React.FC = () => {
   const { activeWellId, setActiveWellId, wells, activeWell, telemetry } = useApp();

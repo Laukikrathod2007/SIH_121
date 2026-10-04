@@ -315,9 +315,9 @@ export const DashboardPage: React.FC = () => {
           <div className="mt-3 pt-2 border-t border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
             <span className="flex items-center gap-1 text-slate-400">
               <span className={`w-2 h-2 rounded-full ${isWsConnected ? 'bg-emerald-400' : 'bg-slate-500'}`}></span>
-              Physics Digital Twin (module 03 — not yet wired)
+              Physics Digital Twin (module 04/05, :8003)
             </span>
-            <span className="text-slate-300">{isWsConnected ? 'Connected' : 'Not connected'}</span>
+            <span className="text-slate-300">{isWsConnected ? 'Connected' : 'Not connected — start the simulator'}</span>
           </div>
         </div>
 
@@ -359,15 +359,16 @@ export const DashboardPage: React.FC = () => {
               </div>
             ) : (
               <div className="mt-3 text-xs font-mono text-slate-500 p-2 bg-slate-900/60 rounded border border-slate-800">
-                No live hazard forecast available — module 03 (physics/predictive engine) is not yet wired to an HTTP
-                endpoint in this project.
+                No live hazard forecast yet — module 04/05's risk-fusion engine (real, running on :8003) only
+                evaluates once live telemetry is flowing. Start the simulator (Scenario Simulator page) to see
+                real fused hazard scores here.
               </div>
             )}
           </div>
 
           <div className="mt-3 pt-2 border-t border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
-            <span>Predictive ML fusion (module 03 — not yet wired)</span>
-            <span className="text-cyan-400">Placeholder</span>
+            <span>Predictive ML fusion (module 04/05, :8003)</span>
+            <span className="text-cyan-400">{activeRisk ? 'Live' : 'Idle — simulator not running'}</span>
           </div>
         </div>
       </div>

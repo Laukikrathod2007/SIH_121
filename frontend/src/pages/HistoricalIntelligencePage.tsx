@@ -131,6 +131,14 @@ export const HistoricalIntelligencePage: React.FC = () => {
               <option value="WELLBORE_INSTABILITY">Wellbore Instability</option>
               <option value="TORQUE_SPIKE">Torque Spike</option>
               <option value="CEMENTING_FAILURE">Cementing Failure</option>
+              <option value="OVERPRESSURE_ZONE">Overpressure Zone</option>
+              {/* Taxonomy support added per PS 26121 item (ix); the live
+                  dataset has zero fishing-operation events (none in the
+                  Equinor Volve pull this project's data is built from), so
+                  selecting this honestly returns an empty result rather
+                  than a fabricated example -- see AUDIT/11_REMEDIATION_REPORT.md
+                  Priority 5. */}
+              <option value="FISHING_OPERATION">Fishing Operation</option>
             </select>
           </div>
 

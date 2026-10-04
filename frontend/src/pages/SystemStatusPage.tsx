@@ -7,14 +7,20 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { api } from '../services/api';
-import { HealthResponseM01, HealthResponseM02 } from '../types';
+import { HealthResponseM01, HealthResponseM02, SimulationStatus } from '../types';
 
-// Renders REAL health data from GET /api/v1/health (module 01) and
-// GET /api/v2/health (module 02) — replaces the previous page's fetch-then-
-// ignore pattern and its hardcoded "105/105 TESTS PASSING" banner, fake
-// per-stage latency table, and fake ROC-AUC/F1 model-registry cards.
-// Module 03 (physics engine) has no health endpoint because it has no HTTP
-// routes at all yet — shown honestly as "NOT CONNECTED" below, not faked.
+// Renders REAL health data from GET /api/v1/health (module 01),
+// GET /api/v2/health (module 02), and GET /api/v3/physics/status + /predictive/models
+// (module 04, which also hosts module 05's predictive code) — replaces the
+// previous page's fetch-then-ignore pattern and its hardcoded
+// "105/105 TESTS PASSING" banner, fake per-stage latency table, and fake
+// ROC-AUC/F1 model-registry cards. Module 04/05's card used to be a
+// permanently-amber "NOT CONNECTED" static block written before that module
+// existed in this project — found stale (module 04 is real, running, and
+// healthy) during the end-to-end verification pass and replaced with a real
+// check, same pattern as the other two cards (module 04/05 has no
+// dedicated /api/v3 health route of its own, so /physics/status is used as
+// the liveness probe, same as BackendStatusStrip.tsx already does).
 
 function StatusDot({ ok }: { ok: boolean | null }) {
   if (ok === null) return <span className="w-2 h-2 rounded-full bg-slate-600 inline-block" />;
@@ -24,14 +30,22 @@ function StatusDot({ ok }: { ok: boolean | null }) {
 export const SystemStatusPage: React.FC = () => {
   const [healthM01, setHealthM01] = useState<HealthResponseM01 | null>(null);
   const [healthM02, setHealthM02] = useState<HealthResponseM02 | null>(null);
+  const [statusM04, setStatusM04] = useState<SimulationStatus | null>(null);
+  const [modelsM04, setModelsM04] = useState<any[] | null>(null);
   const [errorM01, setErrorM01] = useState<string | null>(null);
   const [errorM02, setErrorM02] = useState<string | null>(null);
+  const [errorM04, setErrorM04] = useState<string | null>(null);
   const [pinging, setPinging] = useState<boolean>(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
   const fetchHealth = async () => {
     setPinging(true);
-    const [m01, m02] = await Promise.allSettled([api.getHealthM01(), api.getHealthM02()]);
+    const [m01, m02, m04status, m04models] = await Promise.allSettled([
+      api.getHealthM01(),
+      api.getHealthM02(),
+      api.getSimStatus(),
+      api.getRegisteredModels(),
+    ]);
 
     if (m01.status === 'fulfilled') {
       setHealthM01(m01.value);
@@ -49,6 +63,15 @@ export const SystemStatusPage: React.FC = () => {
       setErrorM02('Unreachable — is module 02 running on port 8002 (python run_server.py)?');
     }
 
+    if (m04status.status === 'fulfilled') {
+      setStatusM04(m04status.value);
+      setErrorM04(null);
+    } else {
+      setStatusM04(null);
+      setErrorM04('Unreachable — is module 04 running on port 8003 (python run_server.py)?');
+    }
+    setModelsM04(m04models.status === 'fulfilled' ? m04models.value : null);
+
     setLastChecked(new Date());
     setPinging(false);
   };
@@ -59,6 +82,7 @@ export const SystemStatusPage: React.FC = () => {
 
   const m01Healthy = healthM01?.status === 'healthy';
   const m02Healthy = healthM02?.status === 'healthy';
+  const m04Healthy = statusM04 !== null;
 
   return (
     <div className="p-4 space-y-4 max-w-[1600px] mx-auto">
@@ -167,21 +191,56 @@ export const SystemStatusPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Module 03 — honestly not connected */}
-      <div className="scada-panel p-4 space-y-2 border-l-4 border-l-amber-500">
+      {/* Module 04/05 — real check via /api/v3/physics/status (liveness) and
+          /api/v3/predictive/models (honest fitted/unfitted ML status) */}
+      <div className={`scada-panel p-4 space-y-2 border-l-4 ${m04Healthy ? 'border-l-emerald-500' : 'border-l-amber-500'}`}>
         <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-          <span className="text-xs font-mono font-bold text-slate-200">MODULE 03 — PHYSICS DIGITAL TWIN / PREDICTIVE ML</span>
-          <span className="px-2 py-0.5 rounded text-[10px] font-bold border bg-amber-500/20 text-amber-300 border-amber-500/40">
-            NOT CONNECTED
+          <span className="text-xs font-mono font-bold text-slate-200">MODULE 04/05 — PHYSICS DIGITAL TWIN / PREDICTIVE ML (:8003)</span>
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border flex items-center gap-1 ${
+            m04Healthy ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+          }`}>
+            {m04Healthy ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+            {m04Healthy ? 'HEALTHY' : 'UNREACHABLE'}
           </span>
         </div>
-        <div className="text-[11px] font-mono text-slate-400">
-          modules/03_physics_engine/ is being ported in a parallel effort and has no FastAPI routes exposed yet in
-          this project — there is no health endpoint to poll, and LiveDrillingPage / SimulatorPage /
-          RiskPredictionPage's live hazard scores / AlertsAdvisoryPage all point at a placeholder base URL
-          (VITE_M03_API_BASE, default http://localhost:8003) that nothing is currently listening on. This is a
-          known gap, not a fabricated "online" status.
-        </div>
+
+        {errorM04 && (
+          <div className="text-[11px] font-mono text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded p-2 flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {errorM04}
+          </div>
+        )}
+
+        {statusM04 && (
+          <div className="space-y-1.5 text-xs font-mono">
+            <div className="p-2 bg-slate-900/70 border border-slate-800 rounded">
+              <div className="text-slate-400 text-[10px]">PHYSICS ENGINE</div>
+              <div className="text-slate-200">
+                running: {String(statusM04.is_running)} · depth: {statusM04.measured_depth_m?.toFixed(1)}m · speed: {statusM04.speed_multiplier}x
+              </div>
+            </div>
+            {modelsM04 && (
+              <div className="p-2 bg-slate-900/70 border border-slate-800 rounded">
+                <div className="text-slate-400 text-[10px]">PREDICTIVE MODELS</div>
+                <div className="space-y-1 mt-1">
+                  {modelsM04.map((m: any) => (
+                    <div key={m.model_id} className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-slate-200">
+                        <StatusDot ok={m.status === 'ACTIVE'} /> {m.model_id}
+                      </span>
+                      <span className={`text-[10px] ${m.status === 'ACTIVE' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        {m.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-[10px] text-slate-500 pt-1">
+                  UNFITTED_FALLBACK means no trained .joblib artifact exists on disk for that model — the rule
+                  engine pillar still runs real, deterministic hazard scoring; this is not a fabricated metric.
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
