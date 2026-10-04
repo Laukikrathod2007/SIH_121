@@ -18,23 +18,23 @@ Verifies:
 
 import math
 import pytest
-from models.config import SimulatorConfig
-from models.state import FormationParams, OperatorInputs
-from simulation.formation import FormationModel, default_demo_formations
-from simulation.engine import DrillingPhysicsEngine
-from simulation.faults import ScenarioType
-from simulation.sensors import ChannelSensor, SensorArray
-from data_pipeline.ingestion import TelemetryIngestor
-from data_pipeline.cleaner import UnitStandardizer, TelemetryCleaner
-from data_pipeline.alignment import DepthTimeAligner
-from data_pipeline.feature_engine import FeatureEngine
-from data_pipeline.labeler import HazardLabeler
-from data_pipeline.splitter import DatasetSplitter
-from data_pipeline.synthetic_generator import (
+from app.modules.physics.models.config import SimulatorConfig
+from app.modules.physics.models.state import FormationParams, OperatorInputs
+from app.modules.physics.simulation.formation import FormationModel, default_demo_formations
+from app.modules.physics.simulation.engine import DrillingPhysicsEngine
+from app.modules.physics.simulation.faults import ScenarioType
+from app.modules.physics.simulation.sensors import ChannelSensor, SensorArray
+from app.modules.physics.data_pipeline.ingestion import TelemetryIngestor
+from app.modules.physics.data_pipeline.cleaner import UnitStandardizer, TelemetryCleaner
+from app.modules.physics.data_pipeline.alignment import DepthTimeAligner
+from app.modules.physics.data_pipeline.feature_engine import FeatureEngine
+from app.modules.physics.data_pipeline.labeler import HazardLabeler
+from app.modules.physics.data_pipeline.splitter import DatasetSplitter
+from app.modules.physics.data_pipeline.synthetic_generator import (
     SyntheticDataGenerator,
     QualityGateFailure,
 )
-from simulation.physics_controller import PhysicsController
+from app.modules.physics.simulation.physics_controller import PhysicsController
 
 
 # ===========================================================================

@@ -7,7 +7,7 @@ Bridges FastAPI endpoints to the LiveTelemetryStreamer singleton.
 from __future__ import annotations
 
 from typing import Dict, Any, Optional, List
-from simulation.telemetry_streamer import LiveTelemetryStreamer
+from app.modules.physics.simulation.telemetry_streamer import LiveTelemetryStreamer
 
 
 class PhysicsController:

@@ -21,8 +21,8 @@ from __future__ import annotations
 
 import math
 from typing import Tuple
-from models.state import FormationParams, OperatorInputs
-from models.config import SimulatorConfig
+from app.modules.physics.models.state import FormationParams, OperatorInputs
+from app.modules.physics.models.config import SimulatorConfig
 
 
 class MechanicsEngine:

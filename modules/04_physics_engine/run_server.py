@@ -10,8 +10,14 @@ import sys
 import os
 from pathlib import Path
 
+# STANDALONE debug launcher. The product runs as ONE backend (Backend/run.py).
+# This module's code is imported through its canonical packages
+# `app.modules.physics` / `app.modules.predictive_analytics` (see
+# Backend/app/modules/), so Backend/ -- which holds that `app` package -- is
+# put on the path once, here, at launcher start.
 MODULE_ROOT = Path(__file__).parent
-sys.path.insert(0, str(MODULE_ROOT))
+BACKEND_ROOT = MODULE_ROOT.parents[1] / "Backend"
+sys.path.insert(0, str(BACKEND_ROOT))
 
 # ---------------------------------------------------------------------------
 # Server Mode (default)
@@ -70,10 +76,11 @@ if __name__ == "__main__":
     print("=" * 60 + "\n")
 
     if is_prod:
-        uvicorn.run("api.server:app", host=host, port=port, reload=False, log_level="info")
+        uvicorn.run("app.modules.physics.api.server:app", app_dir=str(BACKEND_ROOT), host=host, port=port, reload=False, log_level="info")
     else:
         uvicorn.run(
-            "api.server:app",
+            "app.modules.physics.api.server:app",
+            app_dir=str(BACKEND_ROOT),
             host=host,
             port=port,
             reload=True,

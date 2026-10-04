@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import math
 from typing import Dict, Any
-from models.state import FormationParams
-from models.config import SimulatorConfig
+from app.modules.physics.models.state import FormationParams
+from app.modules.physics.models.config import SimulatorConfig
 
 
 class HoleCleaningEngine:

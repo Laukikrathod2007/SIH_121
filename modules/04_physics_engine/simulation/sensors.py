@@ -21,7 +21,7 @@ import collections
 import math
 import random
 from typing import Dict, Any, Optional, Tuple
-from models.telemetry import ChannelQuality
+from app.modules.physics.models.telemetry import ChannelQuality
 
 
 class ChannelSensor:

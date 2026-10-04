@@ -14,8 +14,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
 
-from models.telemetry import ChannelQuality
-from data_pipeline.models import ProvenanceClass, DataRecordMetadata
+from app.modules.physics.models.telemetry import ChannelQuality
+from app.modules.physics.data_pipeline.models import ProvenanceClass, DataRecordMetadata
 
 
 # Standard engineering bounds for drilling channels

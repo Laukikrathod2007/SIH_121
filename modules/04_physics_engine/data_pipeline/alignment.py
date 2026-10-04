@@ -11,8 +11,8 @@ Implements Module 5 Data Pipeline Sections 10, 58-59:
 from __future__ import annotations
 
 from typing import Dict, Any, List, Optional
-from data_pipeline.xi_correlator import compute_xi
-from simulation.formation import FormationModel, default_demo_formations
+from app.modules.physics.data_pipeline.xi_correlator import compute_xi
+from app.modules.physics.simulation.formation import FormationModel, default_demo_formations
 
 
 class DepthTimeAligner:

@@ -15,11 +15,11 @@ from __future__ import annotations
 
 import random
 from typing import Dict, Any, List, Optional, Tuple
-from models.config import SimulatorConfig
-from simulation.engine import DrillingPhysicsEngine
-from simulation.formation import FormationModel, default_demo_formations
-from simulation.faults import ScenarioType
-from data_pipeline.labeler import HazardLabeler
+from app.modules.physics.models.config import SimulatorConfig
+from app.modules.physics.simulation.engine import DrillingPhysicsEngine
+from app.modules.physics.simulation.formation import FormationModel, default_demo_formations
+from app.modules.physics.simulation.faults import ScenarioType
+from app.modules.physics.data_pipeline.labeler import HazardLabeler
 
 
 class QualityGateFailure(Exception):

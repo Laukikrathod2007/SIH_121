@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from models.state import FormationParams
+from app.modules.physics.models.state import FormationParams
 
 
 class FormationModel:

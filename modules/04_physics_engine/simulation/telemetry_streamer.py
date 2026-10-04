@@ -18,9 +18,9 @@ from typing import Dict, Any, List, Optional, Set
 from fastapi import WebSocket
 
 from loguru import logger
-from simulation.engine import DrillingPhysicsEngine
-from simulation.faults import ScenarioType
-from models.telemetry import TelemetryEnvelope
+from app.modules.physics.simulation.engine import DrillingPhysicsEngine
+from app.modules.physics.simulation.faults import ScenarioType
+from app.modules.physics.models.telemetry import TelemetryEnvelope
 
 
 class LiveTelemetryStreamer:

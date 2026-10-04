@@ -24,22 +24,22 @@ import math
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List, Tuple
 
-from models.state import (
+from app.modules.physics.models.state import (
     SimulationState, FormationParams, OperatorInputs
 )
-from models.config import SimulatorConfig
-from models.telemetry import (
+from app.modules.physics.models.config import SimulatorConfig
+from app.modules.physics.models.telemetry import (
     TelemetryEnvelope, TelemetryChannels, DepthRecord, FormationRecord,
     TelemetryQuality, ChannelQuality, ProvenanceTier
 )
-from simulation.formation import FormationModel, default_demo_formations
-from simulation.mechanics import MechanicsEngine
-from simulation.hydraulics import HydraulicsEngine
-from simulation.mass_balance import MassBalanceEngine
-from simulation.torsional_dynamics import TorsionalDynamicsEngine
-from simulation.hole_cleaning import HoleCleaningEngine
-from simulation.faults import FaultEngine, ScenarioType
-from simulation.sensors import SensorArray
+from app.modules.physics.simulation.formation import FormationModel, default_demo_formations
+from app.modules.physics.simulation.mechanics import MechanicsEngine
+from app.modules.physics.simulation.hydraulics import HydraulicsEngine
+from app.modules.physics.simulation.mass_balance import MassBalanceEngine
+from app.modules.physics.simulation.torsional_dynamics import TorsionalDynamicsEngine
+from app.modules.physics.simulation.hole_cleaning import HoleCleaningEngine
+from app.modules.physics.simulation.faults import FaultEngine, ScenarioType
+from app.modules.physics.simulation.sensors import SensorArray
 
 
 class DrillingPhysicsEngine:

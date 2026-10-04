@@ -50,24 +50,18 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
-# Path setup — module root first (so `from models...`/`from simulation...`
-# resolve, matching tests/conftest.py's pattern), then Module 05's root so
-# `from predictive...` resolves. Symmetric to Module 05's own sys.path insert
-# that reaches back into this module for `data_pipeline.feature_engine`.
+# Imports use the canonical `app.modules.physics` / `app.modules.predictive_analytics`
+# packages (adapters whose __path__ point at modules/04_physics_engine and
+# modules/05_predictive_analytics -- see Backend/app/modules/*/__init__.py),
+# so no sys.path manipulation is needed or performed.
 # ---------------------------------------------------------------------------
 MODULE_04_ROOT = Path(__file__).resolve().parent.parent
-if str(MODULE_04_ROOT) not in sys.path:
-    sys.path.insert(0, str(MODULE_04_ROOT))
 
-MODULE_05_ROOT = MODULE_04_ROOT.parent / "05_predictive_analytics"
-if str(MODULE_05_ROOT) not in sys.path:
-    sys.path.insert(0, str(MODULE_05_ROOT))
+from app.modules.physics.simulation.engine import DrillingPhysicsEngine
+from app.modules.physics.simulation.faults import ScenarioType
+from app.modules.physics.api.auth import require_api_key, rate_limit, auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
 
-from simulation.engine import DrillingPhysicsEngine
-from simulation.faults import ScenarioType
-from api.auth import require_api_key, rate_limit, auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
-
-from predictive.realtime_inference import RealTimeRiskInferenceService  # noqa: E402
+from app.modules.predictive_analytics.predictive.realtime_inference import RealTimeRiskInferenceService  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Singletons — one live digital twin, one predictive inference service.
@@ -504,7 +498,21 @@ async def predictive_evaluate(body: EvaluateRequest):
         "md": fused_output.get("md", 0.0),
         "formation": fused_output.get("formation", "Unknown"),
     }
-    fused_output["alerts"] = [_alert_to_advisory(a) for a in fused_output.get("alerts", [])]
+
+    raw_alerts = fused_output.get("alerts", [])
+
+    # Pass 4: best-effort write-through of this telemetry tick + any alerts
+    # it produced into the canonical PostgreSQL schema. Already decimated
+    # to the frontend's ~1 Hz evaluate cadence (see db/__init__.py's module
+    # docstring) -- never raises, never blocks the response below on a
+    # database outage.
+    try:
+        from app.modules.physics.db import service as db_sync
+        db_sync.sync_evaluation(telemetry, raw_alerts)
+    except Exception as exc:
+        logger.debug(f"Telemetry/alert write-through raised unexpectedly (non-fatal): {exc}")
+
+    fused_output["alerts"] = [_alert_to_advisory(a) for a in raw_alerts]
     return fused_output
 
 

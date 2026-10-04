@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-from simulation.faults import ScenarioType
-from data_pipeline.synthetic_generator import SyntheticDataGenerator
-from data_pipeline.feature_engine import FeatureEngine
-from data_pipeline.splitter import DatasetSplitter
+from app.modules.physics.simulation.faults import ScenarioType
+from app.modules.physics.data_pipeline.synthetic_generator import SyntheticDataGenerator
+from app.modules.physics.data_pipeline.feature_engine import FeatureEngine
+from app.modules.physics.data_pipeline.splitter import DatasetSplitter
 
 MODULE_ROOT = Path(__file__).resolve().parent.parent
 

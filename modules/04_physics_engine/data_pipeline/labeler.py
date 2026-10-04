@@ -13,7 +13,7 @@ Implements Module 5 Data Pipeline Section 12:
 from __future__ import annotations
 
 from typing import Dict, Any, List, Optional
-from data_pipeline.models import MultiHorizonLabels, EventPhase
+from app.modules.physics.data_pipeline.models import MultiHorizonLabels, EventPhase
 
 
 class HazardLabeler:
