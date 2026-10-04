@@ -30,6 +30,27 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 
 -- =============================================================================
+-- PROVENANCE
+-- Added in the Phase 1 foundation pass (2026-10-04) per the explicit task
+-- requirement that simulation data never be confused with real data. Named
+-- "source_type" rather than "provenance" to match the existing codebase's
+-- own vocabulary -- AUDIT/08_REAL_VS_SIMULATED.md's own classification
+-- table already uses "REAL SOURCE DATA" / "SYNTHETIC DATA" / "SIMULATED
+-- REPLAY" / "DERIVED" as its header, so this enum is lifted directly from
+-- that document rather than inventing new terms:
+--   REAL       -- genuinely sourced from a real field document/dataset
+--               -- (Equinor Volve PDFs/WITSML -- real_data/)
+--   SYNTHETIC  -- procedurally generated testbed data
+--               -- (modules/02_nwis_backend/data/synthetic/generate_testbed.py)
+--   SIMULATED  -- produced by a running physics/replay simulation, not a
+--               -- static dataset (modules/04_physics_engine, live/replay_engine.py)
+--   IMPORTED   -- loaded from an external file/feed whose own realness this
+--               -- schema does not itself attest to (e.g. a future WITSML feed)
+--   DERIVED    -- computed by this project's own engines from other rows
+--               -- already in this database (DORS, risk corridors, ML predictions)
+CREATE TYPE source_type AS ENUM ('REAL', 'SYNTHETIC', 'SIMULATED', 'IMPORTED', 'DERIVED');
+
+-- =============================================================================
 -- TIER 1 — MASTER / REFERENCE DATA (PPDM-style)
 -- Slowly-changing, authoritative lookup entities that everything else hangs
 -- off. This is the layer PPDM calls "business associate" / "field" / "well"
@@ -85,7 +106,13 @@ INSERT INTO hazard_type (code, description) VALUES
     ('KICK',                  'Uncontrolled formation fluid influx into the wellbore'),
     ('WELLBORE_INSTABILITY',  'Hole enlargement / collapse (e.g. washout, sloughing shale)'),
     ('TORQUE_SPIKE',          'Abnormal torque response indicating mechanical drag/friction'),
-    ('CEMENTING_FAILURE',     'Cement job failed to achieve zonal isolation / bond');
+    ('CEMENTING_FAILURE',     'Cement job failed to achieve zonal isolation / bond'),
+    -- Added in the Phase 1 foundation pass: models/schemas.py HazardType
+    -- already had this 7th value (PS 26121 outcome (v) names "overpressure
+    -- zones" explicitly) and data/synthetic/drilling_events.json actively
+    -- uses it (real schema drift caught by migrate_seed.py's FK violation
+    -- on a real seed run against real synthetic data, not a hypothetical gap).
+    ('OVERPRESSURE_ZONE',    'Abnormally high pore pressure zone relative to the planned mud weight');
 
 CREATE TABLE wells (
     -- Business key used verbatim by both modules' JSON/API payloads
@@ -112,9 +139,16 @@ CREATE TABLE wells (
     status                TEXT NOT NULL DEFAULT 'COMPLETED'
                           CHECK (status IN ('PRODUCING','COMPLETED','ABANDONED','SUSPENDED','DRILLING')),
     witsml_uid            UUID NOT NULL DEFAULT gen_random_uuid(),
+    -- REAL for the 2 Volve wells (data_store.py's REAL_WELLS), SYNTHETIC for
+    -- the 12 generate_testbed.py Assam-Arakan wells -- see AUDIT/08's
+    -- real-vs-synthetic boundary map, which this column makes queryable
+    -- instead of only inferable from well_id prefix conventions.
+    source_type           source_type NOT NULL DEFAULT 'SYNTHETIC',
     created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at             TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE INDEX idx_wells_source_type ON wells (source_type);
 
 CREATE INDEX idx_wells_surface_location ON wells USING GIST (surface_location);
 CREATE INDEX idx_wells_field ON wells (field_id);
@@ -222,6 +256,7 @@ CREATE TABLE trajectory_stations (
     source_document_id                 TEXT REFERENCES documents(document_id),
     source_page                          INT,
     extraction_confidence                 NUMERIC(5,4),
+    source_type                            source_type NOT NULL DEFAULT 'SYNTHETIC',
     UNIQUE (well_id, md_m)
 );
 
@@ -243,7 +278,16 @@ CREATE TABLE formation_tops (
     confidence                                  NUMERIC(5,4) DEFAULT 0.90,
     source_document_id                            TEXT REFERENCES documents(document_id),
     source_page                                     INT,
-    extraction_confidence                             NUMERIC(5,4)
+    extraction_confidence                             NUMERIC(5,4),
+    source_type                                         source_type NOT NULL DEFAULT 'SYNTHETIC',
+    -- Added in the Phase 1 foundation pass: without this, migrate_seed.py
+    -- re-running its plain INSERT (no natural key existed to ON CONFLICT
+    -- against) duplicated every formation top on a second run -- a real
+    -- idempotency bug against task requirement #7 ("running seed twice
+    -- should not create two copies"), not a hypothetical one. A given well
+    -- genuinely has at most one top of a given formation name at a given
+    -- MD, so this is a true uniqueness constraint, not an artificial one.
+    UNIQUE (well_id, formation_name, top_md_m)
 );
 
 CREATE INDEX idx_formation_tops_well ON formation_tops (well_id);
@@ -276,10 +320,15 @@ CREATE TABLE drilling_events (
     source_document_id                                        TEXT REFERENCES documents(document_id),
     source_page                                                 INT,
     extraction_confidence                                         NUMERIC(5,4),
+    -- EVT-xxxxxxxx (8 hex) rows from data/synthetic/drilling_events.json are
+    -- SYNTHETIC; EVT-REAL-0xx rows from real_data/real_events_depth_tagged_fresh.json
+    -- are REAL -- see data_store.py's load() and AUDIT/08's 39+5=44 count.
+    source_type                                                   source_type NOT NULL DEFAULT 'SYNTHETIC',
     created_at                                                      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_drilling_events_well ON drilling_events (well_id);
+CREATE INDEX idx_drilling_events_source_type ON drilling_events (source_type);
 CREATE INDEX idx_drilling_events_well_depth ON drilling_events (well_id, depth_start_md_m);
 CREATE INDEX idx_drilling_events_type ON drilling_events (event_type);
 -- GIN full-text index on raw_narrative — complements (does not replace) the
@@ -332,6 +381,41 @@ CREATE TABLE mud_properties (
 
 CREATE INDEX idx_mud_properties_well ON mud_properties (well_id);
 
+-- Added in the Phase 1 foundation pass: task requirement #2/#3 names
+-- CasingProgram as a canonical entity, but no table for it existed here --
+-- models/schemas.py (module 02) already has a real CasingRecord (hole
+-- section size, shoe depth, top-of-cement), populated from
+-- real_data/real_casing_records_all.json (2 real Volve wells) and served
+-- by GET /api/v2/casing — this table is that model's canonical home, named
+-- casing_programs (plural of the task's "CasingProgram") for naming
+-- consistency with drilling_events/formation_tops/trajectory_stations.
+CREATE TABLE casing_programs (
+    casing_id               BIGSERIAL PRIMARY KEY,
+    well_id                    TEXT NOT NULL REFERENCES wells(well_id) ON DELETE CASCADE,
+    -- models/schemas.py CasingRecord — verbatim field names
+    casing_size_inches            NUMERIC,
+    shoe_depth_md_m                  NUMERIC NOT NULL,
+    top_of_cement_md_m                 NUMERIC,
+    source_document_id                   TEXT REFERENCES documents(document_id),
+    source_page                            INT,
+    extraction_confidence                     NUMERIC(5,4),
+    -- REAL for real_data/real_casing_records_all.json rows (the only
+    -- source currently loaded — see data_store.py's REAL_CASING_DATA_PATH);
+    -- no synthetic casing data exists in the testbed today, so there is no
+    -- SYNTHETIC default case to seed, but the column still exists for a
+    -- future synthetic generator the same way other Tier 2 tables do.
+    source_type                                 source_type NOT NULL DEFAULT 'REAL',
+    created_at                                     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- Added after migrate_seed.py's real-casing load was found to double
+    -- rows on a second run (no natural key existed to ON CONFLICT against
+    -- -- the same class of idempotency bug formation_tops already had, see
+    -- its own UNIQUE comment above). A well has at most one casing string
+    -- recorded per shoe depth.
+    UNIQUE (well_id, shoe_depth_md_m)
+);
+
+CREATE INDEX idx_casing_programs_well ON casing_programs (well_id);
+
 -- TimescaleDB hypertable. models/schemas.py (module 02) TelemetryRecord —
 -- verbatim fields. `time` (parsed from TelemetryRecord.timestamp, an ISO8601
 -- string) is the hypertable partitioning column, so it's part of the PK
@@ -351,6 +435,13 @@ CREATE TABLE telemetry_records (
     pit_volume_bbl                                 NUMERIC DEFAULT 0.0,
     mud_weight_ppg                                   NUMERIC DEFAULT 9.0,
     d_exponent                                         NUMERIC DEFAULT 1.0,
+    -- SIMULATED for module 04's physics-engine-generated stream / the
+    -- synthetic testbed's telemetry_stream.json; REAL reserved for a future
+    -- genuine OIL India eRTMAC feed adapter (PS 26121's named data source --
+    -- not available to this project, see AUDIT/FINAL_AUDIT_SUMMARY.md "What
+    -- is still missing"). This column is the explicit distinction the task
+    -- brief requires so simulation is never labeled as live production data.
+    source_type                                        source_type NOT NULL DEFAULT 'SIMULATED',
     PRIMARY KEY (well_id, time)
 );
 
@@ -390,6 +481,7 @@ CREATE TABLE risk_corridors (
     recommended_action                               TEXT DEFAULT '',
     formation                                          TEXT,
     formation_id                                         INT REFERENCES formations(formation_id),
+    source_type                                            source_type NOT NULL DEFAULT 'DERIVED',
     created_at                                             TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -423,6 +515,7 @@ CREATE TABLE hazard_assessments (
     lead_time_meters                                            NUMERIC,
     recommended_action                                            TEXT DEFAULT '',
     evidence_events                                                 TEXT[] NOT NULL DEFAULT '{}',  -- event_ids
+    source_type                                                       source_type NOT NULL DEFAULT 'DERIVED',
     assessed_at                                                       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -470,6 +563,14 @@ CREATE TABLE model_registry (
     metrics                                    JSONB NOT NULL DEFAULT '{}'::jsonb,  -- precision/recall/f1/auc...
     feature_list                                 JSONB NOT NULL DEFAULT '[]'::jsonb,
     is_active                                      BOOLEAN NOT NULL DEFAULT TRUE,
+    -- REAL for real_data/real_trained_models/*_REAL.joblib (trained on real
+    -- Volve-derived events -- see real_data/train_hazard_models_real.py),
+    -- SYNTHETIC for modules/02_nwis_backend/data/models/*.joblib (trained on
+    -- the synthetic testbed -- see ml/train_hazard_models.py). AUDIT/06
+    -- documents both exist; this column is what makes "which one actually
+    -- served this prediction" a queryable fact instead of a code-reading
+    -- exercise.
+    source_type                                    source_type NOT NULL DEFAULT 'SYNTHETIC',
     trained_at                                       TIMESTAMPTZ,
     created_at                                         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -498,6 +599,64 @@ CREATE TABLE event_embeddings (
 -- operator ordering is directly comparable to that existing similarity score.
 CREATE INDEX idx_event_embeddings_hnsw
     ON event_embeddings USING hnsw (embedding vector_cosine_ops);
+
+-- =============================================================================
+-- GENERIC DOCUMENT EXTRACTIONS
+-- Task requirement #7 (DocumentExtraction entity): a generic field/entity/
+-- value/confidence row, distinct from the already-existing TYPED extraction
+-- tables above (formation_tops, drilling_events, npt_records,
+-- mud_properties, trajectory_stations each already carry their own
+-- source_document_id/source_page/extraction_confidence triad because they
+-- ARE the extracted, normalized rows for their respective entity types --
+-- module 01's real ExtractedField provenance triad, just flattened per
+-- table rather than duplicated generically). This table exists for
+-- extracted fields that do NOT yet have a typed home -- e.g. a raw
+-- key/value pulled from a document before (or instead of) being resolved
+-- into one of the typed tables, mirroring module 01's
+-- models/schemas.py ExtractedField shape directly (field_name/value/
+-- confidence/extraction_method/page). It is additive: nothing above was
+-- changed to route through this table instead of its own typed columns.
+-- =============================================================================
+
+CREATE TABLE document_extractions (
+    extraction_id        BIGSERIAL PRIMARY KEY,
+    document_id            TEXT NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+    field_name                TEXT NOT NULL,   -- e.g. "mud_weight_ppg", "well_name"
+    field_value                 TEXT,            -- raw extracted value, pre-typing (module 01's ExtractedField.value is also permissive)
+    confidence                   NUMERIC(5,4),
+    extraction_method               TEXT DEFAULT 'regex',  -- "regex" | "ocr" | "cloud_fallback" | "manual" -- see module 01's tier3_entity_extractor.py; never "nlp"/"llm", honestly (AUDIT/07 §1)
+    page_number                      INT,
+    section_reference                  TEXT,
+    validation_status                    TEXT DEFAULT 'PENDING'
+                                          CHECK (validation_status IN ('PENDING','PASS','FAILED_PHYSICS_VALIDATION','FLAGGED_LOW_CONFIDENCE')),
+    created_at                             TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_document_extractions_document ON document_extractions (document_id);
+CREATE INDEX idx_document_extractions_field ON document_extractions (field_name);
+
+-- =============================================================================
+-- AUDIT LOG
+-- Task requirement #12. Append-only, system-wide. Not wired into every
+-- write path in this pass (that would be a repository-wide behavioral
+-- change outside this pass's scope) -- the table and its index exist so
+-- the repository/service layer introduced in this pass (see
+-- modules/02_nwis_backend/db/) has a real place to write to, and the one
+-- migrated vertical slice (well lookup / nearby-well query) writes to it.
+-- =============================================================================
+
+CREATE TABLE audit_log (
+    audit_id        BIGSERIAL PRIMARY KEY,
+    actor              TEXT NOT NULL DEFAULT 'system',  -- "system" | an API key's identity | a username, once auth carries one
+    action                TEXT NOT NULL,                  -- e.g. "CREATE", "UPDATE", "SEED", "QUERY"
+    entity_type             TEXT NOT NULL,                  -- e.g. "well", "drilling_event"
+    entity_id                  TEXT,
+    metadata                     JSONB NOT NULL DEFAULT '{}'::jsonb,
+    occurred_at                   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_audit_log_entity ON audit_log (entity_type, entity_id);
+CREATE INDEX idx_audit_log_occurred_at ON audit_log (occurred_at DESC);
 
 -- =============================================================================
 -- End of schema.sql

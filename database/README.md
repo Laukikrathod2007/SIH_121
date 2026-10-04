@@ -39,7 +39,7 @@ purpose-built Postgres extension instead of being forced into plain columns:
 cd database
 docker compose up -d --build   # builds Postgres 16 + PostGIS + TimescaleDB + pgvector
 pip install -r requirements.txt
-python migrate_seed.py          # loads modules/02_nwis_backend's synthetic testbed
+python migrate_seed.py          # loads the synthetic testbed + real Volve data
 ```
 
 The database listens on **port 5433** (not 5432) — this machine already runs
@@ -47,11 +47,29 @@ an unrelated project's Postgres container on 5432.
 
 Connect: `psql "host=localhost port=5433 dbname=nwis user=nwis password=nwis_dev_password"`
 
-**Verified working end-to-end** (2026-09-28): all 12 wells / 1245 trajectory
-stations / 97 formation tops / 39 events / 3600 telemetry records loaded;
-all 39 events genuinely embedded; a PostGIS `ST_DWithin` radius query, a
-pgvector cosine-similarity search, and a TimescaleDB `time_bucket()`
-aggregation all ran and returned correct results against this real data.
+To actually use this database from module 02 instead of just populating it,
+set (in `modules/02_nwis_backend/.env` or the process environment):
+
+```
+NWIS_DATABASE_URL=postgresql://nwis:nwis_dev_password@localhost:5433/nwis
+```
+
+**Verified working end-to-end** (2026-10-04, Phase 1 foundation pass):
+`docker compose up -d --build` -> clean schema init with zero errors ->
+`python migrate_seed.py` run twice in a row produced byte-identical row
+counts (14 wells / 1691 trajectory stations / 105 formation tops / 50
+events / 6 casing records / 3600 telemetry records / 45 embeddings) —
+genuine idempotency, not assumed. `modules/02_nwis_backend`'s
+`pytest tests/` (14 tests: schema/seed-idempotency/well-CRUD/geo-filtering/
+provenance/API-contract) passed against this live container. `run_server.py`
+started with `NWIS_DATABASE_URL` set, and `GET /api/v2/wells/15%2F9-F-12`
+and `GET /api/v2/map/wells?center_well_id=15%2F9-F-12&radius_km=5` were
+curled live and returned the real Volve well with `source_type: "REAL"`
+and its one real offset well (`15/9-F-1`, 5m away) via an actual PostGIS
+`ST_DWithin` query — not inferred, actually executed. Separately, the
+original 2026-09-28 verification (12 synthetic wells / 1245 stations / 97
+tops / 39 events / 3600 telemetry, pgvector cosine search, TimescaleDB
+`time_bucket()`) also still holds.
 
 Note: this machine's shared Python environment has a `sentence-transformers`
 → TensorFlow → protobuf version conflict unrelated to this project (some
@@ -59,19 +77,25 @@ other installed package's TF pin). `migrate_seed.py` sets `USE_TF=0` before
 importing `sentence_transformers` to force the PyTorch backend and avoid it
 entirely — no TF is needed here.
 
-## Migration path — what this does NOT do
+## Migration path — Phase 1 status (2026-10-04)
 
 `modules/01_document_intelligence` and `modules/02_nwis_backend` are real,
 independently working FastAPI services, previously live-tested extensively,
 currently backed by SQLite (module 01's job store) and JSON files (module
 02's synthetic testbed) plus in-process computation. **This database layer
-does not replace that storage and neither module has been changed to use
-it.** Cutting either module over to this schema — rewriting their
-SQLAlchemy/ORM access layer, re-pointing `knowledge_search.py`'s embedding
-lookups at `event_embeddings`, re-pointing `dors_engine.py`'s spatial scoring
-at PostGIS — is real, separate follow-up work, not done here. This is a
-ready-to-deploy layer sitting alongside the existing services with a
-verified, populate-able schema, not a live cutover.
+still does not replace that storage wholesale, and module 01 has not been
+changed to use it at all.**
+
+Module 02 now has a genuine, opt-in, database-backed path for ONE
+representative vertical slice — active well lookup -> nearby wells ->
+well metadata — proving the architecture end to end rather than describing
+it. See `modules/02_nwis_backend/db/` and that module's own documentation
+for exactly what moved and what didn't. Everything else in module 02
+(DORS ranking, risk corridors, telemetry replay, semantic search,
+formations/casing/trajectory detail) is unchanged and still runs entirely
+off the in-memory `NWISDataStore`, same as before this pass. Setting
+`NWIS_DATABASE_URL`/`NWIS_DB_*` is required to activate the DB-backed path
+at all; leaving it unset reproduces the exact pre-migration behavior.
 
 ## Judgment calls made while building this schema
 
@@ -106,11 +130,20 @@ verified, populate-able schema, not a live cutover.
   single official image ships all three).
 - `docker-compose.yml` — brings the database up on port 5433.
 - `migrate_seed.py` — loads `modules/02_nwis_backend/data/synthetic/*.json`
-  into the schema, including generating real embeddings for
-  `event_embeddings` via the same `all-MiniLM-L6-v2` model
-  `knowledge_search.py` uses.
+  (synthetic Assam-Arakan testbed) AND `real_data/*.json` (the 2 real Volve
+  wells `15/9-F-12`/`15/9-F-1`, mirroring `data_store.py`'s own REAL_WELLS
+  filter exactly) into the schema, with correct `source_type` throughout,
+  including generating real embeddings for `event_embeddings` via the same
+  `all-MiniLM-L6-v2` model `knowledge_search.py` uses. Every insert is
+  idempotent — running it twice in a row produces byte-identical row counts
+  (verified; see "Setup" above).
 - `requirements.txt` — deps for `migrate_seed.py` only (psycopg,
   sentence-transformers).
+
+Module 02's own `db/` package (`modules/02_nwis_backend/db/connection.py`,
+`repositories.py`, `service.py`, `api_schemas.py`) and its `tests/` are
+documented in that module, not duplicated here — this README stays about
+the schema and seed data, not module 02's internal architecture.
 
 `_archived_prior_design/` holds an earlier, independent design exploration
 (`DATABASE_DESIGN.md`, `SETUP_GUIDE.md`, `VISUALIZATION_TECH_STACK.md`, and a
