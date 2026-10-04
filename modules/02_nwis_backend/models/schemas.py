@@ -41,6 +41,29 @@ class HazardType(str, Enum):
     # other five hazards above, and this module had no equivalent despite
     # already carrying pore_pressure_gradient_ppg on FormationTop.
     OVERPRESSURE_ZONE = "OVERPRESSURE_ZONE"
+    # Added for Priority 5 of the SIH-26121 remediation pass (2026-10-04):
+    # the PS's relevant-data list (item ix) names "fishing operations"
+    # explicitly as a historical-event-record category, alongside mud
+    # losses/kicks/stuck pipe/NPT events — DrillingEvent.event_type
+    # (below) is typed as HazardType, so this module had literally nowhere
+    # to store one even though module 01's EventType already supports
+    # extracting it (see models/schemas.py there, tier3_entity_extractor.py's
+    # keyword list — both honestly disclosed as real but untested against
+    # real data, since the current 14-document Volve pull has zero fishing
+    # narratives). Deliberately NOT added to orchestrator.py's ALL_HAZARDS:
+    # a fishing operation is a remedial action taken AFTER a hole-in-the-hole
+    # incident (e.g. following a stuck pipe), not a geological hazard a
+    # future offset well "has a risk of encountering" the way KICK or
+    # WELLBORE_INSTABILITY are — treating it as a hazard-prediction target
+    # would misrepresent what the feature does. It exists here purely so
+    # a fishing-operation event CAN be stored, searched, and filtered as a
+    # historical record, exactly what PS item (ix) asks for. The ml/
+    # training and hazard_predictor loops that iterate bare HazardType will
+    # see this member, find zero historical examples (honestly true, not
+    # hidden), and fall through to the existing under-threshold-skip path
+    # every other sparse hazard already takes — no new code change needed
+    # there for that to be safe.
+    FISHING_OPERATION = "FISHING_OPERATION"
 
 
 class RiskLevel(str, Enum):

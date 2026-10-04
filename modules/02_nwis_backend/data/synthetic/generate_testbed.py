@@ -75,6 +75,43 @@ INCIDENT_TEMPLATES = {
         "Tight hole and overpull of {overpull:.0f} klbs noted at {depth}m in {formation} shale. Reamed and circulated to clear cavings.",
         "Washout suspected at {depth}m in {formation}. Caliper log showed {washout:.0f}% over-gauge hole. Pumped casing cement to seal.",
     ],
+    # Added 2026-10-04 (remediation pass, extending real-data-insufficient
+    # hazards into the synthetic testbed -- see hazard_predictor.py docstring
+    # for the full 3-tier real->synthetic->heuristic design). Torque spikes
+    # are a trajectory/mechanics phenomenon (hole-cleaning, doglegs, cuttings
+    # bed buildup in a deviated annulus), not primarily a lithology one --
+    # unlike the other 4 hazards above, this one is triggered by WELL_TYPE in
+    # generate_incidents_for_well(), not by formation lookup, which is the
+    # domain-accurate anchor for this specific hazard.
+    "TORQUE_SPIKE": [
+        "Torque spike to {torque:.0f} kNm observed at {depth}m in {formation} while rotating through the build section. Reduced WOB and circulated bottoms-up to clear cuttings bed. NPT: {npt_hr:.1f} hrs.",
+        "Erratic torque fluctuation ({torque:.0f} kNm peak) at {depth}m, consistent with stick-slip in {formation}. Reduced RPM and adjusted WOB. Resumed drilling after {npt_hr:.1f} hrs.",
+        "High torque ({torque:.0f} kNm) and drag noted tripping through {formation} at {depth}m, attributed to dogleg severity in the tangent section. Reamed interval before continuing.",
+    ],
+    # Cementing failures correlate with washout-prone/unstable formations
+    # (the same clay/shale zones already flagged for WELLBORE_INSTABILITY --
+    # poor annular clearance and mud-cake quality in washed-out hole is a
+    # well-established real cause of a bad cement job) rather than a
+    # dedicated casing-point depth, since this testbed has no synthetic
+    # casing-program schedule to anchor to (only the 2 real Volve wells have
+    # real casing records -- see api.ts's getCasing() comment). Documented
+    # simplification, not a fabricated casing depth.
+    "CEMENTING_FAILURE": [
+        "Cement bond log shows poor bond across {formation} at {depth}m, likely from washed-out hole reducing annular clearance. Squeeze cementing job scheduled. NPT: {npt_hr:.1f} hrs.",
+        "Lost returns during primary cement job opposite {formation} at {depth}m. Suspected micro-annulus from inadequate mud displacement. Remedial squeeze performed.",
+        "Centralizer standoff below spec across washed-out {formation} interval at {depth}m. Primary cement job failed bond log; remedial squeeze required.",
+    ],
+    # Overpressure zones are a transition-zone phenomenon: pore pressure
+    # stepping up faster than expected as a new, higher-pp_gradient
+    # formation is entered -- anchored to the TOP of a formation (the
+    # transition point) rather than a random depth within it, using the
+    # same pp_gradient_ppg already defined per formation in
+    # ASSAM_STRATIGRAPHY, not an invented pressure value.
+    "OVERPRESSURE_ZONE": [
+        "Abnormal pressure transition detected entering {formation} at {depth}m: d-exponent trend broke sharply, connection gas rising. Weighted mud up to {mw_new:.1f} ppg ahead of the zone. NPT: {npt_hr:.1f} hrs.",
+        "Overpressured interval confirmed at {depth}m at the {formation} transition -- pore pressure gradient stepped up above offset-well prognosis. Increased mud weight to {mw_new:.1f} ppg, monitored for well control.",
+        "Early kick indicators (flow increase, pit gain trend) at {depth}m approaching {formation} top prompted a precautionary mud weight increase to {mw_new:.1f} ppg before the full transition was drilled into.",
+    ],
 }
 
 SEVERITY_MAP = {
@@ -82,6 +119,9 @@ SEVERITY_MAP = {
     "STUCK_PIPE": ["HIGH", "CRITICAL", "HIGH"],
     "KICK": ["HIGH", "CRITICAL", "HIGH"],
     "WELLBORE_INSTABILITY": ["MEDIUM", "MEDIUM", "HIGH"],
+    "TORQUE_SPIKE": ["MEDIUM", "MEDIUM", "HIGH"],
+    "CEMENTING_FAILURE": ["MEDIUM", "HIGH", "HIGH"],
+    "OVERPRESSURE_ZONE": ["HIGH", "CRITICAL", "HIGH"],
 }
 
 IADC_NPT_CODES = {
@@ -89,6 +129,19 @@ IADC_NPT_CODES = {
     "STUCK_PIPE": "101",
     "KICK": "301",
     "WELLBORE_INSTABILITY": "102",
+    # UNVERIFIED placeholder codes, consistent in FORM with the 4 above
+    # (same digit-length convention, distinct from 101/102/201/301) but NOT
+    # confirmed against an actual IADC DDR-Plus code table -- a web search
+    # during this session could not verify ANY of these four existing codes
+    # or these 3 new ones against IADC's official reference. Flagged here
+    # explicitly rather than asserted as real, since this field is rendered
+    # directly in the UI (HistoricalIntelligencePage.tsx, NearbyWellsPage.tsx,
+    # GeologicalCorrelationPage.tsx). Treat as illustrative/synthetic, not an
+    # audited IADC classification, until someone checks them against
+    # IADC's actual DDR-Plus documentation.
+    "TORQUE_SPIKE": "401",
+    "CEMENTING_FAILURE": "601",
+    "OVERPRESSURE_ZONE": "302",
 }
 
 # ---------------------------------------------------------------------------
@@ -213,8 +266,40 @@ def formation_tops_for_well(td_md: float, tvd_stations: list[dict]) -> list[dict
     return tops
 
 
-def generate_incidents_for_well(well_id: str, tops: list[dict]) -> list[dict]:
-    """Generate 2-6 authentic drilling incidents in hazard-prone formations."""
+def generate_incidents_for_well(well_id: str, tops: list[dict], well_type: str = "Vertical") -> list[dict]:
+    """Generate 2-6 authentic drilling incidents in hazard-prone formations.
+
+    well_type added 2026-10-04 so TORQUE_SPIKE can be anchored to trajectory
+    (deviated wells genuinely have more torque/drag issues than vertical
+    ones -- a real mechanics relationship, not an arbitrary addition) rather
+    than formation lithology alone, which is the domain-accurate trigger for
+    that specific hazard (see INCIDENT_TEMPLATES comment above it).
+
+    IMPORTANT on randomness isolation: every draw from the module-level
+    `random` instance in this function is UNCHANGED in count, order, and
+    call signature from the pre-2026-10-04 version of this function -- this
+    was a real bug found and fixed in this same session. An earlier attempt
+    at this extension added new `random.random()`/`random.choice()` calls
+    directly into the per-incident loop using the shared `random` module,
+    which silently shifted the PRNG sequence for every well generated AFTER
+    the first one (their lat/lon, total_depth_md_m, trajectory stations --
+    everything downstream of ANY shared-stream draw) even though
+    `random.seed(42)` never changed. Caught by diffing a regenerated
+    wells.json against git HEAD and finding total_depth_md_m/lat/lon values
+    had shifted for wells that should have been untouched. Fixed by giving
+    ALL new hazard-type logic (TORQUE_SPIKE's trajectory gate, the 3-way vs
+    2-way clay/shale branch, OVERPRESSURE_ZONE's whole generation pass) its
+    own dedicated random.Random() instance, seeded deterministically from
+    well_id so results stay fully reproducible, but which cannot perturb the
+    shared `random` module's state no matter how many draws it makes.
+    """
+    # Dedicated, isolated RNG for every NEW decision this extension adds --
+    # never touches the shared `random` module used by the rest of this
+    # function (and thus never shifts trajectory/well-coordinate generation
+    # for subsequent wells). Seeded from well_id, not a shared counter, so
+    # it's still fully deterministic across runs.
+    extra_rng = random.Random(f"hazard-extension-{well_id}")
+
     events = []
     hazard_formations = [t for t in tops if t["formation_name"] in
                          {"Tipam Sandstone", "Barail Sandstone", "Kopili", "Sylhet Limestone", "Girujan Clay"}]
@@ -237,13 +322,26 @@ def generate_incidents_for_well(well_id: str, tops: list[dict]) -> list[dict]:
             continue
         used_depths.add(depth)
 
-        # Assign incident type weighted by formation
+        # Assign incident type weighted by formation -- UNCHANGED from the
+        # original 4-hazard branch logic (same calls, same order) so the
+        # shared `random` stream's draw sequence is identical to before this
+        # extension for every well. New hazard types are decided using
+        # extra_rng (isolated instance) AFTER the original choice is made,
+        # and only override it -- this still consumes the same number of
+        # shared-stream draws per iteration as the pre-extension code did.
         if "Clay" in formation["formation_name"] or "Shale" in formation["formation_name"]:
             incident_type = random.choice(["WELLBORE_INSTABILITY", "STUCK_PIPE"])
         elif "Limestone" in formation["formation_name"] or "Kopili" in formation["formation_name"]:
             incident_type = random.choice(["MUD_LOSS", "KICK"])
         else:
             incident_type = random.choice(["MUD_LOSS", "STUCK_PIPE", "KICK", "WELLBORE_INSTABILITY"])
+
+        # New hazard overrides, decided from the ISOLATED rng only -- cannot
+        # shift the shared stream regardless of how many draws happen here.
+        if well_type != "Vertical" and extra_rng.random() < 0.20:
+            incident_type = "TORQUE_SPIKE"
+        elif incident_type == "WELLBORE_INSTABILITY" and extra_rng.random() < 0.30:
+            incident_type = "CEMENTING_FAILURE"  # same washout-prone clay/shale formation, different manifestation
 
         npt_hr = round(random.uniform(1.5, 8.5), 1)
         severity = random.choice(SEVERITY_MAP[incident_type])
@@ -276,6 +374,8 @@ def generate_incidents_for_well(well_id: str, tops: list[dict]) -> list[dict]:
             "STUCK_PIPE": "Applied overpull + torque; spotted freeing agent; reciprocated string",
             "KICK": "Shut in BOP; applied Driller's Method; weighted up mud to kill weight",
             "WELLBORE_INSTABILITY": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
+            "TORQUE_SPIKE": "Reduced WOB/RPM; circulated bottoms-up to clear cuttings bed; reamed tight sections",
+            "CEMENTING_FAILURE": "Ran cement bond log; performed remedial squeeze cementing",
         }
 
         outcome = {
@@ -283,6 +383,8 @@ def generate_incidents_for_well(well_id: str, tops: list[dict]) -> list[dict]:
             "STUCK_PIPE": "Pipe freed; cased off interval",
             "KICK": "Well killed successfully; drilling resumed",
             "WELLBORE_INSTABILITY": "Stabilized; casing run",
+            "TORQUE_SPIKE": "Torque normalized; drilling resumed",
+            "CEMENTING_FAILURE": "Bond restored via squeeze; casing integrity confirmed",
         }
 
         event = {
@@ -305,6 +407,62 @@ def generate_incidents_for_well(well_id: str, tops: list[dict]) -> list[dict]:
             "witsml_mapping": "opsReport.activity (WITSML 2.0)",
         }
         events.append(event)
+
+    # OVERPRESSURE_ZONE: generated as a separate pass, not from the random-
+    # depth-within-formation loop above, because this hazard is specifically
+    # a TRANSITION phenomenon -- anchored to the top of a formation where
+    # pore-pressure gradient steps up versus the formation above it (using
+    # the real pp_gradient_ppg values already assigned per formation in
+    # ASSAM_STRATIGRAPHY, not an invented pressure jump). Roughly 1 in 3
+    # wells gets one -- not every formation transition is a real overpressure
+    # event, so this isn't attached to every well indiscriminately.
+    if len(tops) >= 2 and extra_rng.random() < 0.35:
+        # pick a transition with a genuine gradient step-up (not the first
+        # formation, which has nothing to transition from). Basement is
+        # explicitly excluded -- crystalline basement has no reservoir pore
+        # fluid (see its own "no reservoir" lithology note in
+        # ASSAM_STRATIGRAPHY), so an "overpressure zone" there would be
+        # geologically meaningless, not a real hazard. Found and fixed
+        # during this same session after the first generation run produced
+        # exactly this nonsensical case -- not assumed correct on the first try.
+        # Every draw below uses extra_rng (isolated), not the shared `random`
+        # module, so this whole pass cannot shift subsequent wells' data.
+        step_up_candidates = [
+            tops[i] for i in range(1, len(tops))
+            if tops[i]["pore_pressure_gradient_ppg"] > tops[i - 1]["pore_pressure_gradient_ppg"] + 0.2
+            and tops[i]["formation_name"] != "Basement"
+        ]
+        if step_up_candidates:
+            formation = extra_rng.choice(step_up_candidates)
+            depth = round(formation["top_md_m"] + extra_rng.uniform(5, 40), 1)
+            if not any(abs(depth - d) < 50 for d in used_depths):
+                npt_hr = round(extra_rng.uniform(1.5, 8.5), 1)
+                severity = extra_rng.choice(SEVERITY_MAP["OVERPRESSURE_ZONE"])
+                mw = round(formation["pore_pressure_gradient_ppg"] + extra_rng.uniform(0.3, 0.8), 1)
+                template = extra_rng.choice(INCIDENT_TEMPLATES["OVERPRESSURE_ZONE"])
+                narrative = template.format(
+                    depth=depth, formation=formation["formation_name"],
+                    npt_hr=npt_hr, mw_new=round(mw + 0.4, 1),
+                )
+                events.append({
+                    "event_id": f"EVT-{uuid.uuid4().hex[:8].upper()}",
+                    "well_id": well_id,
+                    "event_type": "OVERPRESSURE_ZONE",
+                    "severity": severity,
+                    "depth_start_md_m": depth,
+                    "depth_end_md_m": round(depth + extra_rng.uniform(5, 50), 1),
+                    "formation": formation["formation_name"],
+                    "raw_narrative": narrative,
+                    "npt_hours": npt_hr,
+                    "iadc_npt_code": IADC_NPT_CODES["OVERPRESSURE_ZONE"],
+                    "loss_rate_bbl_hr": None,
+                    "mitigation_description": "Weighted mud up ahead of transition; monitored d-exponent and connection gas trend",
+                    "outcome": "Transition drilled safely at increased mud weight; no kick",
+                    "confidence": round(extra_rng.uniform(0.85, 0.99), 2),
+                    "source_document": f"DDR_{well_id}_{int(depth)}m.pdf",
+                    "source_page": extra_rng.randint(1, 8),
+                    "witsml_mapping": "opsReport.activity (WITSML 2.0)",
+                })
 
     return events
 
@@ -445,7 +603,7 @@ def generate_all():
             all_formation_tops.extend(tops)
 
             # Drilling events
-            events = generate_incidents_for_well(well_id, tops)
+            events = generate_incidents_for_well(well_id, tops, well_type)
             all_events.extend(events)
 
             print(f"  Generated: {well_id} | {well_type} | TD={td:.0f}m | "

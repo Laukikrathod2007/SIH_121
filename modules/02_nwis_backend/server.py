@@ -556,19 +556,31 @@ async def stratigraphic_depth_track(
 async def rank_offsets(
     well_id: str,
     depth: float = Query(..., ge=0, description="Current bit depth (m MD)"),
-    radius_km: float = Query(25.0, description="Search radius (km)"),
+    radius_km: float = Query(25.0, description="DORS spatial SCORING DECAY divisor, NOT a hard exclusion radius — a well beyond this distance scores lower on the spatial factor but is still ranked and returned. Use max_distance_km for a real hard filter."),
     top_n: int = Query(10, description="Number of top offset wells to return"),
+    max_distance_km: float = Query(None, description="Optional HARD exclusion filter (Haversine km from the active well's surface location). Unlike radius_km, a well strictly beyond this distance is removed from the result entirely. Omit for the original unfiltered-ranking behavior (default, unchanged)."),
 ):
     """
     Run the DORS 5-factor offset well ranking engine.
     Implements PS 26121 requirement ii: nearby well relevance scoring.
+
+    IMPORTANT — radius_km is a scoring decay, not a filter (Priority 2 audit
+    finding, documented not silently changed): score_spatial() computes
+    max(0, 1 - distance/radius_km), so every well in the catalog is still
+    scored and can still appear in `rankings` regardless of radius_km's
+    value — only its spatial sub-score changes. This preserves the original
+    DORS ranking formula and every existing caller's behavior (Command
+    Center, Geological Correlation, Dashboard all rely on getting a full
+    ranked list back, not a filtered one). Pass max_distance_km if you
+    specifically need wells beyond a distance excluded from the response —
+    this is new, additive, and opt-in; omitting it changes nothing.
     """
     _require_store()
     active_well = store.wells_by_id.get(well_id)
     if not active_well:
         raise HTTPException(404, f"Well '{well_id}' not found")
 
-    from engines.dors_engine import rank_offset_wells
+    from engines.dors_engine import rank_offset_wells, haversine_km
     from engines.stratigraphic_correlator import formation_at_depth
 
     active_tops = store.formation_tops_by_well.get(well_id, [])
@@ -586,11 +598,18 @@ async def rank_offsets(
         top_n=top_n,
     )
 
+    hard_filter_applied = max_distance_km is not None
+    if hard_filter_applied:
+        rankings = [r for r in rankings if r.distance_km is not None and r.distance_km <= max_distance_km]
+
     return {
         "active_well_id": well_id,
         "depth_m": depth,
         "formation_at_bit": active_fm.formation_name if active_fm else None,
         "radius_km": radius_km,
+        "radius_km_is_scoring_decay_not_a_filter": True,
+        "max_distance_km": max_distance_km,
+        "hard_filter_applied": hard_filter_applied,
         "total_ranked": len(rankings),
         "rankings": [r.model_dump() for r in rankings],
         "dors_formula": "DORS = 0.20·S_spatial + 0.30·S_formation + 0.20·S_depth + 0.15·S_trajectory + 0.15·S_hazard",
@@ -764,14 +783,39 @@ async def get_ahead_of_bit_corridor(
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/map/wells", tags=["GIS Map"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_map_wells():
+async def get_map_wells(
+    center_well_id: str = Query(None, description="Well ID to measure distance from. Omit to return all wells unfiltered (default, unchanged behavior)."),
+    radius_km: float = Query(None, description="Hard exclusion radius in km from center_well_id. Requires center_well_id. A well strictly outside this radius is NOT returned — this is a real spatial filter, unlike offset_rank's radius_km (see that endpoint's docstring)."),
+):
     """
-    Get all wells with surface coordinates for the interactive GIS map.
+    Get wells with surface coordinates for the interactive GIS map.
     Implements PS 26121 requirement ii: map-based well visualization.
+
+    Radius semantics (Priority 2 fix, 2026-10-04): by default (no params)
+    returns every well, exactly as before this fix — no existing caller's
+    behavior changes. When BOTH center_well_id and radius_km are given, this
+    endpoint now applies a genuine Haversine hard filter and excludes wells
+    outside the radius. This is a real filter, deliberately distinct from
+    offset_rank's radius_km, which is a scoring decay divisor, not an
+    exclusion boundary — see that endpoint's docstring for why the two are
+    not the same contract.
     """
     _require_store()
+    from engines.dors_engine import haversine_km
+
+    center_well = None
+    if center_well_id is not None:
+        center_well = store.wells_by_id.get(center_well_id)
+        if not center_well:
+            raise HTTPException(404, f"Well '{center_well_id}' not found")
+
     map_data = []
     for w in store.all_wells:
+        distance_km = None
+        if center_well is not None:
+            distance_km = round(haversine_km(center_well.surface_lat, center_well.surface_lon, w.surface_lat, w.surface_lon), 3)
+            if radius_km is not None and w.well_id != center_well.well_id and distance_km > radius_km:
+                continue
         events = store.events_by_well.get(w.well_id, [])
         map_data.append({
             "well_id": w.well_id,
@@ -784,10 +828,12 @@ async def get_map_wells():
             "total_depth_md_m": w.total_depth_md_m,
             "total_events": len(events),
             "is_active": w.well_id == store.active_well_id,
+            "distance_km": distance_km,
         })
     return {
         "total": len(map_data),
         "active_well_id": store.active_well_id,
+        "radius_filter_applied": center_well_id is not None and radius_km is not None,
         "wells": map_data,
     }
 

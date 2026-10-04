@@ -13,7 +13,7 @@
     "spud_date": "2019-09-03",
     "completion_date": "2020-01-01",
     "status": "PRODUCING",
-    "witsml_uid": "e0ef391e-11bb-46fd-abea-1581065f9d01"
+    "witsml_uid": "236a324a-19c4-407a-b953-ebbf5b672fa1"
   },
   {
     "well_id": "WELL-NHK-002",
@@ -29,7 +29,7 @@
     "spud_date": "2016-09-05",
     "completion_date": "2017-05-20",
     "status": "COMPLETED",
-    "witsml_uid": "588e4b4b-3fd9-4c8d-a42e-0c6f321982ec"
+    "witsml_uid": "1738d21f-59db-4cf6-9b79-f1c858c8112f"
   },
   {
     "well_id": "WELL-NHK-003",
@@ -45,7 +45,7 @@
     "spud_date": "2024-08-08",
     "completion_date": "2025-10-20",
     "status": "SUSPENDED",
-    "witsml_uid": "b1f5e229-6b23-42a3-8ad2-f9d2e830ae91"
+    "witsml_uid": "6e4eee47-483c-4e32-9771-cdd6258accd8"
   },
   {
     "well_id": "WELL-MRN-004",
@@ -61,7 +61,7 @@
     "spud_date": "2022-12-10",
     "completion_date": "2022-11-13",
     "status": "ABANDONED",
-    "witsml_uid": "7736d5a1-056e-4ba6-b559-61c82e0d3502"
+    "witsml_uid": "2d2a1812-7843-496a-9a68-5621b31b82e7"
   },
   {
     "well_id": "WELL-MRN-005",
@@ -77,7 +77,7 @@
     "spud_date": "2024-07-01",
     "completion_date": "2025-03-26",
     "status": "SUSPENDED",
-    "witsml_uid": "e7f37827-5303-40da-a564-e286277ef14c"
+    "witsml_uid": "9285bb9c-b4b0-4058-bbce-a60e78bf2072"
   },
   {
     "well_id": "WELL-MRN-006",
@@ -93,7 +93,7 @@
     "spud_date": "2022-07-03",
     "completion_date": "2023-10-27",
     "status": "COMPLETED",
-    "witsml_uid": "ddf9fdbd-9222-437f-82da-ad1db30fb1b4"
+    "witsml_uid": "22aa8270-66a8-4706-9884-25c67dec0ab3"
   },
   {
     "well_id": "WELL-BGJ-007",
@@ -109,7 +109,7 @@
     "spud_date": "2022-03-14",
     "completion_date": "2023-08-21",
     "status": "COMPLETED",
-    "witsml_uid": "3e5baa4d-e887-4e84-b4e8-72a5047ad926"
+    "witsml_uid": "2f509471-73a0-426f-b976-11efae519622"
   },
   {
     "well_id": "WELL-BGJ-008",
@@ -125,7 +125,7 @@
     "spud_date": "2019-07-15",
     "completion_date": "2019-12-08",
     "status": "ABANDONED",
-    "witsml_uid": "e0ebe33e-9163-4b49-9c69-62b01eab3b75"
+    "witsml_uid": "1d3b8ef1-216f-4a67-9d5e-590e23cc26ed"
   },
   {
     "well_id": "WELL-BGJ-009",
@@ -141,7 +141,7 @@
     "spud_date": "2020-04-07",
     "completion_date": "2021-12-20",
     "status": "SUSPENDED",
-    "witsml_uid": "ba8e3eba-cd7a-46cf-a88d-c8ea1d612b08"
+    "witsml_uid": "66b80536-5e2e-4212-b6f0-1964823ca5fb"
   },
   {
     "well_id": "WELL-HGJ-010",
@@ -157,7 +157,7 @@
     "spud_date": "2024-01-08",
     "completion_date": "2024-08-12",
     "status": "SUSPENDED",
-    "witsml_uid": "dbc674eb-32a8-423c-8a34-4c8beb573ef3"
+    "witsml_uid": "4aa648b2-289b-4d8c-8d8e-e13d104fc464"
   },
   {
     "well_id": "WELL-HGJ-011",
@@ -173,7 +173,7 @@
     "spud_date": "2020-12-18",
     "completion_date": "2021-11-10",
     "status": "ABANDONED",
-    "witsml_uid": "78a43f43-f6c1-47d5-afdd-801388ebbcbe"
+    "witsml_uid": "e5fadee6-8d69-4bf8-adad-6bfd62f14524"
   },
   {
     "well_id": "WELL-HGJ-012",
@@ -189,6 +189,6 @@
     "spud_date": "2016-07-04",
     "completion_date": "2017-08-23",
     "status": "COMPLETED",
-    "witsml_uid": "9862945f-0386-49be-80c6-4482acbbba9f"
+    "witsml_uid": "2f2511c5-ad35-45ca-963c-24d50f14fa11"
   }
 ]

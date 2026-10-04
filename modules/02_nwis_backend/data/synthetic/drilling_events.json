@@ -1,25 +1,25 @@
 [
   {
-    "event_id": "EVT-3F39EACF",
+    "event_id": "EVT-C6C3D354",
     "well_id": "WELL-NHK-001",
-    "event_type": "WELLBORE_INSTABILITY",
+    "event_type": "CEMENTING_FAILURE",
     "severity": "MEDIUM",
     "depth_start_md_m": 1221.5,
     "depth_end_md_m": 1237.2,
     "formation": "Girujan Clay",
-    "raw_narrative": "Washout suspected at 1221.5m in Girujan Clay. Caliper log showed 33% over-gauge hole. Pumped casing cement to seal.",
+    "raw_narrative": "Centralizer standoff below spec across washed-out Girujan Clay interval at 1221.5m. Primary cement job failed bond log; remedial squeeze required.",
     "npt_hours": 6.2,
-    "iadc_npt_code": "102",
+    "iadc_npt_code": "601",
     "loss_rate_bbl_hr": null,
-    "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
-    "outcome": "Stabilized; casing run",
+    "mitigation_description": "Ran cement bond log; performed remedial squeeze cementing",
+    "outcome": "Bond restored via squeeze; casing integrity confirmed",
     "confidence": 0.91,
     "source_document": "DDR_WELL-NHK-001_1221m.pdf",
     "source_page": 5,
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-4FD3A896",
+    "event_id": "EVT-86B706DF",
     "well_id": "WELL-NHK-001",
     "event_type": "MUD_LOSS",
     "severity": "CRITICAL",
@@ -38,7 +38,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-87C9E9B9",
+    "event_id": "EVT-C7F3E0C7",
     "well_id": "WELL-NHK-002",
     "event_type": "WELLBORE_INSTABILITY",
     "severity": "MEDIUM",
@@ -57,7 +57,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-926FC89D",
+    "event_id": "EVT-6A284653",
     "well_id": "WELL-NHK-002",
     "event_type": "KICK",
     "severity": "HIGH",
@@ -76,7 +76,26 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-B4236127",
+    "event_id": "EVT-0CFB0A21",
+    "well_id": "WELL-NHK-002",
+    "event_type": "OVERPRESSURE_ZONE",
+    "severity": "CRITICAL",
+    "depth_start_md_m": 3020.3,
+    "depth_end_md_m": 3053.7,
+    "formation": "Langpar",
+    "raw_narrative": "Overpressured interval confirmed at 3020.3m at the Langpar transition -- pore pressure gradient stepped up above offset-well prognosis. Increased mud weight to 12.2 ppg, monitored for well control.",
+    "npt_hours": 5.7,
+    "iadc_npt_code": "302",
+    "loss_rate_bbl_hr": null,
+    "mitigation_description": "Weighted mud up ahead of transition; monitored d-exponent and connection gas trend",
+    "outcome": "Transition drilled safely at increased mud weight; no kick",
+    "confidence": 0.86,
+    "source_document": "DDR_WELL-NHK-002_3020m.pdf",
+    "source_page": 5,
+    "witsml_mapping": "opsReport.activity (WITSML 2.0)"
+  },
+  {
+    "event_id": "EVT-328B63C5",
     "well_id": "WELL-NHK-003",
     "event_type": "KICK",
     "severity": "HIGH",
@@ -95,7 +114,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-A092A410",
+    "event_id": "EVT-6B8FB217",
     "well_id": "WELL-NHK-003",
     "event_type": "KICK",
     "severity": "CRITICAL",
@@ -114,7 +133,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-3EF575F2",
+    "event_id": "EVT-900CBE75",
     "well_id": "WELL-MRN-004",
     "event_type": "WELLBORE_INSTABILITY",
     "severity": "MEDIUM",
@@ -133,7 +152,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-45042485",
+    "event_id": "EVT-8679B897",
     "well_id": "WELL-MRN-004",
     "event_type": "STUCK_PIPE",
     "severity": "CRITICAL",
@@ -152,7 +171,26 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-12697F53",
+    "event_id": "EVT-DFD869A8",
+    "well_id": "WELL-MRN-004",
+    "event_type": "OVERPRESSURE_ZONE",
+    "severity": "HIGH",
+    "depth_start_md_m": 236.2,
+    "depth_end_md_m": 252.3,
+    "formation": "Dihing",
+    "raw_narrative": "Abnormal pressure transition detected entering Dihing at 236.2m: d-exponent trend broke sharply, connection gas rising. Weighted mud up to 9.5 ppg ahead of the zone. NPT: 4.9 hrs.",
+    "npt_hours": 4.9,
+    "iadc_npt_code": "302",
+    "loss_rate_bbl_hr": null,
+    "mitigation_description": "Weighted mud up ahead of transition; monitored d-exponent and connection gas trend",
+    "outcome": "Transition drilled safely at increased mud weight; no kick",
+    "confidence": 0.92,
+    "source_document": "DDR_WELL-MRN-004_236m.pdf",
+    "source_page": 4,
+    "witsml_mapping": "opsReport.activity (WITSML 2.0)"
+  },
+  {
+    "event_id": "EVT-4DF5B48D",
     "well_id": "WELL-MRN-005",
     "event_type": "WELLBORE_INSTABILITY",
     "severity": "HIGH",
@@ -171,7 +209,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-2256E581",
+    "event_id": "EVT-A5636D80",
     "well_id": "WELL-MRN-005",
     "event_type": "WELLBORE_INSTABILITY",
     "severity": "MEDIUM",
@@ -190,7 +228,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-9BFCF927",
+    "event_id": "EVT-720726C9",
     "well_id": "WELL-MRN-005",
     "event_type": "KICK",
     "severity": "CRITICAL",
@@ -209,7 +247,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-0F153310",
+    "event_id": "EVT-935C98BD",
     "well_id": "WELL-MRN-005",
     "event_type": "WELLBORE_INSTABILITY",
     "severity": "HIGH",
@@ -228,7 +266,26 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-60A3E4FF",
+    "event_id": "EVT-12E3ECA6",
+    "well_id": "WELL-MRN-005",
+    "event_type": "OVERPRESSURE_ZONE",
+    "severity": "CRITICAL",
+    "depth_start_md_m": 3503.7,
+    "depth_end_md_m": 3526.5,
+    "formation": "Langpar",
+    "raw_narrative": "Abnormal pressure transition detected entering Langpar at 3503.7m: d-exponent trend broke sharply, connection gas rising. Weighted mud up to 12.1 ppg ahead of the zone. NPT: 1.8 hrs.",
+    "npt_hours": 1.8,
+    "iadc_npt_code": "302",
+    "loss_rate_bbl_hr": null,
+    "mitigation_description": "Weighted mud up ahead of transition; monitored d-exponent and connection gas trend",
+    "outcome": "Transition drilled safely at increased mud weight; no kick",
+    "confidence": 0.94,
+    "source_document": "DDR_WELL-MRN-005_3503m.pdf",
+    "source_page": 2,
+    "witsml_mapping": "opsReport.activity (WITSML 2.0)"
+  },
+  {
+    "event_id": "EVT-A2F7F078",
     "well_id": "WELL-MRN-006",
     "event_type": "KICK",
     "severity": "HIGH",
@@ -247,7 +304,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-0A60E138",
+    "event_id": "EVT-2D878EEC",
     "well_id": "WELL-MRN-006",
     "event_type": "STUCK_PIPE",
     "severity": "HIGH",
@@ -266,7 +323,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-3883E9E3",
+    "event_id": "EVT-66AE242D",
     "well_id": "WELL-MRN-006",
     "event_type": "STUCK_PIPE",
     "severity": "CRITICAL",
@@ -285,7 +342,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-DE31D627",
+    "event_id": "EVT-25A28DFA",
     "well_id": "WELL-MRN-006",
     "event_type": "STUCK_PIPE",
     "severity": "HIGH",
@@ -304,7 +361,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-8E95EBDE",
+    "event_id": "EVT-8A398309",
     "well_id": "WELL-MRN-006",
     "event_type": "MUD_LOSS",
     "severity": "HIGH",
@@ -323,26 +380,26 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-7C5FFF40",
+    "event_id": "EVT-6EA65513",
     "well_id": "WELL-BGJ-007",
-    "event_type": "WELLBORE_INSTABILITY",
-    "severity": "MEDIUM",
+    "event_type": "CEMENTING_FAILURE",
+    "severity": "HIGH",
     "depth_start_md_m": 1345.2,
     "depth_end_md_m": 1391.3,
     "formation": "Girujan Clay",
-    "raw_narrative": "Washout suspected at 1345.2m in Girujan Clay. Caliper log showed 36% over-gauge hole. Pumped casing cement to seal.",
+    "raw_narrative": "Centralizer standoff below spec across washed-out Girujan Clay interval at 1345.2m. Primary cement job failed bond log; remedial squeeze required.",
     "npt_hours": 5.4,
-    "iadc_npt_code": "102",
+    "iadc_npt_code": "601",
     "loss_rate_bbl_hr": null,
-    "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
-    "outcome": "Stabilized; casing run",
+    "mitigation_description": "Ran cement bond log; performed remedial squeeze cementing",
+    "outcome": "Bond restored via squeeze; casing integrity confirmed",
     "confidence": 0.9,
     "source_document": "DDR_WELL-BGJ-007_1345m.pdf",
     "source_page": 7,
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-AF199B90",
+    "event_id": "EVT-A9675F92",
     "well_id": "WELL-BGJ-007",
     "event_type": "STUCK_PIPE",
     "severity": "HIGH",
@@ -361,7 +418,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-018270CF",
+    "event_id": "EVT-AB0C8C22",
     "well_id": "WELL-BGJ-007",
     "event_type": "KICK",
     "severity": "HIGH",
@@ -380,7 +437,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-1A65D83B",
+    "event_id": "EVT-3C9E71C2",
     "well_id": "WELL-BGJ-007",
     "event_type": "STUCK_PIPE",
     "severity": "HIGH",
@@ -399,7 +456,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-120E1E30",
+    "event_id": "EVT-B1BA0B8E",
     "well_id": "WELL-BGJ-008",
     "event_type": "MUD_LOSS",
     "severity": "MEDIUM",
@@ -418,7 +475,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-93D47090",
+    "event_id": "EVT-CC20BB8D",
     "well_id": "WELL-BGJ-008",
     "event_type": "STUCK_PIPE",
     "severity": "CRITICAL",
@@ -437,7 +494,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-B1746DAB",
+    "event_id": "EVT-95F1BC67",
     "well_id": "WELL-BGJ-008",
     "event_type": "KICK",
     "severity": "CRITICAL",
@@ -456,7 +513,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-57576A2C",
+    "event_id": "EVT-902E767B",
     "well_id": "WELL-BGJ-009",
     "event_type": "STUCK_PIPE",
     "severity": "HIGH",
@@ -475,7 +532,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-8E41FF3D",
+    "event_id": "EVT-04F3A38E",
     "well_id": "WELL-BGJ-009",
     "event_type": "STUCK_PIPE",
     "severity": "HIGH",
@@ -494,7 +551,26 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-8779C573",
+    "event_id": "EVT-D8A72C01",
+    "well_id": "WELL-BGJ-009",
+    "event_type": "OVERPRESSURE_ZONE",
+    "severity": "CRITICAL",
+    "depth_start_md_m": 1751.7,
+    "depth_end_md_m": 1764.9,
+    "formation": "Barail Sandstone",
+    "raw_narrative": "Abnormal pressure transition detected entering Barail Sandstone at 1751.7m: d-exponent trend broke sharply, connection gas rising. Weighted mud up to 11.0 ppg ahead of the zone. NPT: 4.8 hrs.",
+    "npt_hours": 4.8,
+    "iadc_npt_code": "302",
+    "loss_rate_bbl_hr": null,
+    "mitigation_description": "Weighted mud up ahead of transition; monitored d-exponent and connection gas trend",
+    "outcome": "Transition drilled safely at increased mud weight; no kick",
+    "confidence": 0.91,
+    "source_document": "DDR_WELL-BGJ-009_1751m.pdf",
+    "source_page": 7,
+    "witsml_mapping": "opsReport.activity (WITSML 2.0)"
+  },
+  {
+    "event_id": "EVT-4C438DCE",
     "well_id": "WELL-HGJ-010",
     "event_type": "KICK",
     "severity": "HIGH",
@@ -513,26 +589,26 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-2D9E9ACB",
+    "event_id": "EVT-C519C1AA",
     "well_id": "WELL-HGJ-010",
-    "event_type": "WELLBORE_INSTABILITY",
+    "event_type": "CEMENTING_FAILURE",
     "severity": "HIGH",
     "depth_start_md_m": 1180.7,
     "depth_end_md_m": 1200.1,
     "formation": "Girujan Clay",
-    "raw_narrative": "Washout suspected at 1180.7m in Girujan Clay. Caliper log showed 24% over-gauge hole. Pumped casing cement to seal.",
+    "raw_narrative": "Centralizer standoff below spec across washed-out Girujan Clay interval at 1180.7m. Primary cement job failed bond log; remedial squeeze required.",
     "npt_hours": 8.1,
-    "iadc_npt_code": "102",
+    "iadc_npt_code": "601",
     "loss_rate_bbl_hr": null,
-    "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
-    "outcome": "Stabilized; casing run",
+    "mitigation_description": "Ran cement bond log; performed remedial squeeze cementing",
+    "outcome": "Bond restored via squeeze; casing integrity confirmed",
     "confidence": 0.94,
     "source_document": "DDR_WELL-HGJ-010_1180m.pdf",
     "source_page": 2,
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-A506B185",
+    "event_id": "EVT-1A5AF2C8",
     "well_id": "WELL-HGJ-010",
     "event_type": "KICK",
     "severity": "HIGH",
@@ -551,7 +627,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-092B589B",
+    "event_id": "EVT-FCF1A7C3",
     "well_id": "WELL-HGJ-010",
     "event_type": "WELLBORE_INSTABILITY",
     "severity": "MEDIUM",
@@ -570,7 +646,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-91458494",
+    "event_id": "EVT-26161580",
     "well_id": "WELL-HGJ-011",
     "event_type": "WELLBORE_INSTABILITY",
     "severity": "HIGH",
@@ -589,7 +665,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-8BB5D739",
+    "event_id": "EVT-905D6158",
     "well_id": "WELL-HGJ-011",
     "event_type": "STUCK_PIPE",
     "severity": "HIGH",
@@ -608,7 +684,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-695F1835",
+    "event_id": "EVT-3856972C",
     "well_id": "WELL-HGJ-011",
     "event_type": "KICK",
     "severity": "HIGH",
@@ -627,7 +703,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-431ED3FA",
+    "event_id": "EVT-8321A8A4",
     "well_id": "WELL-HGJ-011",
     "event_type": "STUCK_PIPE",
     "severity": "HIGH",
@@ -646,7 +722,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-681732C8",
+    "event_id": "EVT-64775D4C",
     "well_id": "WELL-HGJ-011",
     "event_type": "STUCK_PIPE",
     "severity": "CRITICAL",
@@ -665,7 +741,7 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-39F378F6",
+    "event_id": "EVT-3463A5D2",
     "well_id": "WELL-HGJ-011",
     "event_type": "WELLBORE_INSTABILITY",
     "severity": "MEDIUM",
@@ -684,7 +760,26 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-CD5DAAA2",
+    "event_id": "EVT-FC944E04",
+    "well_id": "WELL-HGJ-011",
+    "event_type": "OVERPRESSURE_ZONE",
+    "severity": "HIGH",
+    "depth_start_md_m": 397.0,
+    "depth_end_md_m": 404.1,
+    "formation": "Tipam Sandstone",
+    "raw_narrative": "Abnormal pressure transition detected entering Tipam Sandstone at 397.0m: d-exponent trend broke sharply, connection gas rising. Weighted mud up to 10.2 ppg ahead of the zone. NPT: 4.3 hrs.",
+    "npt_hours": 4.3,
+    "iadc_npt_code": "302",
+    "loss_rate_bbl_hr": null,
+    "mitigation_description": "Weighted mud up ahead of transition; monitored d-exponent and connection gas trend",
+    "outcome": "Transition drilled safely at increased mud weight; no kick",
+    "confidence": 0.94,
+    "source_document": "DDR_WELL-HGJ-011_397m.pdf",
+    "source_page": 1,
+    "witsml_mapping": "opsReport.activity (WITSML 2.0)"
+  },
+  {
+    "event_id": "EVT-8E4BC9CD",
     "well_id": "WELL-HGJ-012",
     "event_type": "STUCK_PIPE",
     "severity": "CRITICAL",
@@ -703,41 +798,60 @@
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-FD5F563F",
+    "event_id": "EVT-DE23E4F4",
     "well_id": "WELL-HGJ-012",
-    "event_type": "STUCK_PIPE",
+    "event_type": "TORQUE_SPIKE",
     "severity": "HIGH",
     "depth_start_md_m": 488.0,
     "depth_end_md_m": 522.1,
     "formation": "Tipam Sandstone",
-    "raw_narrative": "Differential pipe sticking at 488.0m in Tipam Sandstone. Applied 24 kNm right torque and reciprocated string. Worked free after 8.4 hrs. LCM pill not required.",
+    "raw_narrative": "Torque spike to 24 kNm observed at 488.0m in Tipam Sandstone while rotating through the build section. Reduced WOB and circulated bottoms-up to clear cuttings bed. NPT: 8.4 hrs.",
     "npt_hours": 8.4,
-    "iadc_npt_code": "101",
+    "iadc_npt_code": "401",
     "loss_rate_bbl_hr": null,
-    "mitigation_description": "Applied overpull + torque; spotted freeing agent; reciprocated string",
-    "outcome": "Pipe freed; cased off interval",
+    "mitigation_description": "Reduced WOB/RPM; circulated bottoms-up to clear cuttings bed; reamed tight sections",
+    "outcome": "Torque normalized; drilling resumed",
     "confidence": 0.9,
     "source_document": "DDR_WELL-HGJ-012_488m.pdf",
     "source_page": 5,
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   },
   {
-    "event_id": "EVT-6A11F81B",
+    "event_id": "EVT-290ACF43",
     "well_id": "WELL-HGJ-012",
-    "event_type": "WELLBORE_INSTABILITY",
+    "event_type": "CEMENTING_FAILURE",
     "severity": "HIGH",
     "depth_start_md_m": 691.4,
     "depth_end_md_m": 729.6,
     "formation": "Tipam Sandstone",
-    "raw_narrative": "Washout suspected at 691.4m in Tipam Sandstone. Caliper log showed 30% over-gauge hole. Pumped casing cement to seal.",
+    "raw_narrative": "Centralizer standoff below spec across washed-out Tipam Sandstone interval at 691.4m. Primary cement job failed bond log; remedial squeeze required.",
     "npt_hours": 4.4,
-    "iadc_npt_code": "102",
+    "iadc_npt_code": "601",
     "loss_rate_bbl_hr": null,
-    "mitigation_description": "Raised KCl inhibitor; increased mud weight; short trips for caliper",
-    "outcome": "Stabilized; casing run",
+    "mitigation_description": "Ran cement bond log; performed remedial squeeze cementing",
+    "outcome": "Bond restored via squeeze; casing integrity confirmed",
     "confidence": 0.88,
     "source_document": "DDR_WELL-HGJ-012_691m.pdf",
     "source_page": 4,
+    "witsml_mapping": "opsReport.activity (WITSML 2.0)"
+  },
+  {
+    "event_id": "EVT-DC51BC4F",
+    "well_id": "WELL-HGJ-012",
+    "event_type": "OVERPRESSURE_ZONE",
+    "severity": "HIGH",
+    "depth_start_md_m": 2749.6,
+    "depth_end_md_m": 2797.3,
+    "formation": "Sylhet Limestone",
+    "raw_narrative": "Overpressured interval confirmed at 2749.6m at the Sylhet Limestone transition -- pore pressure gradient stepped up above offset-well prognosis. Increased mud weight to 11.7 ppg, monitored for well control.",
+    "npt_hours": 5.6,
+    "iadc_npt_code": "302",
+    "loss_rate_bbl_hr": null,
+    "mitigation_description": "Weighted mud up ahead of transition; monitored d-exponent and connection gas trend",
+    "outcome": "Transition drilled safely at increased mud weight; no kick",
+    "confidence": 0.89,
+    "source_document": "DDR_WELL-HGJ-012_2749m.pdf",
+    "source_page": 3,
     "witsml_mapping": "opsReport.activity (WITSML 2.0)"
   }
 ]
