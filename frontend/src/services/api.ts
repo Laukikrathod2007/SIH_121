@@ -210,9 +210,19 @@ export const api = {
     return res.data;
   },
 
-  /** GET /api/v2/map/wells — for the GIS map. */
-  getMapWells: async (): Promise<MapWell[]> => {
-    const res = await m02.get('/map/wells');
+  /**
+   * GET /api/v2/map/wells — for the GIS map. Called with no params, this
+   * returns ALL wells unfiltered (original behavior, unchanged) — the 2D/3D
+   * map pages apply their own client-side Haversine radius filter on top of
+   * this, which remains correct and is NOT redundant with the backend's
+   * optional filter below (see NearbyWellsPage.tsx / GlobeMapPage.tsx).
+   * The backend also now accepts an optional real hard filter
+   * (centerWellId + radiusKm, Priority 2 fix) for callers that want
+   * server-side filtering instead; unused by the current pages, which
+   * already have a working client-side equivalent.
+   */
+  getMapWells: async (centerWellId?: string, radiusKm?: number): Promise<MapWell[]> => {
+    const res = await m02.get('/map/wells', { params: { center_well_id: centerWellId, radius_km: radiusKm } });
     return res.data?.wells ?? [];
   },
 
@@ -289,14 +299,23 @@ export const api = {
     return res.data;
   },
 
-  /** GET /api/v2/offset_rank/{well_id} — DORS 5-factor offset well ranking. */
+  /**
+   * GET /api/v2/offset_rank/{well_id} — DORS 5-factor offset well ranking.
+   * `radiusKm` is a SCORING DECAY, not a hard filter — every well is still
+   * ranked and returned regardless of its value (see server.py's docstring
+   * for why: several pages rely on getting the full ranked list). Pass
+   * `maxDistanceKm` for a real, additive hard exclusion filter if a caller
+   * specifically needs wells beyond a distance removed server-side; omit it
+   * for the original unfiltered-ranking behavior (default, unchanged).
+   */
   getOffsetRank: async (
     wellId: string,
     depth: number,
     radiusKm: number = 25.0,
     topN: number = 10,
-  ): Promise<{ active_well_id: string; formation_at_bit: string | null; rankings: OffsetWellRanking[]; dors_formula: string }> => {
-    const res = await m02.get(`/offset_rank/${wellId}`, { params: { depth, radius_km: radiusKm, top_n: topN } });
+    maxDistanceKm?: number,
+  ): Promise<{ active_well_id: string; formation_at_bit: string | null; rankings: OffsetWellRanking[]; dors_formula: string; radius_km_is_scoring_decay_not_a_filter?: boolean }> => {
+    const res = await m02.get(`/offset_rank/${wellId}`, { params: { depth, radius_km: radiusKm, top_n: topN, max_distance_km: maxDistanceKm } });
     return res.data;
   },
 
@@ -407,20 +426,16 @@ export const api = {
   },
 
   // ==========================================================================
-  // MODULE 03 — Physics Digital Twin & Predictive ML — NOT YET WIRED.
-  //
-  // modules/03_physics_engine/ is being ported into this project in a
-  // parallel effort and, as of this port, exposes NO FastAPI routes — no
-  // start/pause/step/reset controls, no WebSocket telemetry stream, no
-  // /predictive/evaluate or /predictive/alerts/*. Every function below talks
-  // to a placeholder base URL (VITE_M03_API_BASE, default
-  // http://localhost:8003/api/v3) and will fail with a network error until
-  // that module ships real endpoints. The call shapes/paths are kept
-  // unchanged from Prasad's original frontend on purpose — once module 03
-  // exposes real routes, wiring this up should be a base-URL + path fix
-  // here, not a rewrite of every page that calls it (LiveDrillingPage,
-  // SimulatorPage, and the physics-twin-dependent parts of
-  // RiskPredictionPage / AlertsAdvisoryPage via AppContext).
+  // MODULE 03 — served by modules/04_physics_engine/api/server.py, which also
+  // hosts modules/05_predictive_analytics's predictive code via a sys.path
+  // import (see that file's own docstring). Real FastAPI app, real routes,
+  // real WebSocket telemetry stream, real /predictive/evaluate and
+  // /predictive/alerts/* — confirmed live (VITE_M03_API_BASE, default
+  // http://localhost:8003/api/v3) during the end-to-end verification pass.
+  // The isolation-forest/XGBoost ML pillars are typically UNFITTED_FALLBACK
+  // on a fresh checkout (no trained .joblib artifacts ship by default) — the
+  // rule-engine pillar is always ACTIVE. See AUDIT/02_CORE_INTEGRATION.md and
+  // AUDIT/04_E2E_VERIFICATION.md.
   // ==========================================================================
 
   getSimStatus: async (): Promise<SimulationStatus> => {

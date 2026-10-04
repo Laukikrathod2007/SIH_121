@@ -206,7 +206,7 @@ export interface HazardRiskAssessment {
   p_history: number;
   a_sensor: number;
   m_ml: number;
-  m_ml_source: string; // "trained_model" | "heuristic_fallback"
+  m_ml_source: string; // "trained_model_real" | "trained_model" | "heuristic_fallback"
   confidence: FourPillarConfidence;
   active_corridor?: RiskCorridor | null;
   lead_time_meters?: number | null;
