@@ -34,7 +34,18 @@ export const NearbyWellsPage: React.FC = () => {
   const { activeWellId, setActiveWellId, wells, activeWell, telemetry } = useApp();
 
   const [dorsOffsets, setDorsOffsets] = useState<OffsetWellRanking[]>([]);
-  const [selectedWellId, setSelectedWellId] = useState<string>('WELL-NHK-002');
+  // Tracks activeWellId by default (the dossier should show the well the
+  // rest of the app is currently scoped to) but a manual row-click below
+  // can inspect a different well without disturbing the global active
+  // well -- that pick is intentionally overwritten the next time the
+  // active well itself changes, so switching wells from the header never
+  // leaves this panel silently pointed at a well no longer selected
+  // anywhere else (confirmed bug: this used to default to a hardcoded
+  // 'WELL-NHK-002' and never re-synced at all).
+  const [selectedWellId, setSelectedWellId] = useState<string>(activeWellId);
+  useEffect(() => {
+    setSelectedWellId(activeWellId);
+  }, [activeWellId]);
   const [selectedWellFormations, setSelectedWellFormations] = useState<FormationTop[]>([]);
   const [selectedWellEvents, setSelectedWellEvents] = useState<DrillingEvent[]>([]);
   const [filterField, setFilterField] = useState<string>('ALL');
@@ -78,6 +89,8 @@ export const NearbyWellsPage: React.FC = () => {
 
   const selectedWell = wells.find((w) => w.well_id === selectedWellId) || wells[0];
 
+  const uniqueFields = Array.from(new Set(wells.map((w) => w.field).filter(Boolean))).sort();
+
   const filteredWells = wells.filter((w) => {
     const matchesField = filterField === 'ALL' || w.field.toLowerCase().includes(filterField.toLowerCase());
     const matchesSearch = w.well_name.toLowerCase().includes(searchQuery.toLowerCase()) || w.well_id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -98,13 +111,19 @@ export const NearbyWellsPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              MODULE 2: NEARBY WELL INTELLIGENCE & GEOSPATIAL MAP
+              NEARBY WELL INTELLIGENCE & GEOSPATIAL MAP
               <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded">
                 HAVERSINE + 5-FACTOR DORS
               </span>
             </div>
             <div className="text-xs text-slate-400 font-mono">
-              Upper Assam Shelf | Total Catalog: {wells.length} Wells | Showing {filteredWells.length} within {radiusKm} km
+              {/* Was hardcoded "Upper Assam Shelf" regardless of which
+                  field the catalog actually spans -- wrong for the 2 real
+                  Volve (North Sea) wells. Total Catalog already correctly
+                  covers every well in the database across all 5 fields
+                  (Baghjan, Hugrijan, Moran, Nahorkatiya, Volve); only the
+                  label was field-specific. */}
+              Total Catalog: {wells.length} Wells across {uniqueFields.length} Fields | Showing {filteredWells.length} within {radiusKm} km
             </div>
           </div>
         </div>
@@ -124,9 +143,17 @@ export const NearbyWellsPage: React.FC = () => {
             className="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-slate-200 focus:outline-none focus:border-cyan-500"
           >
             <option value="ALL">All Fields</option>
-            <option value="Nahorkatiya">Nahorkatiya</option>
-            <option value="Tengakhat">Tengakhat</option>
-            <option value="Borpothar">Borpothar</option>
+            {/* Derived from the real well catalog instead of a hardcoded
+                3-field list -- that list omitted "Volve" entirely (the 2
+                real North Sea wells) and named two fields ("Tengakhat",
+                "Borpothar") that don't exist in the actual 14-well catalog
+                (confirmed against the live database: Baghjan, Hugrijan,
+                Moran, Nahorkatiya, Volve), so those wells could never be
+                filtered to by name even though "All Fields" did include
+                them. */}
+            {uniqueFields.map((f) => (
+              <option key={f} value={f}>{f}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -160,7 +187,13 @@ export const NearbyWellsPage: React.FC = () => {
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
             <div className="text-xs font-mono font-bold text-slate-200 flex items-center gap-2">
               <Navigation className="w-4 h-4 text-cyan-400" />
-              UPPER ASSAM BASIN SPATIAL CLUSTERING (27.15°N, 95.30°E)
+              {/* Was a hardcoded "UPPER ASSAM BASIN..." label regardless of
+                  which well was active -- confirmed wrong for the two real
+                  Volve wells (North Sea, not Assam). Derived from the
+                  active well's own field/coordinates instead. */}
+              {activeWell
+                ? `${(activeWell.field || 'WELL').toUpperCase()} SPATIAL CLUSTERING (${activeWell.surface_lat.toFixed(2)}°N, ${activeWell.surface_lon.toFixed(2)}°E)`
+                : 'OFFSET WELL SPATIAL CLUSTERING'}
             </div>
             <div className="text-[10px] font-mono text-slate-400 flex items-center gap-3">
               <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span> Active Well</span>

@@ -140,7 +140,7 @@ export const PdfEvidenceViewer: React.FC<PdfEvidenceViewerProps> = ({
         setStatus('error');
         setErrorMessage(
           `Failed to fetch or render the source PDF for document '${resolvedDocId}' from module 01 ` +
-            '(GET /api/v1/documents/{doc_id}/file) — is it running on :8001?',
+            '(GET /api/v1/documents/{doc_id}/file) — is the NWIS backend running (cd Backend && python run.py)?',
         );
       }
     };

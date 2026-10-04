@@ -102,8 +102,17 @@ function WellboreTube({ stations }: { stations: SurveyStation[] }) {
 // `telemetry` object every other live page in this app reads from), not a
 // scripted animation. Smoothly interpolates toward each new real depth
 // reading rather than snapping, so motion reads as continuous drilling.
-function LiveBit({ stations, measuredDepthM }: { stations: SurveyStation[]; measuredDepthM: number }) {
+//
+// Carries its own point light. The scene's surface lights (ambient,
+// directional, hemisphere) only reach the derrick near Y=0 -- at real
+// drilling depths (thousands of scene units down at TRAJECTORY_SCALE) a
+// live/downhole/cross-section camera has nothing lit to look at except
+// this one emissive sphere. Without a light that travels with the bit,
+// DOWNHOLE_FOLLOW and CROSS_SECTION render as a single glowing dot in an
+// otherwise black frame -- confirmed live, not theoretical.
+function LiveBit({ stations, measuredDepthM, extent }: { stations: SurveyStation[]; measuredDepthM: number; extent: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const lightRef = useRef<THREE.PointLight>(null);
   const targetRef = useRef(new THREE.Vector3());
 
   useEffect(() => {
@@ -114,14 +123,27 @@ function LiveBit({ stations, measuredDepthM }: { stations: SurveyStation[]; meas
   useFrame((_, delta) => {
     if (meshRef.current) {
       meshRef.current.position.lerp(targetRef.current, Math.min(1, delta * 4));
+      lightRef.current?.position.copy(meshRef.current.position);
     }
   });
 
+  // `distance` must scale with the scene's own extent, not a fixed
+  // constant -- a real trajectory's extent (maxTvd * TRAJECTORY_SCALE)
+  // can be 10-100+ scene units depending on the well's total depth, and a
+  // DOWNHOLE_FOLLOW camera sits ~extent*0.4-0.57 away from the bit
+  // (CameraRig.tsx). A fixed distance:6 light (the first attempt at this
+  // fix) couldn't reach the camera's own position for any well deeper
+  // than a few hundred meters -- confirmed live: still rendered black.
+  const lightRange = Math.max(extent * 1.2, 4);
+
   return (
-    <mesh ref={meshRef}>
-      <sphereGeometry args={[0.06, 16, 16]} />
-      <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={1.2} />
-    </mesh>
+    <>
+      <pointLight ref={lightRef} color="#67e8f9" intensity={extent * 8} distance={lightRange} decay={2} />
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[Math.max(extent * 0.015, 0.06), 16, 16]} />
+        <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={1.2} />
+      </mesh>
+    </>
   );
 }
 
@@ -169,14 +191,21 @@ export const LiveDrillingScene3D: React.FC<LiveDrillingScene3DProps> = ({
   return (
     <div className="relative w-full h-full bg-[#050709]">
       <Canvas camera={{ position: [extent * 0.9, RIG_HEIGHT * 0.6, extent * 0.9], fov: 55 }}>
-        <ambientLight intensity={0.4} />
+        {/* ambientLight/hemisphereLight apply uniformly regardless of depth,
+            so they're what keeps the wellbore tube and formation bands
+            visible (if dim) at real drilling depths where the directional
+            light and the derrick itself are far out of range -- raised
+            from the original 0.4/0.4 after confirming DOWNHOLE_FOLLOW/
+            CROSS_SECTION rendered as a black frame with only those values
+            and no light traveling with the bit (see LiveBit's own light). */}
+        <ambientLight intensity={0.55} />
         <directionalLight position={[10, 15, 10]} intensity={1.3} />
-        <hemisphereLight args={['#1e293b', '#0a0d13', 0.4]} />
+        <hemisphereLight args={['#1e293b', '#0a0d13', 0.6]} />
 
         <Derrick />
         <FormationBands formations={formations} extent={extent} />
         {stations.length > 1 && <WellboreTube stations={stations} />}
-        {stations.length > 1 && <LiveBit stations={stations} measuredDepthM={measuredDepthM} />}
+        {stations.length > 1 && <LiveBit stations={stations} measuredDepthM={measuredDepthM} extent={extent} />}
 
         <CameraRig preset={preset} bitPosition={bitPositionRef} extent={extent} rigHeight={RIG_HEIGHT} />
         {preset === 'ORBIT' && OrbitControlsComp && <OrbitControlsComp enableDamping dampingFactor={0.08} />}

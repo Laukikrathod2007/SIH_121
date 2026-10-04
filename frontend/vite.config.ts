@@ -5,14 +5,21 @@ import path from 'node:path';
 
 // https://vitejs.dev/config/
 //
-// No dev-server proxy: services/api.ts talks directly to our two real
-// backends by absolute base URL (VITE_M01_API_BASE / VITE_M02_API_BASE,
-// defaulting to http://localhost:8001 and http://localhost:8012) rather than
-// a single proxied '/api' path to one backend on 8008 (Prasad's original
-// setup). Both modules/01_document_intelligence/api/server.py and
-// modules/02_nwis_backend/server.py already allow CORS from
-// http://localhost:5173 by default (see their `_default_origins`), so no
-// proxy is needed for local dev.
+// Backend consolidation (2026-10-04): modules/01_document_intelligence
+// (:8001), modules/02_nwis_backend (:8002), and modules/04_physics_engine+
+// 05_predictive_analytics (:8003) were 3 independently-launched FastAPI
+// processes; they're now ONE unified app (Backend/app/main.py, :8000 by
+// default -- see services/api.ts). With exactly one real backend to talk
+// to, a dev-server proxy is now the better default (previously
+// deliberately omitted, when there were 2+ backends and no single thing to
+// proxy to): it lets local dev be same-origin through Vite's dev server
+// (CORS stops mattering in dev at all, not just allowed), and it mirrors
+// how a real reverse-proxy deployment (nginx in front of both the static
+// frontend build and the API) would actually look in production -- one
+// step closer to "clean, easy to deploy." The production `dist/` build
+// still uses VITE_API_BASE as an absolute URL (proxy only affects `vite
+// dev`), so this is additive, not a replacement for that config.
+const BACKEND_ORIGIN = process.env.VITE_API_BASE || 'http://localhost:8000';
 
 // Serves static marketing pages (public/landing/*.html) at clean top-level
 // paths -- "/" for index.html, "/benchmarks" for benchmarks.html -- while
@@ -64,5 +71,9 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     host: '0.0.0.0',
+    proxy: {
+      '/api': { target: BACKEND_ORIGIN, changeOrigin: true },
+      '/ws': { target: BACKEND_ORIGIN.replace(/^http/, 'ws'), ws: true, changeOrigin: true },
+    },
   },
 });

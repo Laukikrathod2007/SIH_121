@@ -34,18 +34,14 @@ const AppContext = createContext<AppContextType | null>(null);
 
 const HISTORY_SIZE = 250; // ~10 s of trace at 25 Hz
 
-// NOT YET WIRED: modules/03_physics_engine/ (the physics digital twin) has no
-// FastAPI/WebSocket routes exposed yet — see services/api.ts's "MODULE 03"
-// section. This URL points at a placeholder base (VITE_M03_API_BASE, default
-// http://localhost:8003) so the connect attempt below fails cleanly (caught
-// by ws.onerror -> reconnect loop) instead of pointing at a backend that
-// doesn't exist in this project at all. Update the path once module 03 ships
-// a real telemetry stream endpoint.
+// Physics digital twin WebSocket stream, served by the unified backend
+// (Backend/app/main.py) at /api/v3/physics/stream -- same origin as every
+// other API call (see services/api.ts), just with ws:// instead of http://.
 const telemetryWsUrl = () => {
   const override = import.meta.env.VITE_TELEMETRY_WS_URL as string | undefined;
   if (override) return override;
-  const m03Base = (import.meta.env.VITE_M03_API_BASE as string | undefined) || 'http://localhost:8003';
-  const wsBase = m03Base.replace(/^http/, 'ws');
+  const apiBase = (import.meta.env.VITE_API_BASE as string | undefined) || 'http://localhost:8000';
+  const wsBase = apiBase.replace(/^http/, 'ws');
   return `${wsBase}/api/v3/physics/stream`;
 };
 

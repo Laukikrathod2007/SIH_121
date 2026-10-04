@@ -12,11 +12,15 @@ import { useNwisMapData } from '../components/nwis-map/useNwisMapData';
 // currently in the live store (12 synthetic + the 2 real Volve wells),
 // not a fabricated subset. Evidence citations open real PDFs -- 39
 // bundled synthetic DDRs plus 3 real Volve documents (F-12's COMPLETION
-// report, F-1's MUD_LOG/MUD_LOG_COMBINED) -- via evidence-server/
-// (also copied in unchanged from the package's server/), not the
-// module 01 file endpoint, which needs an API-key header a plain iframe
-// can't set.
-const EVIDENCE_SERVER = (import.meta.env.VITE_EVIDENCE_SERVER as string | undefined) || 'http://localhost:4100/evidence';
+// report, F-1's MUD_LOG/MUD_LOG_COMBINED) -- via the unified backend's
+// /api/evidence router (Backend/app/api/evidence.py), which replaced the
+// standalone Node evidence-server/ process. Kept on its own env var
+// (rather than hardcoded as `${API_BASE}/api/evidence`) since this is a
+// plain-GET, no-API-key-header path (a plain iframe/<img> can't set
+// custom headers, unlike the module 01 file endpoint) -- same reasoning
+// as before, just pointed at the new router.
+const EVIDENCE_SERVER = (import.meta.env.VITE_EVIDENCE_SERVER as string | undefined)
+  || `${(import.meta.env.VITE_API_BASE as string | undefined) || 'http://localhost:8000'}/api/evidence`;
 
 // Some events' real `source_document` values (real_data/real_events_depth_tagged_fresh.json,
 // generated on a Windows machine) carry a Windows-style relative path prefix,

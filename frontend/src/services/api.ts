@@ -27,37 +27,25 @@ import {
 } from '../types';
 
 // ============================================================================
-// Two real backends + one real-but-thin backend.
+// ONE unified backend (Backend/app/main.py, port 8000 by default) serving
+// all of document intelligence (/api/v1), well/geospatial intelligence
+// (/api/v2), and physics digital twin + predictive analytics (/api/v3) --
+// consolidated from 3 previously independently-launched FastAPI processes
+// (modules/01_document_intelligence :8001, modules/02_nwis_backend :8002,
+// modules/04_physics_engine+05_predictive_analytics :8003). Evidence/PDF
+// delivery (previously the standalone Node evidence-server/ on :4100) is
+// now /api/evidence/* on the same origin -- see NwisMapPage.tsx.
 //
-//  - Module 01 (Document Intelligence)  -> http://localhost:8001/api/v1/*
-//  - Module 02 (NWIS Backend Intel.)     -> http://localhost:8002/api/v2/*
-//  - Module 03 (Physics Digital Twin)    -> http://localhost:8003/api/v3/* —
-//    served by modules/04_physics_engine/api/server.py (which imports
-//    modules/05_predictive_analytics's predictive/ code into itself via a
-//    sys.path insert; module 05 has no server of its own). Routes exist and
-//    the server runs, but the ML models it serves are typically UNFITTED on a
-//    fresh checkout (no trained .joblib artifacts) — see the "MODULE 03"
-//    section at the bottom of this file and AUDIT/02_CORE_INTEGRATION.md.
-//
-// Both real backends require an `X-API-Key` header on every route except
-// health/root when NWIS_API_KEY is configured server-side (see
-// modules/01_document_intelligence/api/auth.py and
-// modules/02_nwis_backend/auth.py — both read `Header(default=None,
-// alias="X-API-Key")` and compare with secrets.compare_digest). Configure the
-// matching keys here via .env (copy .env.example -> .env):
-//   VITE_M01_API_KEY=<value of NWIS_API_KEY in modules/01_document_intelligence/.env>
-//   VITE_M02_API_KEY=<value of NWIS_API_KEY in modules/02_nwis_backend/.env>
-// Both modules run with auth OFF (any/no key accepted) if their own
-// NWIS_API_KEY is unset, which matches their documented default-dev behavior.
+// The unified backend requires an `X-API-Key` header on every data/analysis
+// route except health/root/docs (see Backend/app/core/auth.py). Configure
+// the matching key here via .env (copy .env.example -> .env):
+//   VITE_API_KEY=<value of NWIS_API_KEY in Backend/.env>
+// Auth is OFF (any/no key accepted) if NWIS_API_KEY is unset server-side,
+// matching the unified backend's documented default-dev behavior.
 // ============================================================================
 
-const M01_BASE = (import.meta.env.VITE_M01_API_BASE as string | undefined) || 'http://localhost:8001';
-const M02_BASE = (import.meta.env.VITE_M02_API_BASE as string | undefined) || 'http://localhost:8002';
-const M03_BASE = (import.meta.env.VITE_M03_API_BASE as string | undefined) || 'http://localhost:8003';
-
-const M01_KEY = (import.meta.env.VITE_M01_API_KEY as string | undefined) || '';
-const M02_KEY = (import.meta.env.VITE_M02_API_KEY as string | undefined) || '';
-const M03_KEY = (import.meta.env.VITE_M03_API_KEY as string | undefined) || '';
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) || 'http://localhost:8000';
+const API_KEY = (import.meta.env.VITE_API_KEY as string | undefined) || '';
 
 function withApiKey(client: AxiosInstance, key: string) {
   client.interceptors.request.use((config) => {
@@ -71,19 +59,16 @@ function withApiKey(client: AxiosInstance, key: string) {
 }
 
 const m01 = withApiKey(
-  axios.create({ baseURL: `${M01_BASE}/api/v1`, timeout: 20000 }),
-  M01_KEY,
+  axios.create({ baseURL: `${API_BASE}/api/v1`, timeout: 20000 }),
+  API_KEY,
 );
 const m02 = withApiKey(
-  axios.create({ baseURL: `${M02_BASE}/api/v2`, timeout: 15000 }),
-  M02_KEY,
+  axios.create({ baseURL: `${API_BASE}/api/v2`, timeout: 15000 }),
+  API_KEY,
 );
-// Placeholder client — see MODULE 03 section below. Kept so call sites don't
-// need to change once module 03 exposes real routes; only this baseURL/key
-// wiring (and the routes themselves) need to change then.
 const m03 = withApiKey(
-  axios.create({ baseURL: `${M03_BASE}/api/v3`, timeout: 10000 }),
-  M03_KEY,
+  axios.create({ baseURL: `${API_BASE}/api/v3`, timeout: 10000 }),
+  API_KEY,
 );
 
 export const api = {
@@ -382,11 +367,11 @@ export const api = {
     if (params.end_depth_m != null) qs.set('end_depth_m', String(params.end_depth_m));
 
     const headers: Record<string, string> = {};
-    if (M02_KEY) headers['X-API-Key'] = M02_KEY;
+    if (API_KEY) headers['X-API-Key'] = API_KEY;
 
     (async () => {
       try {
-        const res = await fetch(`${M02_BASE}/api/v2/live/replay/${wellId}?${qs.toString()}`, {
+        const res = await fetch(`${API_BASE}/api/v2/live/replay/${wellId}?${qs.toString()}`, {
           headers,
           signal: controller.signal,
         });

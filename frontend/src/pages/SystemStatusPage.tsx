@@ -52,7 +52,7 @@ export const SystemStatusPage: React.FC = () => {
       setErrorM01(null);
     } else {
       setHealthM01(null);
-      setErrorM01('Unreachable — is module 01 running on port 8001 (python run_server.py)?');
+      setErrorM01('Unreachable — is the NWIS backend running (cd Backend && python run.py)?');
     }
 
     if (m02.status === 'fulfilled') {
@@ -60,7 +60,7 @@ export const SystemStatusPage: React.FC = () => {
       setErrorM02(null);
     } else {
       setHealthM02(null);
-      setErrorM02('Unreachable — is module 02 running on port 8002 (python run_server.py)?');
+      setErrorM02('Unreachable — is the NWIS backend running (cd Backend && python run.py)?');
     }
 
     if (m04status.status === 'fulfilled') {
@@ -68,7 +68,7 @@ export const SystemStatusPage: React.FC = () => {
       setErrorM04(null);
     } else {
       setStatusM04(null);
-      setErrorM04('Unreachable — is module 04 running on port 8003 (python run_server.py)?');
+      setErrorM04('Unreachable — is the NWIS backend running (cd Backend && python run.py)?');
     }
     setModelsM04(m04models.status === 'fulfilled' ? m04models.value : null);
 
@@ -117,7 +117,7 @@ export const SystemStatusPage: React.FC = () => {
         {/* Module 01 */}
         <div className="scada-panel p-4 space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-            <span className="text-xs font-mono font-bold text-slate-200">MODULE 01 — DOCUMENT INTELLIGENCE (:8001)</span>
+            <span className="text-xs font-mono font-bold text-slate-200">MODULE 01 — DOCUMENT INTELLIGENCE (/api/v1)</span>
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border flex items-center gap-1 ${
               m01Healthy ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
             }`}>
@@ -153,7 +153,7 @@ export const SystemStatusPage: React.FC = () => {
         {/* Module 02 */}
         <div className="scada-panel p-4 space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-            <span className="text-xs font-mono font-bold text-slate-200">MODULE 02 — NWIS BACKEND INTELLIGENCE (:8002)</span>
+            <span className="text-xs font-mono font-bold text-slate-200">MODULE 02 — NWIS BACKEND INTELLIGENCE (/api/v2)</span>
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border flex items-center gap-1 ${
               m02Healthy ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
             }`}>
@@ -195,7 +195,7 @@ export const SystemStatusPage: React.FC = () => {
           /api/v3/predictive/models (honest fitted/unfitted ML status) */}
       <div className={`scada-panel p-4 space-y-2 border-l-4 ${m04Healthy ? 'border-l-emerald-500' : 'border-l-amber-500'}`}>
         <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-          <span className="text-xs font-mono font-bold text-slate-200">MODULE 04/05 — PHYSICS DIGITAL TWIN / PREDICTIVE ML (:8003)</span>
+          <span className="text-xs font-mono font-bold text-slate-200">MODULE 04/05 — PHYSICS DIGITAL TWIN / PREDICTIVE ML (/api/v3)</span>
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold border flex items-center gap-1 ${
             m04Healthy ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
           }`}>

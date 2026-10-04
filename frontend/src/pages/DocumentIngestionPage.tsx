@@ -115,7 +115,7 @@ export const DocumentIngestionPage: React.FC = () => {
         }
       } catch (err) {
         if (pollRef.current) clearInterval(pollRef.current);
-        setError('Lost connection to module 01 while polling job status (is it still running on :8001?).');
+        setError('Lost connection to the backend while polling job status (is it still running? cd Backend && python run.py).');
         setUploading(false);
         console.error(err);
       }
@@ -137,7 +137,7 @@ export const DocumentIngestionPage: React.FC = () => {
       setJobId(job.job_id);
       startPolling(job.job_id);
     } catch (err) {
-      setError('Failed to reach /api/v1/ingest on module 01 (is it running on :8001?).');
+      setError('Failed to reach /api/v1/ingest on the backend (is it running? cd Backend && python run.py).');
       setUploading(false);
       console.error(err);
     }
@@ -308,7 +308,7 @@ export const DocumentIngestionPage: React.FC = () => {
           </div>
 
           <div className="pt-2 border-t border-slate-800 text-[10px] font-mono text-slate-400">
-            Requires modules/01_document_intelligence running on :8001 (python run_server.py)
+            Requires the NWIS backend running (cd Backend &amp;&amp; python run.py)
           </div>
         </div>
 
