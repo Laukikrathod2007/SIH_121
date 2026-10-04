@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { Sidebar } from './components/layout/Sidebar';
@@ -18,6 +18,13 @@ import { SimulatorPage } from './pages/SimulatorPage';
 import { ReportsAnalyticsPage } from './pages/ReportsAnalyticsPage';
 import { SystemStatusPage } from './pages/SystemStatusPage';
 
+// Lazy-loaded: pulls in three.js + @react-three/fiber (~800kB, same cost as
+// WellInspector3DModal), only needed when the user actually opens the 3D
+// globe, not on initial load of every page in the app.
+const GlobeMapPage = lazy(() =>
+  import('./pages/GlobeMapPage').then((m) => ({ default: m.GlobeMapPage }))
+);
+
 // "/" itself is intercepted before it ever reaches React (see vite.config.ts's
 // landingPageAtRoot plugin, which serves the static marketing page for that
 // exact path). Everything the app actually does lives under /app, so a
@@ -33,6 +40,20 @@ const RoutedContent: React.FC = () => {
         <Route path="/app/drilling" element={<LiveDrillingPage />} />
         <Route path="/app/wells" element={<NearbyWellsPage />} />
         <Route path="/app/offset-map" element={<NwisMapPage />} />
+        <Route
+          path="/app/globe"
+          element={
+            <Suspense
+              fallback={
+                <div className="h-full flex items-center justify-center text-slate-500 font-mono text-xs">
+                  Loading 3D globe...
+                </div>
+              }
+            >
+              <GlobeMapPage />
+            </Suspense>
+          }
+        />
         <Route path="/app/correlation" element={<GeologicalCorrelationPage />} />
         <Route path="/app/risk" element={<RiskPredictionPage />} />
         <Route path="/app/alerts" element={<AlertsAdvisoryPage />} />

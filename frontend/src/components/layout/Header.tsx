@@ -71,29 +71,40 @@ export const Header: React.FC = () => {
           <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
         </div>
 
-        {/* Real-time Depth Readout */}
+        {/* Real-time Depth Readout -- when `telemetry` is null (WS not yet
+            connected / dropped), these render a static placeholder instead
+            of a live-looking number: dimmed, no bold/color emphasis, and an
+            explicit "--" unit so it cannot be mistaken for a real reading
+            (Priority 4 fix: these used to show a hardcoded fallback number
+            in the exact same styling as live data). */}
         <div className="hidden md:flex items-center space-x-3 text-xs font-mono">
-          <div className="bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded flex items-center gap-1.5">
+          <div className={`bg-slate-900/80 border px-2.5 py-1 rounded flex items-center gap-1.5 ${telemetry ? 'border-slate-800' : 'border-slate-800/50'}`}>
             <span className="text-slate-400">MD:</span>
-            <span className="text-cyan-400 font-bold">
-              {telemetry?.measured_depth_m?.toFixed(1) ?? '2450.0'} m
-            </span>
+            {telemetry?.measured_depth_m != null ? (
+              <span className="text-cyan-400 font-bold">{telemetry.measured_depth_m.toFixed(1)} m</span>
+            ) : (
+              <span className="text-slate-600 italic" title="No live telemetry connected">-- m</span>
+            )}
           </div>
-          <div className="bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded flex items-center gap-1.5">
+          <div className={`bg-slate-900/80 border px-2.5 py-1 rounded flex items-center gap-1.5 ${telemetry ? 'border-slate-800' : 'border-slate-800/50'}`}>
             <span className="text-slate-400">TVDSS:</span>
-            <span className="text-slate-200">
-              {telemetry?.tvdss_m?.toFixed(1) ?? '2315.6'} m
-            </span>
+            {telemetry?.tvdss_m != null ? (
+              <span className="text-slate-200">{telemetry.tvdss_m.toFixed(1)} m</span>
+            ) : (
+              <span className="text-slate-600 italic" title="No live telemetry connected">-- m</span>
+            )}
           </div>
-          <div className="bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded flex items-center gap-1.5">
+          <div className={`bg-slate-900/80 border px-2.5 py-1 rounded flex items-center gap-1.5 ${telemetry ? 'border-slate-800' : 'border-slate-800/50'}`}>
             <Layers className="w-3 h-3 text-amber-400" />
             <span className="text-slate-400">FORMATION:</span>
-            <span className="text-amber-300 font-semibold truncate max-w-[140px]">
-              {telemetry?.formation?.replace(/_/g, ' ') ?? 'Barail Sand'}
-            </span>
-            <span className="text-[10px] bg-slate-800 text-slate-300 px-1 rounded">
-              ξ: {telemetry?.xi?.toFixed(3) ?? '0.250'}
-            </span>
+            {telemetry?.formation ? (
+              <>
+                <span className="text-amber-300 font-semibold truncate max-w-[140px]">{telemetry.formation.replace(/_/g, ' ')}</span>
+                <span className="text-[10px] bg-slate-800 text-slate-300 px-1 rounded">ξ: {telemetry.xi?.toFixed(3) ?? 'n/a'}</span>
+              </>
+            ) : (
+              <span className="text-slate-600 italic" title="No live telemetry connected">-- (idle)</span>
+            )}
           </div>
         </div>
       </div>
