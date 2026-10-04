@@ -295,5 +295,125 @@
     "depth_start_md_m": 2980.0,
     "severity": "LOW",
     "well_id": "15/9-F-1"
+  },
+  {
+    "event_id": "EVT-1CC103C2",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-19B",
+    "event_type": "GAS_INFLUX",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 2805.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "event_id": "EVT-D242B94C",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-19B",
+    "event_type": "GAS_INFLUX",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 3220.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "event_id": "EVT-C9DA4ED8",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-19B",
+    "event_type": "GAS_INFLUX",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 317.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "event_id": "EVT-60EC8502",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-19B",
+    "event_type": "GAS_INFLUX",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 3360.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "event_id": "EVT-A90F04AF",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-19B",
+    "event_type": "GAS_INFLUX",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 3375.0,
+    "severity": "LOW",
+    "well_id": "15/9-19B"
+  },
+  {
+    "event_id": "EVT-0CA59534",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-19B",
+    "event_type": "GAS_INFLUX",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 4031.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "event_id": "EVT-4321E026",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-19B",
+    "event_type": "GAS_INFLUX",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 4071.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "event_id": "EVT-6AAD59FC",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-19B",
+    "event_type": "GAS_INFLUX",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 4109.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "event_id": "EVT-A2747CEA",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-19B",
+    "event_type": "GAS_INFLUX",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 4148.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-19B"
+  },
+  {
+    "event_id": "EVT-87F77267",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-19B",
+    "event_type": "KICK",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 3961.0,
+    "severity": "CRITICAL",
+    "well_id": "15/9-19B"
+  },
+  {
+    "event_id": "EVT-2CEB15D8",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-F-1C",
+    "event_type": "KICK",
+    "hazard_type": "KICK",
+    "depth_start_md_m": 3056.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-1C"
+  },
+  {
+    "event_id": "EVT-A2D68B8F",
+    "source_file": "volve (real_events_module01.json augmentation)",
+    "well_guess": "15/9-F-1C",
+    "event_type": "STUCK_PIPE",
+    "hazard_type": "STUCK_PIPE",
+    "depth_start_md_m": 3015.0,
+    "severity": "MEDIUM",
+    "well_id": "15/9-F-1C"
   }
 ]

@@ -227,7 +227,15 @@ def main():
     print()
 
     results = {}
-    for hazard_type in [HazardType.STUCK_PIPE, HazardType.WELLBORE_INSTABILITY]:
+    # KICK and MUD_LOSS added 2026-10-04 after merge_unused_real_events.py
+    # recovered genuinely usable, previously-unmerged real depth-tagged
+    # events from real_events_module01.json (a raw extraction dump that had
+    # never been fed into real_events_depth_tagged_fresh.json before). See
+    # that script's own docstring for the exact exclusion/dedup reasoning
+    # (a garbled/unexplained well bucket, 2 physically-impossible depths, a
+    # geological-description false positive, and 6 duplicate-OCR-pass rows
+    # were all identified and excluded, not blindly merged).
+    for hazard_type in [HazardType.STUCK_PIPE, HazardType.WELLBORE_INSTABILITY, HazardType.KICK, HazardType.MUD_LOSS]:
         print(f"--- {hazard_type.value} ---")
 
         # Soft dataset: includes 19B (no real trajectory -> inclination
