@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 750" role="img" aria-labelledby="title desc">
+  <title id="title">Operator report template learned</title>
+  <desc id="desc">Repeated report layouts become a saved operator template that accelerates the next report.</desc>
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#e9dfd1" stroke-width="1"/></pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="10" stdDeviation="11" flood-color="#5a4934" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="720" height="750" fill="#faf7f1"/><rect width="720" height="750" fill="url(#grid)" opacity=".75"/>
+  <text x="70" y="104" fill="#7a7166" font-family="monospace" font-size="12" letter-spacing="2">OPERATOR MEMORY · OIL INDIA</text>
+  <g class="report report-one" filter="url(#shadow)" transform="rotate(-8 206 335)"><rect x="86" y="190" width="210" height="300" rx="10" fill="#fffdfa" stroke="#d9d0c4" stroke-width="2"/><path d="M114 236h142M114 262h162M114 288h136M114 354h154M114 380h142M114 406h160" stroke="#c5bdb1" stroke-width="6" stroke-linecap="round"/><rect x="108" y="318" width="164" height="25" rx="3" fill="#f8d9b5" fill-opacity=".5" stroke="#c96a12"/></g>
+  <g class="report report-two" filter="url(#shadow)" transform="rotate(5 284 362)"><rect x="178" y="228" width="210" height="300" rx="10" fill="#fffdfa" stroke="#d9d0c4" stroke-width="2"/><path d="M206 274h142M206 300h162M206 326h136M206 392h154M206 418h142M206 444h160" stroke="#c5bdb1" stroke-width="6" stroke-linecap="round"/><rect x="200" y="358" width="164" height="25" rx="3" fill="#f8d9b5" fill-opacity=".5" stroke="#c96a12"/></g>
+  <path class="learn-flow" d="M394 370h75" fill="none" stroke="#c96a12" stroke-width="3" stroke-dasharray="6 7"/>
+  <g class="template" filter="url(#shadow)"><rect x="470" y="222" width="192" height="302" rx="18" fill="#fffdfa" stroke="#c96a12" stroke-width="2"/><rect x="492" y="248" width="148" height="56" rx="10" fill="#fbe8d3"/><text x="510" y="272" fill="#9a4e0c" font-family="monospace" font-size="10" letter-spacing="1">SAVED TEMPLATE</text><text x="510" y="291" fill="#312d27" font-family="monospace" font-size="13">DDR · OIL INDIA</text><path d="M500 342h130M500 375h112M500 408h124M500 456h94" stroke="#bbb2a5" stroke-width="7" stroke-linecap="round"/><circle cx="622" cy="456" r="10" fill="#c96a12"/></g>
+  <g transform="translate(186 586)"><rect width="350" height="50" rx="25" fill="#fbe8d3" stroke="#e2b17f"/><circle class="memory-dot" cx="29" cy="25" r="8" fill="#c96a12"/><text x="51" y="30" fill="#8a4006" font-family="monospace" font-size="13" letter-spacing="1">NEXT REPORT · FAST PATH</text></g>
+  <style>
+    .report-one{animation:report-in 4.8s ease-in-out infinite}.report-two{animation:report-in 4.8s ease-in-out infinite .35s}
+    .template{transform-box:fill-box;transform-origin:center;animation:template-save 4.8s cubic-bezier(.2,.8,.2,1) infinite}
+    .learn-flow{stroke-dasharray:6 7;animation:learn-dash 1.1s linear infinite}
+    .memory-dot{animation:memory-pulse 1.6s ease-in-out infinite}
+    @keyframes report-in{0%,10%,100%{opacity:.58;transform:translateY(6px)}28%,78%{opacity:1;transform:translateY(0)}}
+    @keyframes template-save{0%,20%{opacity:.45;transform:scale(.96)}42%,85%{opacity:1;transform:scale(1)}}
+    @keyframes learn-dash{to{stroke-dashoffset:-26}}
+    @keyframes memory-pulse{50%{opacity:.45;transform:scale(.78)}}
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;opacity:1!important;transform:none!important}}
+  </style>
+</svg>

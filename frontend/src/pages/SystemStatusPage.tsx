@@ -167,19 +167,26 @@ export const SystemStatusPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Module 03 — honestly not connected */}
+      {/* Physics/predictive engine — honestly not connected. Previously
+          labeled "MODULE 03" and pointed at "modules/03_physics_engine/" --
+          that folder doesn't exist; the real folders are
+          modules/04_physics_engine and modules/05_predictive_analytics.
+          "MODULE 03" in services/api.ts is just this feature area's
+          internal section name, not a real module number, and shouldn't
+          have been surfaced to users as one. */}
       <div className="scada-panel p-4 space-y-2 border-l-4 border-l-amber-500">
         <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-          <span className="text-xs font-mono font-bold text-slate-200">MODULE 03 — PHYSICS DIGITAL TWIN / PREDICTIVE ML</span>
+          <span className="text-xs font-mono font-bold text-slate-200">MODULES 04/05 — PHYSICS DIGITAL TWIN / PREDICTIVE ML</span>
           <span className="px-2 py-0.5 rounded text-[10px] font-bold border bg-amber-500/20 text-amber-300 border-amber-500/40">
             NOT CONNECTED
           </span>
         </div>
         <div className="text-[11px] font-mono text-slate-400">
-          modules/03_physics_engine/ is being ported in a parallel effort and has no FastAPI routes exposed yet in
-          this project — there is no health endpoint to poll, and LiveDrillingPage / SimulatorPage /
-          RiskPredictionPage's live hazard scores / AlertsAdvisoryPage all point at a placeholder base URL
-          (VITE_M03_API_BASE, default http://localhost:8003) that nothing is currently listening on. This is a
+          modules/04_physics_engine/ and modules/05_predictive_analytics/ are being ported in a parallel effort and
+          have no FastAPI routes exposed yet in this project — there is no health endpoint to poll, and
+          LiveDrillingPage / SimulatorPage / RiskPredictionPage's live hazard scores / AlertsAdvisoryPage all point
+          at a placeholder base URL (VITE_M03_API_BASE, default http://localhost:8003 — "M03" here names the
+          feature area, not either module's real folder number) that nothing is currently listening on. This is a
           known gap, not a fabricated "online" status.
         </div>
       </div>

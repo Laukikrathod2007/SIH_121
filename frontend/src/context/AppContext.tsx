@@ -34,13 +34,15 @@ const AppContext = createContext<AppContextType | null>(null);
 
 const HISTORY_SIZE = 250; // ~10 s of trace at 25 Hz
 
-// NOT YET WIRED: modules/03_physics_engine/ (the physics digital twin) has no
+// NOT YET WIRED: the physics digital twin / predictive engine
+// (modules/04_physics_engine, modules/05_predictive_analytics) has no
 // FastAPI/WebSocket routes exposed yet — see services/api.ts's "MODULE 03"
-// section. This URL points at a placeholder base (VITE_M03_API_BASE, default
-// http://localhost:8003) so the connect attempt below fails cleanly (caught
-// by ws.onerror -> reconnect loop) instead of pointing at a backend that
-// doesn't exist in this project at all. Update the path once module 03 ships
-// a real telemetry stream endpoint.
+// section (named after this feature area, not after either module's real
+// folder number). This URL points at a placeholder base (VITE_M03_API_BASE,
+// default http://localhost:8003) so the connect attempt below fails cleanly
+// (caught by ws.onerror -> reconnect loop) instead of pointing at a backend
+// that doesn't exist in this project at all. Update the path once a real
+// telemetry stream endpoint ships.
 const telemetryWsUrl = () => {
   const override = import.meta.env.VITE_TELEMETRY_WS_URL as string | undefined;
   if (override) return override;
@@ -343,49 +345,85 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [isWsConnected, handleNewTelemetry]);
 
   // Simulator Actions
+  //
+  // All seven of these call modules/04_physics_engine's simulator routes,
+  // which this project's backend never actually serves (see the
+  // telemetryWsUrl comment above) -- so every call here was rejecting
+  // silently with no try/catch, leaving every Simulator/Live-Drilling/
+  // Alerts button looking like it did nothing when clicked. Each one now
+  // short-circuits when isBackendOnline is false (skips a network call
+  // already known to fail) and swallows a genuine failure instead of
+  // throwing an unhandled rejection. UI components should still prefer
+  // disabling these controls via isBackendOnline rather than relying on
+  // this catch -- this is a safety net, not a substitute for an honest
+  // disabled state.
   const startSim = async () => {
-    await api.startSim();
-    setSimStatus((prev) => prev ? { ...prev, is_running: true } : null);
+    if (!isBackendOnline) return;
+    try {
+      await api.startSim();
+      setSimStatus((prev) => prev ? { ...prev, is_running: true } : null);
+    } catch { /* physics backend unreachable */ }
   };
 
   const pauseSim = async () => {
-    await api.pauseSim();
-    setSimStatus((prev) => prev ? { ...prev, is_running: false } : null);
+    if (!isBackendOnline) return;
+    try {
+      await api.pauseSim();
+      setSimStatus((prev) => prev ? { ...prev, is_running: false } : null);
+    } catch { /* physics backend unreachable */ }
   };
 
   const stepSim = async () => {
-    const stepData = await api.stepSim();
-    if (stepData) {
-      handleNewTelemetry(stepData);
-    }
+    if (!isBackendOnline) return;
+    try {
+      const stepData = await api.stepSim();
+      if (stepData) {
+        handleNewTelemetry(stepData);
+      }
+    } catch { /* physics backend unreachable */ }
   };
 
   const resetSim = async (initialMd?: number) => {
-    await api.resetSim(initialMd || 2500.0);
-    setTelemetryHistory([]);
-    refreshAlerts();
+    if (!isBackendOnline) return;
+    try {
+      await api.resetSim(initialMd || 2500.0);
+      setTelemetryHistory([]);
+      refreshAlerts();
+    } catch { /* physics backend unreachable */ }
   };
 
   const setSimSpeed = async (speed: number) => {
-    await api.setSimSpeed(speed);
-    setSimStatus((prev) => prev ? { ...prev, speed_multiplier: speed } : null);
+    if (!isBackendOnline) return;
+    try {
+      await api.setSimSpeed(speed);
+      setSimStatus((prev) => prev ? { ...prev, speed_multiplier: speed } : null);
+    } catch { /* physics backend unreachable */ }
   };
 
   const injectScenario = async (scenario: string, severity: number = 1.0) => {
-    await api.injectScenario(scenario, severity);
-    const status = await api.getSimStatus();
-    if (status) setSimStatus(status);
+    if (!isBackendOnline) return;
+    try {
+      await api.injectScenario(scenario, severity);
+      const status = await api.getSimStatus();
+      if (status) setSimStatus(status);
+    } catch { /* physics backend unreachable */ }
   };
 
   const clearScenarios = async () => {
-    await api.clearScenarios();
-    const status = await api.getSimStatus();
-    if (status) setSimStatus(status);
+    if (!isBackendOnline) return;
+    try {
+      await api.clearScenarios();
+      const status = await api.getSimStatus();
+      if (status) setSimStatus(status);
+    } catch { /* physics backend unreachable */ }
   };
 
   const mitigateAlert = async (alertId: string) => {
-    await api.mitigateAlert(activeWellId, alertId);
-    await refreshAlerts();
+    if (!isBackendOnline) return;
+    try {
+      await api.mitigateAlert(activeWellId, alertId);
+      await refreshAlerts();
+    } catch { /* physics backend unreachable */ }
   };
 
   const activeWell = wells.find((w) => w.well_id === activeWellId);

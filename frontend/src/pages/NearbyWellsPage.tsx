@@ -105,7 +105,7 @@ export const NearbyWellsPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              MODULE 2: NEARBY WELL INTELLIGENCE & GEOSPATIAL MAP
+              MODULE 02: NEARBY WELL INTELLIGENCE & GEOSPATIAL MAP
               <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded">
                 HAVERSINE + 5-FACTOR DORS
               </span>

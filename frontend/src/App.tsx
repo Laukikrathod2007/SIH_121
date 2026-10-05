@@ -8,6 +8,7 @@ import { CommandCenterPage } from './pages/CommandCenterPage';
 import { LiveDrillingPage } from './pages/LiveDrillingPage';
 import { NearbyWellsPage } from './pages/NearbyWellsPage';
 import { NwisMapPage } from './pages/NwisMapPage';
+import { SpatialVisualizationPage } from './pages/SpatialVisualizationPage';
 import { GeologicalCorrelationPage } from './pages/GeologicalCorrelationPage';
 import { RiskPredictionPage } from './pages/RiskPredictionPage';
 import { AlertsAdvisoryPage } from './pages/AlertsAdvisoryPage';
@@ -33,6 +34,7 @@ const RoutedContent: React.FC = () => {
         <Route path="/app/drilling" element={<LiveDrillingPage />} />
         <Route path="/app/wells" element={<NearbyWellsPage />} />
         <Route path="/app/offset-map" element={<NwisMapPage />} />
+        <Route path="/app/spatial" element={<SpatialVisualizationPage />} />
         <Route path="/app/correlation" element={<GeologicalCorrelationPage />} />
         <Route path="/app/risk" element={<RiskPredictionPage />} />
         <Route path="/app/alerts" element={<AlertsAdvisoryPage />} />

@@ -1,0 +1,27 @@
+{
+  "source": "Government of India environmental clearance submission",
+  "operator": "Oil India Limited",
+  "source_url": "https://environmentclearance.nic.in/writereaddata/Online/EDS/0_0_20_Feb_2023_2224388631ADSNDBNFeb23c.pdf",
+  "document_context": "Environmental information table for the Naharkatiya-Deohal-Bogapani-Nagajan area; the table lists well names, villages, and coordinates.",
+  "coordinate_note": "DMS coordinates transcribed from the source and converted to decimal degrees for map display. The source datum is not specified; do not treat the displayed decimals as a new survey.",
+  "wells": [
+    {
+      "well_id": "OIL-ASSAM-314",
+      "name": "Jaloni GT 15 · Well 314",
+      "field": "NDBN area · Duliajan",
+      "latitude_dms": "27° 22' 21.243\" N",
+      "longitude_dms": "95° 19' 48.572\" E",
+      "latitude": 27.3725675,
+      "longitude": 95.3301588888889
+    },
+    {
+      "well_id": "OIL-ASSAM-333",
+      "name": "Naohalia No. 3 · Well 333",
+      "field": "NDBN area · Duliajan",
+      "latitude_dms": "27° 21' 55.062\" N",
+      "longitude_dms": "95° 20' 3.978\" E",
+      "latitude": 27.365295,
+      "longitude": 95.3344383333333
+    }
+  ]
+}

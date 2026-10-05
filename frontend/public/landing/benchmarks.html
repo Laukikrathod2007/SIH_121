@@ -1,0 +1,665 @@
+<!DOCTYPE html><!--Jw_21s9GtQbQT3C3MYl6_--><html class="overflow-x-hidden" lang="en" style="--font-dwight:&#x27;dwight&#x27;, &#x27;dwight Fallback&#x27;;--font-dm-mono:&#x27;dmMono&#x27;, &#x27;dmMono Fallback&#x27;;--font-abc-favorit:&#x27;abcFavorit&#x27;, &#x27;abcFavorit Fallback&#x27;;--font-mindway:&#x27;mindway&#x27;, &#x27;mindway Fallback&#x27;;--font-inter:&#x27;Inter&#x27;, &#x27;Inter Fallback&#x27;;--font-systemia:&#x27;systemia&#x27;, &#x27;systemia Fallback&#x27;"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="preload" href="assets/fonts/inter-variable.woff2" as="font" crossorigin="" type="font/woff2"/><link rel="preload" href="assets/fonts/abc-favorit-bold.woff2" as="font" crossorigin="" type="font/woff2"/><link rel="preload" href="assets/fonts/abc-favorit-regular.woff2" as="font" crossorigin="" type="font/woff2"/><link rel="preload" href="assets/fonts/dm-mono-regular.woff2" as="font" crossorigin="" type="font/woff2"/><link rel="preload" href="assets/fonts/dwight-regular.woff2" as="font" crossorigin="" type="font/woff2"/><link rel="preload" href="assets/fonts/mindway.woff2" as="font" crossorigin="" type="font/woff2"/><link rel="preload" href="assets/fonts/systemia-variable.woff2" as="font" crossorigin="" type="font/woff2"/><link rel="stylesheet" href="assets/css/main-styles.css" data-precedence="next"/><link rel="stylesheet" href="assets/css/global-styles.css" data-precedence="next"/><meta name="next-size-adjust" content=""/><meta name="theme-color" content="#000000"/><title>DrillWise — Benchmarks</title><meta name="description" content="Published benchmark runs for DrillWise's document extraction, stratigraphic correlation, and stuck-pipe risk model — logged against real Equinor Volve field data, not synthetic demos."/><link rel="manifest" href="/site.webmanifest"/><meta name="robots" content="index, follow, max-image-preview:large"/><meta property="og:title" content="DrillWise — Benchmarks"/><meta property="og:description" content="Published benchmark runs, logged against real Equinor Volve field data."/><meta property="og:site_name" content="DrillWise"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="DrillWise — Benchmarks"/><meta name="twitter:description" content="Published benchmark runs, logged against real Equinor Volve field data."/><link rel="icon" href="/favicon.ico" sizes="any"/><link rel="icon" href="/favicon.svg" type="image/svg+xml"/><link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32"/><link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16"/><link rel="apple-touch-icon" href="/apple-touch-icon.png"/><style id="drillwise-overrides">
+/* ── DrillWise brand overrides ── */
+
+/* Orange accent colour — replaces extend.ai yellow/primary */
+:root {
+  --orange: #c96a12;
+  --orange-dark: #a75208;
+  --orange-pale: #f6dbb0;
+}
+
+/* Logo image size in nav */
+a[aria-label="DrillWise home"] img {
+  height: 30px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Announcement bar — keep black bg, update accent colour */
+[aria-label="Introducing DrillWise intelligence platform"] .text-orange-03,
+section[aria-label*="DrillWise"] span:first-child {
+  color: #fab849 !important;
+}
+
+/* Hero headline colour */
+h1.font-sans { color: #1c1917 !important; }
+
+/* Thin orange accent line at top of page content */
+main.bg-stone-50 {
+  border-top: 3px solid #c96a12;
+}
+
+/* Primary CTA buttons -> drillers-style solid orange */
+a[data-variant="primary"] {
+  background-color: #c96a12 !important;
+  border-color: #a75208 !important;
+  color: #fffaf3 !important;
+}
+a[data-variant="primary"]:hover {
+  background-color: #a75208 !important;
+  color: #fffaf3 !important;
+}
+
+/* Secondary CTA buttons -> orange outline instead of stone */
+a[data-variant="secondary"] {
+  border-color: #c96a12 !important;
+  color: #8a4006 !important;
+}
+a[data-variant="secondary"]:hover {
+  background-color: #f6dbb0 !important;
+  border-color: #a75208 !important;
+  color: #8a4006 !important;
+}
+
+</style>
+
+
+<style id="drillwise-theme-system">
+/* ─── THEME TOGGLE BUTTONS ─── */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-family: var(--font-dm-mono), monospace;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #f5f5f4;
+  color: #1c1917;
+  border: 1px solid #d6d3d1;
+  transition: all 0.2s ease;
+}
+.theme-toggle-btn:hover {
+  background: #e7e5e4;
+  border-color: #c96a12;
+  color: #c96a12;
+}
+
+.floating-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  background: #1c1917;
+  color: #ffffff;
+  border: 1.5px solid #fab849;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.floating-theme-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 10px 28px rgba(201,106,18,0.45);
+  background: #292524;
+}
+
+/* ─── DARK THEME OVERRIDES ─── */
+html.dark-theme,
+body.dark-theme {
+  background-color: #070d14 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Dark mode Header and Nav */
+html.dark-theme header,
+html.dark-theme nav {
+  background-color: #0b121a !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+html.dark-theme nav a {
+  color: #cbd5e1 !important;
+}
+html.dark-theme nav a:hover {
+  color: #f97316 !important;
+}
+
+/* Dark mode Main sections */
+html.dark-theme main,
+html.dark-theme section#capabilities,
+html.dark-theme .bg-stone-50,
+html.dark-theme .bg-\[\#f7f4ef\] {
+  background-color: #070d14 !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Dark mode Cards and Panels */
+html.dark-theme .bg-white,
+html.dark-theme .bg-stone-100 {
+  background-color: #0f1826 !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #e2e8f0 !important;
+}
+
+/* Dark mode inner cards */
+html.dark-theme .bg-stone-50 {
+  background-color: #131e2d !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Dark mode Text colors */
+html.dark-theme .text-stone-900,
+html.dark-theme .text-stone-800,
+html.dark-theme h1,
+html.dark-theme h2,
+html.dark-theme h3,
+html.dark-theme h4 {
+  color: #f8fafc !important;
+}
+
+html.dark-theme .text-stone-700,
+html.dark-theme .text-stone-600 {
+  color: #94a3b8 !important;
+}
+
+html.dark-theme .text-stone-500,
+html.dark-theme .text-stone-400 {
+  color: #64748b !important;
+}
+
+/* Dark mode border colors */
+html.dark-theme .border-stone-200,
+html.dark-theme .border-stone-300 {
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Dark mode Buttons */
+html.dark-theme .theme-toggle-btn {
+  background: #1e293b;
+  color: #f8fafc;
+  border-color: #334155;
+}
+html.dark-theme .theme-toggle-btn:hover {
+  border-color: #fab849;
+  color: #fab849;
+}
+html.dark-theme .floating-theme-btn {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #f97316;
+}
+
+/* Dark mode Wellbore SVG adjustments */
+html.dark-theme svg.hero-well-simulation-svg path[fill="#ecebea"] {
+  fill: #1a2535 !important;
+}
+html.dark-theme svg.hero-well-simulation-svg path[fill="#f7f4ef"] {
+  fill: #131e28 !important;
+}
+html.dark-theme svg.hero-well-simulation-svg text {
+  fill: #93c5fd !important;
+  stroke: rgba(10,16,24,0.95) !important;
+}
+html.dark-theme svg.hero-well-simulation-svg circle[stroke="#ffffff"],
+html.dark-theme svg.hero-well-simulation-svg circle[stroke="hsl(var(--background))"] {
+  stroke: #0a1018 !important;
+}
+html.dark-theme #dw-hero-well-container {
+  background: #0f1826 !important;
+}
+
+/* Dark mode Footer */
+html.dark-theme footer {
+  background-color: #06090e !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+</style>
+
+<link rel="stylesheet" href="assets/css/drillwise-editorial.css?v=20261002-8">
+</head><body><div hidden=""><!--$--><!--/$--></div><script>((a,b,c,d,e,f,g,h)=>{let i=document.documentElement,j=["light","dark"];function k(b){var c;(Array.isArray(a)?a:[a]).forEach(a=>{let c="class"===a,d=c&&f?e.map(a=>f[a]||a):e;c?(i.classList.remove(...d),i.classList.add(f&&f[b]?f[b]:b)):i.setAttribute(a,b)}),c=b,h&&j.includes(c)&&(i.style.colorScheme=c)}if(d)k(d);else try{let a=localStorage.getItem(b)||c,d=g&&"system"===a?window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light":a;k(d)}catch(a){}})("data-theme","theme","system","light",["light","dark"],null,true,true)</script><div class="relative z-navbar-mobile-menu block lg:hidden"><nav aria-hidden="true" class="fixed top-14.25 left-0 z-navbar-mobile-menu w-full bg-background p-px md:top-16 transform-gpu transition-transform duration-300 ease-out -translate-y-[calc(100%+56px)]"><ul class="flex flex-col gap-px"><li><a style="transition-delay:0ms" tabindex="-1" class="font-mono uppercase relative group text-stone-500 hover:text-stone-800 gap-2 text-[15px] tracking-[0.9px] flex h-auto w-full items-center justify-start rounded-md bg-stone-50 px-8 py-5 hover:pb-5 transform-gpu transition-all duration-300 -translate-x-4 opacity-0" data-size="md" data-variant="navbar" href="/#capabilities">Platform</a></li><li><a style="transition-delay:0ms" tabindex="-1" class="font-mono uppercase relative group text-stone-500 hover:text-stone-800 gap-2 text-[15px] tracking-[0.9px] flex h-auto w-full items-center justify-start rounded-md bg-stone-50 px-8 py-5 hover:pb-5 transform-gpu transition-all duration-300 -translate-x-4 opacity-0" data-size="md" data-variant="navbar" href="/#command-cockpit">Demo</a></li><li><div class="flex flex-col gap-px rounded-md bg-stone-50 px-8 py-5 transform-gpu transition-all duration-300 -translate-x-4 opacity-0" style="transition-delay:0ms"><span class="font-mono text-mono-14 text-stone-500 uppercase tracking-[0.84px]">Modules</span><div class="flex flex-col pt-3"><a tabindex="-1" class="flex items-center font-mono uppercase relative transform-gpu transition-all group text-stone-500 hover:text-stone-800 gap-2 text-[15px] tracking-[0.9px] h-auto w-full justify-start rounded-xs bg-stone-50 px-0 py-2 hover:pb-2" data-size="md" data-variant="navbar" href="/#predictive-risk">Risk Predictor</a><a tabindex="-1" class="flex items-center font-mono uppercase relative transform-gpu transition-all group text-stone-500 hover:text-stone-800 gap-2 text-[15px] tracking-[0.9px] h-auto w-full justify-start rounded-xs bg-stone-50 px-0 py-2 hover:pb-2" data-size="md" data-variant="navbar" href="/#stratigraphy-correlation">Well Correlation</a><a tabindex="-1" class="flex items-center font-mono uppercase relative transform-gpu transition-all group text-stone-500 hover:text-stone-800 gap-2 text-[15px] tracking-[0.9px] h-auto w-full justify-start rounded-xs bg-stone-50 px-0 py-2 hover:pb-2" data-size="md" data-variant="navbar" href="/#lookahead-alerts">Lookahead Alerts</a><a tabindex="-1" class="flex items-center font-mono uppercase relative transform-gpu transition-all group text-stone-500 hover:text-stone-800 gap-2 text-[15px] tracking-[0.9px] h-auto w-full justify-start rounded-xs bg-stone-50 px-0 py-2 hover:pb-2" data-size="md" data-variant="navbar" href="/#knowledge-search">Knowledge Search</a><a href="/app" tabindex="-1" class="flex items-center font-mono uppercase relative transform-gpu transition-all group text-stone-500 hover:text-stone-800 gap-2 text-[15px] tracking-[0.9px] h-auto w-full justify-start rounded-xs bg-stone-50 px-0 py-2 hover:pb-2" data-size="md" data-variant="navbar" href="/#casing-program">Casing Program</a><a href="/app" tabindex="-1" class="flex items-center font-mono uppercase relative transform-gpu transition-all group text-stone-500 hover:text-stone-800 gap-2 text-[15px] tracking-[0.9px] h-auto w-full justify-start rounded-xs bg-stone-50 px-0 py-2 hover:pb-2" data-size="md" data-variant="navbar">Offset Map<svg height="24" role="presentation" viewBox="0 0 12 12" width="24" xmlns="http://www.w3.org/2000/svg" fill="none" class="size-3"><path d="M4.37255 2.875H9.125M9.125 2.875V8.12291M9.125 2.875L3.25 8.75" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg></a></div></div></li><li><a style="transition-delay:0ms" tabindex="-1" class="font-mono uppercase relative group text-stone-500 hover:text-stone-800 gap-2 text-[15px] tracking-[0.9px] flex h-auto w-full items-center justify-start rounded-md bg-stone-50 px-8 py-5 hover:pb-5 transform-gpu transition-all duration-300 -translate-x-4 opacity-0" data-size="md" data-variant="navbar" href="/benchmarks">Benchmarks</a></li><li><a style="transition-delay:0ms" tabindex="-1" class="font-mono uppercase relative group text-stone-500 hover:text-stone-800 gap-2 text-[15px] tracking-[0.9px] flex h-auto w-full items-center justify-start rounded-md bg-stone-50 px-8 py-5 hover:pb-5 transform-gpu transition-all duration-300 -translate-x-4 opacity-0" data-size="md" data-variant="navbar" href="/app">Docs<svg height="24" role="presentation" viewBox="0 0 12 12" width="24" xmlns="http://www.w3.org/2000/svg" fill="none" class="size-3"><path d="M4.37255 2.875H9.125M9.125 2.875V8.12291M9.125 2.875L3.25 8.75" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg></a></li><div class="flex items-center justify-between rounded-md bg-stone-50 p-2.5"><div class="size-1.5 rounded-full bg-stone-300"></div><div class="size-1.5 rounded-full bg-stone-300"></div></div></ul></nav></div><header class="fixed top-0 z-navbar flex h-14 w-full gap-px bg-background md:grid md:h-16 md:grid-cols-[1fr_minmax(0,var(--spacing-tablet-container))_1fr] lg:grid-cols-[1fr_minmax(0,var(--spacing-desktop-container))_1fr] xl:grid-cols-[1fr_minmax(0,var(--spacing-desktop-container-xl))_1fr]"><div class="hidden h-full w-full rounded-xs bg-stone-50 md:block"></div><nav class="relative z-navbar flex w-full items-center justify-between rounded-xs bg-stone-50 px-3 py-3 md:py-0 lg:w-auto lg:px-8"><a aria-label="DrillWise home" href="/" style="display:flex;align-items:center;">
+<img src="assets/images/drillwise-wordmark.png" alt="DrillWise" style="height:28px;width:auto;display:block;object-fit:contain;" />
+</a><div class="hidden items-center gap-4 lg:flex" style="flex-wrap:nowrap;flex-shrink:0;"><a class="flex items-center justify-center font-mono uppercase relative transform-gpu transition-all group bg-transparent text-stone-500 hover:text-stone-800 h-fit w-fit gap-2 px-2.5 py-0 text-[15px] tracking-[0.9px] hover:pb-0 whitespace-nowrap" data-size="md" data-variant="navbar" href="/#capabilities">Platform</a><a class="flex items-center justify-center font-mono uppercase relative transform-gpu transition-all group bg-transparent text-stone-500 hover:text-stone-800 h-fit w-fit gap-2 px-2.5 py-0 text-[15px] tracking-[0.9px] hover:pb-0 whitespace-nowrap" data-size="md" data-variant="navbar" href="/#command-cockpit">Demo</a><div class="relative"><button type="button" id="dw-modules-trigger" class="flex items-center justify-center font-mono uppercase relative transform-gpu transition-all group bg-transparent text-stone-500 hover:text-stone-800 h-fit w-fit gap-2 px-2.5 py-0 text-[15px] tracking-[0.9px] hover:pb-0 whitespace-nowrap" data-size="md" data-variant="navbar">Modules<svg height="24" role="presentation" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg" class="size-3 transition-transform duration-200"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button><div id="dw-modules-panel" style="display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:10px;width:580px;max-width:calc(100vw - 32px);z-index:60;"><div style="background:#ffffff;border:1px solid #e7e5e4;border-radius:8px;box-shadow:0 12px 32px rgba(28,25,23,0.14);padding:18px;overflow:hidden;"><div style="font-family:var(--font-dm-mono),monospace;font-size:11px;color:#a8a29e;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:10px;padding:0 2px;">Modules</div><div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:2px;"><a href="/#historical-extraction" style="display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:6px;text-decoration:none;color:inherit;min-width:0;box-sizing:border-box;" onmouseover="this.style.background='#fafaf9'" onmouseout="this.style.background='transparent'"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#44403c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex-shrink:0;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg><span style="min-width:0;"><strong style="display:block;font-family:var(--font-abc-favorit),ui-sans-serif,sans-serif;font-size:14px;font-weight:600;color:#1c1917;">Data Extraction</strong><span style="display:block;margin-top:2px;font-size:12px;color:#78716c;line-height:1.4;">Scanned DDRs &amp; WCRs parsed into structured records.</span></span></a><a href="/#nearby-well-gis" style="display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:6px;text-decoration:none;color:inherit;min-width:0;box-sizing:border-box;" onmouseover="this.style.background='#fafaf9'" onmouseout="this.style.background='transparent'"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#44403c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg><span style="min-width:0;"><strong style="display:block;font-family:var(--font-abc-favorit),ui-sans-serif,sans-serif;font-size:14px;font-weight:600;color:#1c1917;">Offset GIS</strong><span style="display:block;margin-top:2px;font-size:12px;color:#78716c;line-height:1.4;">Subsurface-aware basin correlation, not just nearby.</span></span></a><a href="/#knowledge-search" style="display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:6px;text-decoration:none;color:inherit;min-width:0;box-sizing:border-box;" onmouseover="this.style.background='#fafaf9'" onmouseout="this.style.background='transparent'"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#44403c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex-shrink:0;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span style="min-width:0;"><strong style="display:block;font-family:var(--font-abc-favorit),ui-sans-serif,sans-serif;font-size:14px;font-weight:600;color:#1c1917;">Knowledge Search</strong><span style="display:block;margin-top:2px;font-size:12px;color:#78716c;line-height:1.4;">Ask drilling archives anything, in plain language.</span></span></a><a href="/#stratigraphy-correlation" style="display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:6px;text-decoration:none;color:inherit;min-width:0;box-sizing:border-box;" onmouseover="this.style.background='#fafaf9'" onmouseout="this.style.background='transparent'"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#44403c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex-shrink:0;"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg><span style="min-width:0;"><strong style="display:block;font-family:var(--font-abc-favorit),ui-sans-serif,sans-serif;font-size:14px;font-weight:600;color:#1c1917;">Stratigraphy</strong><span style="display:block;margin-top:2px;font-size:12px;color:#78716c;line-height:1.4;">See exactly what's ahead of the drill bit.</span></span></a><a href="/#predictive-risk" style="display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:6px;text-decoration:none;color:inherit;min-width:0;box-sizing:border-box;" onmouseover="this.style.background='#fafaf9'" onmouseout="this.style.background='transparent'"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#44403c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex-shrink:0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span style="min-width:0;"><strong style="display:block;font-family:var(--font-abc-favorit),ui-sans-serif,sans-serif;font-size:14px;font-weight:600;color:#1c1917;">Risk Predictor</strong><span style="display:block;margin-top:2px;font-size:12px;color:#78716c;line-height:1.4;">Quantifies every hazard before it manifests downhole.</span></span></a><a href="/#lookahead-alerts" style="display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:6px;text-decoration:none;color:inherit;min-width:0;box-sizing:border-box;" onmouseover="this.style.background='#fafaf9'" onmouseout="this.style.background='transparent'"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#44403c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex-shrink:0;"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg><span style="min-width:0;"><strong style="display:block;font-family:var(--font-abc-favorit),ui-sans-serif,sans-serif;font-size:14px;font-weight:600;color:#1c1917;">Lookahead Alerts</strong><span style="display:block;margin-top:2px;font-size:12px;color:#78716c;line-height:1.4;">35&ndash;45 min of lead time before the bit reaches a known hazard.</span></span></a><a href="/#command-cockpit" style="display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:6px;text-decoration:none;color:inherit;min-width:0;box-sizing:border-box;" onmouseover="this.style.background='#fafaf9'" onmouseout="this.style.background='transparent'"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#44403c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex-shrink:0;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span style="min-width:0;"><strong style="display:block;font-family:var(--font-abc-favorit),ui-sans-serif,sans-serif;font-size:14px;font-weight:600;color:#1c1917;">Command Cockpit</strong><span style="display:block;margin-top:2px;font-size:12px;color:#78716c;line-height:1.4;">One live view where all intelligence converges.</span></span></a><a href="/#casing-program" style="display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:6px;text-decoration:none;color:inherit;min-width:0;box-sizing:border-box;" onmouseover="this.style.background='#fafaf9'" onmouseout="this.style.background='transparent'"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#44403c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;flex-shrink:0;"><path d="M12 2v20"/><path d="M8 6h8"/><path d="M6 12h12"/><path d="M4 18h16"/></svg><span style="min-width:0;"><strong style="display:block;font-family:var(--font-abc-favorit),ui-sans-serif,sans-serif;font-size:14px;font-weight:600;color:#1c1917;">Casing Program</strong><span style="display:block;margin-top:2px;font-size:12px;color:#78716c;line-height:1.4;">Real casing strings for 2 real wells, correlated by shoe depth.</span></span></a></div></div></div></div><a class="flex items-center justify-center font-mono uppercase relative transform-gpu transition-all group bg-transparent text-stone-500 hover:text-stone-800 h-fit w-fit gap-2 px-2.5 py-0 text-[15px] tracking-[0.9px] hover:pb-0 whitespace-nowrap" data-size="md" data-variant="navbar" href="/benchmarks">Benchmarks</a><a target="_blank" rel="noopener" href="/app" class="flex items-center justify-center font-mono uppercase relative transform-gpu transition-all group bg-transparent text-stone-500 hover:text-stone-800 h-fit w-fit gap-2 px-2.5 py-0 text-[15px] tracking-[0.9px] hover:pb-0 whitespace-nowrap" data-size="md" data-variant="navbar">Docs<svg height="24" role="presentation" viewBox="0 0 12 12" width="24" xmlns="http://www.w3.org/2000/svg" fill="none" class="size-3"><path d="M4.37255 2.875H9.125M9.125 2.875V8.12291M9.125 2.875L3.25 8.75" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg></a></div><div class="flex items-center gap-2">
+  <!-- Visible Theme Toggle Key in Header -->
+  <button id="theme-toggle-nav" onclick="toggleTheme()" class="theme-toggle-btn" aria-label="Toggle dark mode" title="Switch between Light and Dark mode">
+    <span class="theme-toggle-icon">🌙</span>
+    <span class="theme-toggle-text hidden sm:inline">Dark</span>
+  </button><a href="/app" class="flex items-center justify-center font-mono uppercase relative transform-gpu transition-all group bg-stone-50 text-stone-800 border-x border-t border-b-2 border-stone-600 rounded-md hover:bg-stone-100 hover:text-stone-700 hover:border-b hover:border-stone-500 hover:inset-shadow-button-secondary data-[size=lg]:hover:text-stone-500 h-10 w-fit py-3.75 px-3 gap-3 text-[13px] tracking-[0.78px] hover:pb-3.25" data-size="md" data-variant="secondary">Get started</a><button aria-expanded="false" aria-label="Open menu" class="items-center justify-center font-mono uppercase relative transform-gpu transition-all group bg-stone-50 text-stone-800 border-x border-t border-b-2 border-stone-600 rounded-md hover:bg-stone-100 hover:text-stone-700 hover:border-b hover:border-stone-500 hover:inset-shadow-button-secondary data-[size=lg]:hover:text-stone-500 py-3.75 px-3 gap-3 text-[13px] tracking-[0.78px] hover:pb-3.25 size-10 [&amp;_svg]:size-3 flex lg:hidden" data-icon-only="" data-size="md" data-variant="secondary"><div class="relative size-5"><span class="absolute top-1/2 left-0 block h-[1.5px] w-full origin-center bg-current" style="transform:translateY(-3.5px)"></span><span class="absolute top-1/2 left-0 block h-[1.5px] w-full origin-center bg-current"></span></div></button></div></nav><div class="hidden h-full w-full rounded-xs bg-stone-50 md:block"></div></header>
+<section class="relative w-full bg-white py-16 lg:py-24 border-t border-stone-200">
+  <div class="mx-auto max-w-desktop-container px-6 lg:px-10 xl:max-w-desktop-container-xl">
+    <div class="text-center max-w-3xl mx-auto">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-50 border border-stone-300 text-[#c96a12] font-mono text-[11px] font-semibold tracking-wider uppercase mb-5">
+        <span class="w-1.5 h-1.5 rounded-full bg-[#c96a12]"></span>
+        Benchmarks
+      </div>
+      <h1 class="font-sans text-stone-900 text-heading-4 md:text-heading-3 lg:text-heading-2 font-bold tracking-tight" style="line-height:1.1;">
+        Benchmarks for the hardest parts of <span style="background:#fbe8d3; padding:0 4px;">offset well intelligence.</span>
+      </h1>
+      <p class="mt-4 text-stone-600 text-base md:text-lg leading-relaxed">
+        Published runs for document extraction, stratigraphic correlation, and stuck-pipe risk. Each report states its dataset, method, comparison scope, and result &mdash; logged against real Equinor Volve field data, not a synthetic demo.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="dashboard" class="relative w-full bg-[#f7f4ef] py-16 lg:py-24 border-t border-stone-200">
+  <div class="mx-auto max-w-desktop-container px-6 lg:px-10 xl:max-w-desktop-container-xl">
+    <div class="text-center max-w-3xl mx-auto mb-12">
+      <div class="font-mono text-xs text-[#c96a12] uppercase tracking-wider font-bold mb-2">Measured, Not Marketed</div>
+      <h2 class="font-sans text-stone-900 text-heading-5 md:text-heading-3 lg:text-heading-2 font-bold tracking-tight" style="line-height:1.1;">
+        Benchmarked on<br/><span style="color:#c96a12;">real Equinor Volve field data</span>
+      </h2>
+      <p class="mt-4 text-stone-600 text-base md:text-lg leading-relaxed">
+        Every figure below comes from a logged run against real historical drilling reports &mdash; not a synthetic demo dataset.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-stone-200 border border-stone-200 rounded-md overflow-hidden mb-10">
+      <div class="bg-stone-900 text-white p-6 lg:p-7">
+        <div class="font-mono text-xs text-stone-400 uppercase tracking-wider mb-2">Stratigraphic Correlation</div>
+        <div class="font-sans text-4xl lg:text-5xl font-bold">98/100</div>
+        <div class="font-mono text-[11px] text-stone-400 uppercase tracking-wider mt-2">Real bracket tests, correct TVD interpolation</div>
+      </div>
+      <div class="bg-white p-6 lg:p-7">
+        <div class="font-mono text-xs text-[#c96a12] uppercase tracking-wider mb-2">Stuck-Pipe Risk Model</div>
+        <div class="font-sans text-stone-900 text-4xl lg:text-5xl font-bold">0.661 AUC</div>
+        <div class="font-mono text-[11px] text-stone-500 uppercase tracking-wider mt-2">Leave-one-well-out on 3 real Volve wells</div>
+      </div>
+      <div class="bg-white p-6 lg:p-7">
+        <div class="font-mono text-xs text-[#c96a12] uppercase tracking-wider mb-2">Document Extraction</div>
+        <div class="font-sans text-stone-900 text-4xl lg:text-5xl font-bold">100%</div>
+        <div class="font-mono text-[11px] text-stone-500 uppercase tracking-wider mt-2">Physics-validation accuracy, 74-page real run</div>
+      </div>
+    </div>
+
+    <div class="mb-10">
+      <div class="font-mono text-xs text-stone-500 uppercase tracking-wider mb-6 text-center">Measured Across Four Logged Runs</div>
+      <div class="flex items-end justify-center gap-6 md:gap-12 h-[220px]">
+        <div class="flex flex-col items-center">
+          <div class="font-sans text-stone-900 text-sm font-bold mb-2">100%</div>
+          <div class="w-14 md:w-20 rounded-t-md" style="height:200px;background:#1d1b19;"></div>
+          <div class="font-mono text-[10px] text-stone-500 uppercase tracking-wider mt-2 text-center w-20 md:w-24">Physics Validation</div>
+        </div>
+        <div class="flex flex-col items-center">
+          <div class="font-sans text-stone-900 text-sm font-bold mb-2">99%</div>
+          <div class="w-14 md:w-20 rounded-t-md" style="height:198px;background:#57524b;"></div>
+          <div class="font-mono text-[10px] text-stone-500 uppercase tracking-wider mt-2 text-center w-20 md:w-24">Extraction Confidence</div>
+        </div>
+        <div class="flex flex-col items-center">
+          <div class="font-sans text-stone-900 text-sm font-bold mb-2">98%</div>
+          <div class="w-14 md:w-20 rounded-t-md" style="height:196px;background:#c96a12;"></div>
+          <div class="font-mono text-[10px] text-stone-500 uppercase tracking-wider mt-2 text-center w-20 md:w-24">Stratigraphic Correlation</div>
+        </div>
+        <div class="flex flex-col items-center">
+          <div class="font-sans text-stone-900 text-sm font-bold mb-2">0.661 AUC</div>
+          <div class="w-14 md:w-20 rounded-t-md border border-stone-300" style="height:132px;background:#e9e2d6;"></div>
+          <div class="font-mono text-[10px] text-stone-500 uppercase tracking-wider mt-2 text-center w-20 md:w-24">Stuck-Pipe Risk</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-stone-200 border border-stone-200 rounded-md overflow-hidden mb-8">
+      <div class="bg-white p-4 text-center">
+        <div class="font-sans text-stone-900 text-2xl font-bold">14</div>
+        <div class="font-mono text-[10px] text-stone-500 uppercase tracking-wider mt-1">Real Volve documents</div>
+      </div>
+      <div class="bg-white p-4 text-center">
+        <div class="font-sans text-stone-900 text-2xl font-bold">979</div>
+        <div class="font-mono text-[10px] text-stone-500 uppercase tracking-wider mt-1">Pages ingested</div>
+      </div>
+      <div class="bg-white p-4 text-center">
+        <div class="font-sans text-stone-900 text-2xl font-bold">119</div>
+        <div class="font-mono text-[10px] text-stone-500 uppercase tracking-wider mt-1">Real events extracted</div>
+      </div>
+      <div class="bg-white p-4 text-center">
+        <div class="font-sans text-stone-900 text-2xl font-bold">22</div>
+        <div class="font-mono text-[10px] text-stone-500 uppercase tracking-wider mt-1">Wells validated</div>
+      </div>
+    </div>
+
+    <p class="text-stone-500 text-xs font-mono text-center max-w-2xl mx-auto leading-relaxed">
+      Methodology: stuck-pipe AUC uses leave-one-well-out cross-validation (train on 2 wells, test on the held-out well, repeated per well) rather than a single random split &mdash; it beat a 0.622 AUC baseline trained on synthetic data alone. Extraction figures are from a logged benchmark run, not a cherry-picked sample.
+    </p>
+  </div>
+</section>
+
+<section id="benchmark-reports" class="relative w-full bg-white py-16 lg:py-24 border-t border-stone-200">
+  <div class="mx-auto max-w-desktop-container px-6 lg:px-10 xl:max-w-desktop-container-xl">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-50 border border-stone-300 text-[#c96a12] font-mono text-[11px] font-semibold tracking-wider uppercase mb-4">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#c96a12]"></span>
+          Benchmark Reports
+        </div>
+        <h2 class="font-sans text-stone-900 text-heading-5 md:text-heading-3 font-bold tracking-tight" style="line-height:1.1;">Three logged runs, published in full.</h2>
+      </div>
+      <p class="text-stone-600 text-sm md:text-base leading-relaxed max-w-md">Each card states its dataset, method, and result exactly as logged. Expand for the benchmark method; the Volve dataset itself is Equinor's public release, not ours.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <div class="bg-white rounded-lg border border-stone-200 p-6 flex flex-col">
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-50 border border-stone-200 text-stone-600 font-mono text-[10px] uppercase tracking-wider w-fit mb-4">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#c96a12]"></span>
+          Extraction
+        </div>
+        <h3 class="font-sans text-stone-900 text-lg font-bold mb-2 flex items-center gap-1.5">
+          Physics-Validated Extraction
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-stone-400"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </h3>
+        <p class="text-stone-500 text-sm leading-relaxed mb-5">Measures whether extracted fields (mud weight, NPT, casing, formation tops) survive a drilling-physics bounds check after OCR, on a real multi-page report.</p>
+        <div class="grid grid-cols-2 gap-px bg-stone-200 border border-stone-200 rounded-md overflow-hidden mb-5">
+          <div class="bg-stone-50 p-3">
+            <div class="font-mono text-[9px] text-stone-500 uppercase tracking-wider mb-1">Validation Accuracy</div>
+            <div class="font-sans text-stone-900 text-2xl font-bold">100%</div>
+            <div class="font-mono text-[9px] text-stone-400 uppercase tracking-wider mt-1">Module 01 pipeline</div>
+          </div>
+          <div class="bg-stone-50 p-3">
+            <div class="font-mono text-[9px] text-stone-500 uppercase tracking-wider mb-1">Pages Run</div>
+            <div class="font-sans text-stone-900 text-2xl font-bold">74</div>
+            <div class="font-mono text-[9px] text-stone-400 uppercase tracking-wider mt-1">1 real DDR, logged</div>
+          </div>
+        </div>
+        <details class="mb-5 group">
+          <summary class="flex items-center justify-between cursor-pointer font-mono text-[11px] text-stone-600 uppercase tracking-wider py-2 border-t border-stone-200 list-none">
+            Benchmark Details
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform group-open:rotate-180"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <p class="text-stone-500 text-xs leading-relaxed pt-2">Run against one real 74-page Volve daily drilling report. Every extracted value is checked against drilling-physics bounds (e.g. mud weight 7&ndash;22 ppg); OCR digit-slips like &ldquo;3.2&rdquo; for &ldquo;13.2&rdquo; are auto-repaired and logged, not silently dropped.</p>
+        </details>
+        <div class="font-mono text-[10px] text-stone-400 uppercase tracking-wider mb-2">Sources</div>
+        <a href="https://www.equinor.com/energy/volve-data-sharing" target="_blank" rel="noopener" class="flex items-center justify-between p-2.5 rounded bg-stone-50 border border-stone-200 hover:border-[#c96a12] transition-colors mb-4">
+          <span>
+            <span class="block font-mono text-[9px] text-stone-400 uppercase tracking-wider">Dataset</span>
+            <span class="block text-stone-700 text-xs font-mono mt-0.5">Equinor Volve (public release)</span>
+          </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-stone-400 shrink-0"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </a>
+        <a href="#dashboard" class="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-md border border-stone-300 font-mono text-xs uppercase tracking-wider text-stone-700 hover:border-[#c96a12] hover:text-[#c96a12] transition-colors">
+          Read Extraction Benchmark
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+
+      <div class="bg-white rounded-lg border border-stone-200 p-6 flex flex-col">
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-50 border border-stone-200 text-stone-600 font-mono text-[10px] uppercase tracking-wider w-fit mb-4">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#c96a12]"></span>
+          Correlation
+        </div>
+        <h3 class="font-sans text-stone-900 text-lg font-bold mb-2 flex items-center gap-1.5">
+          Cross-Well TVD Correlation
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-stone-400"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </h3>
+        <p class="text-stone-500 text-sm leading-relaxed mb-5">Measures whether minimum-curvature TVD interpolation correctly maps formation tops between wells at real bracket (known-depth) test points.</p>
+        <div class="grid grid-cols-2 gap-px bg-stone-200 border border-stone-200 rounded-md overflow-hidden mb-5">
+          <div class="bg-stone-50 p-3">
+            <div class="font-mono text-[9px] text-stone-500 uppercase tracking-wider mb-1">Bracket Test Score</div>
+            <div class="font-sans text-stone-900 text-2xl font-bold">98/100</div>
+            <div class="font-mono text-[9px] text-stone-400 uppercase tracking-wider mt-1">SPE/API min. curvature</div>
+          </div>
+          <div class="bg-stone-50 p-3">
+            <div class="font-mono text-[9px] text-stone-500 uppercase tracking-wider mb-1">Offset Wells</div>
+            <div class="font-sans text-stone-900 text-2xl font-bold">3</div>
+            <div class="font-mono text-[9px] text-stone-400 uppercase tracking-wider mt-1">Real Volve field</div>
+          </div>
+        </div>
+        <details class="mb-5 group">
+          <summary class="flex items-center justify-between cursor-pointer font-mono text-[11px] text-stone-600 uppercase tracking-wider py-2 border-t border-stone-200 list-none">
+            Benchmark Details
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform group-open:rotate-180"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <p class="text-stone-500 text-xs leading-relaxed pt-2">98 of 100 real bracket tests &mdash; interpolating TVD between two known survey stations &mdash; landed within tolerance, using the SPE/API minimum curvature method rather than a linear estimate.</p>
+        </details>
+        <div class="font-mono text-[10px] text-stone-400 uppercase tracking-wider mb-2">Sources</div>
+        <a href="https://www.equinor.com/energy/volve-data-sharing" target="_blank" rel="noopener" class="flex items-center justify-between p-2.5 rounded bg-stone-50 border border-stone-200 hover:border-[#c96a12] transition-colors mb-4">
+          <span>
+            <span class="block font-mono text-[9px] text-stone-400 uppercase tracking-wider">Dataset</span>
+            <span class="block text-stone-700 text-xs font-mono mt-0.5">Equinor Volve (public release)</span>
+          </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-stone-400 shrink-0"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </a>
+        <a href="#dashboard" class="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-md border border-stone-300 font-mono text-xs uppercase tracking-wider text-stone-700 hover:border-[#c96a12] hover:text-[#c96a12] transition-colors">
+          Read Correlation Benchmark
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+
+      <div class="bg-white rounded-lg border border-stone-200 p-6 flex flex-col">
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-50 border border-stone-200 text-stone-600 font-mono text-[10px] uppercase tracking-wider w-fit mb-4">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#c96a12]"></span>
+          Risk ML
+        </div>
+        <h3 class="font-sans text-stone-900 text-lg font-bold mb-2 flex items-center gap-1.5">
+          Stuck-Pipe Risk (XGBoost)
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-stone-400"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </h3>
+        <p class="text-stone-500 text-sm leading-relaxed mb-5">Measures whether the trained stuck-pipe classifier generalizes to a well it never saw in training &mdash; not just the wells it was fit on.</p>
+        <div class="grid grid-cols-2 gap-px bg-stone-200 border border-stone-200 rounded-md overflow-hidden mb-5">
+          <div class="bg-stone-50 p-3">
+            <div class="font-mono text-[9px] text-stone-500 uppercase tracking-wider mb-1">AUC</div>
+            <div class="font-sans text-stone-900 text-2xl font-bold">0.661</div>
+            <div class="font-mono text-[9px] text-stone-400 uppercase tracking-wider mt-1">XGBoost classifier</div>
+          </div>
+          <div class="bg-stone-50 p-3">
+            <div class="font-mono text-[9px] text-stone-500 uppercase tracking-wider mb-1">Method</div>
+            <div class="font-sans text-stone-900 text-base font-bold leading-tight pt-1">Leave-1-<br/>Well-Out</div>
+            <div class="font-mono text-[9px] text-stone-400 uppercase tracking-wider mt-1">3 real Volve wells</div>
+          </div>
+        </div>
+        <details class="mb-5 group">
+          <summary class="flex items-center justify-between cursor-pointer font-mono text-[11px] text-stone-600 uppercase tracking-wider py-2 border-t border-stone-200 list-none">
+            Benchmark Details
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform group-open:rotate-180"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <p class="text-stone-500 text-xs leading-relaxed pt-2">Trained on 2 real Volve wells, tested on the 3rd held-out well, repeated per well (leave-one-well-out cross-validation) &mdash; beat a 0.622 AUC baseline trained on synthetic data alone.</p>
+        </details>
+        <div class="font-mono text-[10px] text-stone-400 uppercase tracking-wider mb-2">Sources</div>
+        <a href="https://www.equinor.com/energy/volve-data-sharing" target="_blank" rel="noopener" class="flex items-center justify-between p-2.5 rounded bg-stone-50 border border-stone-200 hover:border-[#c96a12] transition-colors mb-4">
+          <span>
+            <span class="block font-mono text-[9px] text-stone-400 uppercase tracking-wider">Dataset</span>
+            <span class="block text-stone-700 text-xs font-mono mt-0.5">Equinor Volve (public release)</span>
+          </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-stone-400 shrink-0"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </a>
+        <a href="#dashboard" class="mt-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-md border border-stone-300 font-mono text-xs uppercase tracking-wider text-stone-700 hover:border-[#c96a12] hover:text-[#c96a12] transition-colors">
+          Read Risk Benchmark
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="relative w-full bg-[#f7f4ef] py-16 lg:py-24 border-t border-stone-200">
+  <div class="mx-auto max-w-desktop-container px-6 lg:px-10 xl:max-w-desktop-container-xl">
+    <div class="rounded-xl border border-stone-200 bg-white p-8 lg:p-12 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center overflow-hidden">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-50 border border-stone-300 text-[#c96a12] font-mono text-[11px] font-semibold tracking-wider uppercase mb-4">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#c96a12]"></span>
+          See It Yourself
+        </div>
+        <h2 class="font-sans text-stone-900 text-heading-5 md:text-heading-3 font-bold tracking-tight mb-4" style="line-height:1.1;">
+          These numbers came from a running system. <span style="background:#fbe8d3; padding:0 4px;">Open it.</span>
+        </h2>
+        <p class="text-stone-600 text-base leading-relaxed mb-7 max-w-md">Every figure on this page traces back to the live Command Center &mdash; the same extraction, correlation, and risk models, running against the same real Volve wells.</p>
+        <div class="flex flex-wrap gap-3">
+          <a href="/app" class="px-5 py-3 rounded-md bg-stone-900 text-white font-mono text-xs uppercase tracking-wider hover:bg-[#c96a12] transition-colors">Open Live Demo</a>
+          <a href="/#capabilities" class="px-5 py-3 rounded-md border border-stone-300 text-stone-700 font-mono text-xs uppercase tracking-wider hover:border-[#c96a12] hover:text-[#c96a12] transition-colors">See All Modules</a>
+        </div>
+      </div>
+      <div style="position:relative; border-radius:10px; padding:0; overflow:hidden; background-color:#f3ead9; background-image:linear-gradient(to right, rgba(201,106,18,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(201,106,18,0.08) 1px, transparent 1px); background-size:16px 16px; border:1px solid #e0d5c0;">
+        <svg viewBox="0 0 400 280" class="w-full h-auto block" role="img" aria-label="Validated benchmark report illustration">
+          <defs>
+            <linearGradient id="pgrad12" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#eee6d2"/>
+              <stop offset="55%" stop-color="#fffdfa"/>
+              <stop offset="100%" stop-color="#fdf9ee"/>
+            </linearGradient>
+            <filter id="pshadow12" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow dx="0" dy="7" stdDeviation="8" flood-color="#6b5c3f" flood-opacity="0.3"/>
+            </filter>
+            <filter id="pgrain12">
+              <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" result="n"/>
+              <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.1  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.55 0"/>
+            </filter>
+          </defs>
+          <g opacity="0.85" transform="translate(192,31) matrix(0.866,0.5,-0.866,0.5,0,0)">
+            <rect width="200" height="140" rx="4" fill="#f4efe4" stroke="#d7cfc2" stroke-width="1"/>
+          </g>
+          <g transform="translate(200,40) matrix(0.866,0.5,-0.866,0.5,0,0)" filter="url(#pshadow12)">
+            <rect width="200" height="140" rx="4" fill="url(#pgrad12)" stroke="#c9c2b4" stroke-width="1.5"/>
+            <path d="M178,0 L200,0 L200,22 Z" fill="#efe9db" stroke="#c9c2b4" stroke-width="1"/>
+            <path d="M178,0 L200,22" stroke="#c9c2b4" stroke-width="0.75" fill="none"/>
+            <text x="16" y="6" font-family="monospace" font-size="5" fill="#8a7a5c" letter-spacing="0.4">WELL 15/9-F-12 &#183; DDR</text>
+            <rect x="16" y="10" width="90" height="8" rx="2" fill="#c9c2b4"/>
+            <rect x="16" y="26" width="168" height="5" rx="2" fill="#bdb09a"/>
+            <rect x="16" y="38" width="130" height="5" rx="2" fill="#2fae6c" opacity="0.5"/>
+            <rect x="16" y="50" width="168" height="5" rx="2" fill="#bdb09a"/>
+            <rect x="16" y="66" width="100" height="5" rx="2" fill="#c96a12" opacity="0.5"/>
+            <rect x="16" y="78" width="168" height="5" rx="2" fill="#bdb09a"/>
+            <rect x="16" y="90" width="168" height="5" rx="2" fill="#bdb09a"/>
+            <rect x="16" y="106" width="150" height="5" rx="2" fill="#bdb09a"/>
+            <rect x="16" y="118" width="168" height="5" rx="2" fill="#bdb09a"/>
+            <rect x="16" y="131" width="130" height="5" rx="2" fill="#a69678"/>
+            <rect x="16" y="137" width="70" height="3" rx="1.5" fill="#a69678"/>
+            <rect width="200" height="140" rx="4" filter="url(#pgrain12)" opacity="0.12" pointer-events="none"/>
+          </g>
+          <g transform="translate(300,152)">
+            <rect width="92" height="26" rx="13" fill="#e8f7ef" stroke="#2fae6c" stroke-width="1.25"/>
+            <path d="M10,13 l5,5 l9,-10" stroke="#2fae6c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="28" y="18" font-family="monospace" font-size="9" fill="#1f7a4c">VALIDATED</text>
+          </g>
+        </svg>
+        <div style="position:relative; margin-top:-1px;">
+          <span style="position:absolute; left:10px; bottom:8px; font-family:monospace; font-size:9px; letter-spacing:0.05em; color:#a8a29e; background:#fffdf9; border:1px solid #e0d5c0; border-radius:4px; padding:3px 7px;">( FIG.12 )</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="w-full bg-[#151a22] text-stone-300 py-14 border-t border-stone-800" style="background:#151a22;">
+  <div class="mx-auto max-w-desktop-container px-6 lg:px-10 xl:max-w-desktop-container-xl">
+    <div class="dw-footer-grid grid grid-cols-1 md:grid-cols-4 gap-10 pb-10 border-b border-stone-800">
+      <div class="md:col-span-2">
+        <div class="flex items-center gap-3 mb-4">
+          <img src="assets/images/drillwise-wordmark.png" alt="DrillWise" style="height:32px;width:auto;object-fit:contain;"/>
+        </div>
+        <p class="text-stone-400 text-sm max-w-md leading-relaxed">
+          Physics + Applied ML Operating System for Well Construction. Built for Oil India Limited as a submission for Smart India Hackathon 2026 (Problem Statement SIH26121).
+        </p>
+        <div class="mt-4 inline-flex items-center gap-2 text-xs font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-3 py-1 rounded">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          7/7 Production Capabilities Verified &middot; Volve Field Validated
+        </div>
+      </div>
+      <div>
+        <h4 class="font-mono text-xs uppercase tracking-wider text-stone-400 font-bold mb-3">Intelligence Layers</h4>
+        <ul class="space-y-2 text-sm text-stone-400 font-mono text-xs">
+          <li><a href="/#historical-extraction" class="hover:text-[#c96a12] transition-colors">01 Data Extraction</a></li>
+          <li><a href="/#nearby-well-gis" class="hover:text-[#c96a12] transition-colors">02 Nearby Wells GIS</a></li>
+          <li><a href="/#knowledge-search" class="hover:text-[#c96a12] transition-colors">03 Knowledge Search</a></li>
+          <li><a href="/#stratigraphy-correlation" class="hover:text-[#c96a12] transition-colors">04 Stratigraphy</a></li>
+          <li><a href="/#predictive-risk" class="hover:text-[#c96a12] transition-colors">05 Risk Gauges</a></li>
+          <li><a href="/#lookahead-alerts" class="hover:text-[#c96a12] transition-colors">06 Proactive Alert</a></li>
+          <li><a href="/#command-cockpit" class="hover:text-[#c96a12] transition-colors">07 Command Cockpit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-mono text-xs uppercase tracking-wider text-stone-400 font-bold mb-3">Hackathon Info</h4>
+        <ul class="space-y-2 text-sm text-stone-400 font-mono text-xs">
+          <li>Organization: <span class="text-white">OIL India Limited</span></li>
+          <li>Hackathon: <span class="text-white">SIH 2026</span></li>
+          <li>PS Code: <span class="text-white font-bold">SIH26121</span></li>
+          <li>Validation: <span class="text-white">Equinor Volve Dataset</span></li>
+          <li>Team: <span class="text-[#c96a12] font-bold">Team Sentinel</span></li>
+        </ul>
+      </div>
+      <div class="dw-footer-visual" aria-hidden="true">
+        <div class="dw-footer-visual-label">SUBSURFACE PROFILE <span>NHK-44</span></div>
+        <svg viewBox="0 0 320 300" role="presentation">
+          <defs>
+            <linearGradient id="footer-well-glow" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#fb923c" stop-opacity=".9"/><stop offset="1" stop-color="#c96a12" stop-opacity=".12"/></linearGradient>
+            <pattern id="footer-strata-grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#e7e5e4" stroke-opacity=".08" stroke-width="1"/></pattern>
+          </defs>
+          <rect width="320" height="300" fill="url(#footer-strata-grid)"/>
+          <path d="M0 78H320M0 148H320M0 224H320" stroke="#94a3b8" stroke-opacity=".18" stroke-dasharray="3 5"/>
+          <text x="12" y="70" fill="#a8a29e" font-size="9" font-family="monospace">TIPAM SANDSTONE</text>
+          <text x="12" y="140" fill="#a8a29e" font-size="9" font-family="monospace">BARAIL FORMATION</text>
+          <text x="12" y="216" fill="#a8a29e" font-size="9" font-family="monospace">NALHATI SHALE</text>
+          <path d="M214 8V108C214 146 196 174 168 197C149 213 142 238 142 292" fill="none" stroke="#e7e5e4" stroke-opacity=".24" stroke-width="18"/>
+          <path d="M214 8V108C214 146 196 174 168 197C149 213 142 238 142 292" fill="none" stroke="url(#footer-well-glow)" stroke-width="4"/>
+          <path d="M222 116V157C222 179 209 194 191 211" fill="none" stroke="#38bdf8" stroke-opacity=".7" stroke-width="2" stroke-dasharray="5 5"/>
+          <circle cx="142" cy="250" r="7" fill="#f97316"/><circle cx="142" cy="250" r="15" fill="none" stroke="#f97316" stroke-opacity=".45"/>
+          <text x="164" y="255" fill="#fed7aa" font-size="9" font-family="monospace">RISK INTERVAL</text>
+        </svg>
+      </div>
+    </div>
+    <div class="dw-footer-signature" aria-label="DrillWise Nearby Wells Intelligence System">
+      <a href="#" class="dw-footer-wordmark" aria-label="Back to top">DRILL<span>WISE</span><sup>NWIS</sup></a>
+      <div class="dw-footer-signature-note">NEARBY WELLS INTELLIGENCE SYSTEM <span>PS 26121 &middot; OIL INDIA LIMITED</span></div>
+    </div>
+    <div class="pt-6 flex flex-wrap items-center justify-between text-xs font-mono text-stone-500">
+      <span>&copy; 2026 DrillWise NWIS &middot; All Rights Reserved</span>
+      <span>Physics &gt; Applied ML for Subsurface Well Decision-Making</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/digital-twin.js?v=20260930-7" defer></script>
+<script src="assets/js/scroll-drill.js" defer></script>
+<script src="assets/js/dw-scroll-reveal.js?v=20261002-3" defer></script>
+<script src="assets/js/dw-mega-menu.js?v=20261002-3" defer></script>
+
+<!-- FLOATING VISIBLE THEME TOGGLE KEY (Always visible anywhere on page) -->
+<div id="floating-theme-wrap" style="position:fixed;bottom:22px;right:22px;z-index:9999;">
+  <button id="theme-toggle-float" onclick="toggleTheme()" class="floating-theme-btn" aria-label="Toggle dark mode" title="Toggle Light / Dark Mode">
+    <span id="floating-theme-icon" style="font-size:16px;">🌙</span>
+    <span id="floating-theme-label" style="font-family:var(--font-dm-mono),monospace;font-size:11px;font-weight:700;letter-spacing:0.04em;">Dark Mode</span>
+  </button>
+</div>
+
+
+<script>
+// ─── THEME TOGGLE LOGIC (LIGHT / DARK) ───
+function updateThemeUI(theme) {
+  const isDark = (theme === 'dark');
+  if (isDark) {
+    document.documentElement.classList.add('dark-theme');
+    document.body.classList.add('dark-theme');
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.classList.remove('dark-theme');
+    document.body.classList.remove('dark-theme');
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+
+  // Update navbar button
+  const navBtn = document.getElementById('theme-toggle-nav');
+  if (navBtn) {
+    navBtn.querySelector('.theme-toggle-icon').textContent = isDark ? '☀️' : '🌙';
+    const label = navBtn.querySelector('.theme-toggle-text');
+    if (label) label.textContent = isDark ? 'Light' : 'Dark';
+  }
+
+  // Update floating button
+  const floatIcon = document.getElementById('floating-theme-icon');
+  const floatLabel = document.getElementById('floating-theme-label');
+  if (floatIcon) floatIcon.textContent = isDark ? '☀️' : '🌙';
+  if (floatLabel) floatLabel.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+}
+
+function toggleTheme() {
+  const isCurrentlyDark = document.documentElement.classList.contains('dark-theme');
+  const nextTheme = isCurrentlyDark ? 'light' : 'dark';
+  try {
+    localStorage.setItem('drillwise-theme', nextTheme);
+  } catch(e) {}
+  updateThemeUI(nextTheme);
+}
+
+// Initialize theme on load
+(function initTheme() {
+  let savedTheme = 'light';
+  try {
+    savedTheme = localStorage.getItem('drillwise-theme') || 'light';
+  } catch(e) {}
+  updateThemeUI(savedTheme);
+})();
+</script>
+
+</body></html>

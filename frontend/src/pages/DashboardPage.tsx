@@ -12,6 +12,7 @@ import { OffsetWellRanking, FormationTop, HorizonAlignmentEntry } from '../types
 import { Link } from 'react-router-dom';
 import { LiveValue } from '../components/LiveValue';
 import { MiniSparkline } from '../components/MiniSparkline';
+import { BackendStatusStrip } from '../components/commandcenter/BackendStatusStrip';
 
 export const DashboardPage: React.FC = () => {
   const {
@@ -29,6 +30,12 @@ export const DashboardPage: React.FC = () => {
   const [alignment, setAlignment] = useState<Record<string, HorizonAlignmentEntry>>({});
   const [activeFormations, setActiveFormations] = useState<FormationTop[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  // Tracks whether every one of the three fetches below actually failed, as
+  // opposed to just loading being done -- previously every individual call
+  // was swallowed by its own .catch(() => default), so `loading` went false
+  // on total failure exactly the same as on success, and the badge always
+  // said "ONLINE" regardless of whether the backend was actually reachable.
+  const [allFailed, setAllFailed] = useState<boolean>(false);
 
   const depth = telemetry?.measured_depth_m || 2450.0;
 
@@ -38,17 +45,20 @@ export const DashboardPage: React.FC = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [dorsRes, alignRes, formsRes] = await Promise.all([
-          api.getOffsetRank(activeWellId, depth).catch(() => ({ rankings: [] as OffsetWellRanking[] })),
-          api.getStratigraphicDepthTrack(activeWellId, depth).catch(() => ({ alignment: {} })),
-          api.getFormations(activeWellId).catch(() => []),
+        const results = await Promise.allSettled([
+          api.getOffsetRank(activeWellId, depth),
+          api.getStratigraphicDepthTrack(activeWellId, depth),
+          api.getFormations(activeWellId),
         ]);
         if (cancelled) return;
-        setOffsetRankings((dorsRes as any).rankings ?? []);
-        setAlignment((alignRes as any).alignment ?? {});
-        setActiveFormations(formsRes);
+        const [dorsRes, alignRes, formsRes] = results;
+        setOffsetRankings(dorsRes.status === 'fulfilled' ? ((dorsRes.value as any).rankings ?? []) : []);
+        setAlignment(alignRes.status === 'fulfilled' ? ((alignRes.value as any).alignment ?? {}) : {});
+        setActiveFormations(formsRes.status === 'fulfilled' ? formsRes.value : []);
+        setAllFailed(results.every((r) => r.status === 'rejected'));
       } catch (err) {
         console.error('Error fetching dashboard summary', err);
+        if (!cancelled) setAllFailed(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -77,8 +87,14 @@ export const DashboardPage: React.FC = () => {
             <span className="text-xs font-mono text-cyan-400 font-semibold uppercase tracking-wider">
               DRILLING TARGET IDENTIFICATION
             </span>
-            <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded">
-              {loading ? 'LOADING' : 'ONLINE'}
+            <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+              loading
+                ? 'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                : allFailed
+                ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+            }`}>
+              {loading ? 'LOADING' : allFailed ? 'OFFLINE' : 'ONLINE'}
             </span>
           </div>
           <div className="text-xl font-bold text-slate-100 flex items-center gap-2 mt-0.5">
@@ -117,15 +133,10 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Backend Connectivity Bus */}
-      <div className="scada-panel px-3 py-2 flex items-center justify-between text-[11px] font-mono overflow-x-auto text-slate-300">
-        <span className="text-slate-400 uppercase tracking-widest text-[10px] mr-2">BACKEND STATUS:</span>
-        <div className="flex items-center space-x-4">
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400"></span> Module 01: Document Intelligence (8001)</span>
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400"></span> Module 02: NWIS Backend (8012)</span>
-          <span className="flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${isWsConnected ? 'bg-emerald-400' : 'bg-slate-600'}`}></span> Module 03: Physics Twin (not yet wired)</span>
-        </div>
-      </div>
+      {/* 2. Backend Connectivity Bus -- this used to hardcode green for
+          modules 01/02 regardless of real health; now reuses the same
+          genuinely-polling component the Command Center page already had. */}
+      <BackendStatusStrip />
 
       {/* 3. Operational Critical Alert & Mitigation Card (If Active — module 03 placeholder) */}
       {criticalAlert && (

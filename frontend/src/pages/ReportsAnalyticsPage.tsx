@@ -98,7 +98,7 @@ export const ReportsAnalyticsPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              MODULE 7: OPERATIONAL REPORTING, NPT ANALYTICS & DATA EXPORT
+              OPERATIONAL REPORTING, NPT ANALYTICS & DATA EXPORT
               <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded">
                 EXPORT ENGINE
               </span>

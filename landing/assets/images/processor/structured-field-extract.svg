@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 750" role="img" aria-labelledby="title desc">
+  <title id="title">Drilling fields extracted into structured data</title>
+  <desc id="desc">Formation, mud weight, and nonproductive time values move from a report into structured field cards.</desc>
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#e9dfd1" stroke-width="1"/></pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="10" stdDeviation="11" flood-color="#5a4934" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="720" height="750" fill="#faf7f1"/><rect width="720" height="750" fill="url(#grid)" opacity=".75"/>
+  <g filter="url(#shadow)">
+    <rect x="58" y="190" width="260" height="354" rx="12" fill="#fffdfa" stroke="#d9d0c4" stroke-width="2"/>
+    <text x="86" y="230" fill="#7a7166" font-family="monospace" font-size="12" letter-spacing="1.5">DDR · NHK-44</text>
+    <path d="M87 268h180M87 294h205M87 320h167M87 398h203M87 424h180M87 450h195" stroke="#c9c1b5" stroke-width="6" stroke-linecap="round"/>
+    <rect x="80" y="344" width="222" height="40" rx="5" fill="#f8d9b5" fill-opacity=".35" stroke="#c96a12" stroke-width="2"/>
+    <text x="92" y="369" fill="#8a4006" font-family="monospace" font-size="13">Mud weight: 13.2 ppg</text>
+  </g>
+  <path class="route route-one" d="M326 365C376 365 367 260 416 260" fill="none" stroke="#c96a12" stroke-width="2.5" stroke-dasharray="5 7"/>
+  <path class="route route-two" d="M326 365C382 365 366 376 416 376" fill="none" stroke="#c96a12" stroke-width="2.5" stroke-dasharray="5 7"/>
+  <path class="route route-three" d="M326 365C382 365 366 492 416 492" fill="none" stroke="#c96a12" stroke-width="2.5" stroke-dasharray="5 7"/>
+  <g class="field field-one" filter="url(#shadow)"><rect x="416" y="208" width="246" height="102" rx="12" fill="#fffdfa" stroke="#e1d7ca" stroke-width="2"/><text x="440" y="239" fill="#82796e" font-family="monospace" font-size="11">FORMATION TOP</text><text x="440" y="278" fill="#312d27" font-family="monospace" font-size="21">Tipam Sandstone</text><circle cx="628" cy="238" r="8" fill="#c96a12"/></g>
+  <g class="field field-two" filter="url(#shadow)"><rect x="416" y="324" width="246" height="102" rx="12" fill="#fffdfa" stroke="#e1d7ca" stroke-width="2"/><text x="440" y="355" fill="#82796e" font-family="monospace" font-size="11">MUD WEIGHT</text><text x="440" y="394" fill="#312d27" font-family="monospace" font-size="21">13.2 ppg</text><circle cx="628" cy="354" r="8" fill="#c96a12"/></g>
+  <g class="field field-three" filter="url(#shadow)"><rect x="416" y="440" width="246" height="102" rx="12" fill="#fffdfa" stroke="#e1d7ca" stroke-width="2"/><text x="440" y="471" fill="#82796e" font-family="monospace" font-size="11">NPT EVENT</text><text x="440" y="510" fill="#312d27" font-family="monospace" font-size="21">14.5 hours</text><circle cx="628" cy="470" r="8" fill="#c96a12"/></g>
+  <rect x="238" y="600" width="244" height="48" rx="24" fill="#fbe8d3" stroke="#e2b17f"/><text x="270" y="630" fill="#8a4006" font-family="monospace" font-size="13" letter-spacing="1">FIELDS EXTRACTED · 03</text>
+  <style>
+    .field{opacity:.36;animation:field-in 4.2s ease-in-out infinite}
+    .field-two{animation-delay:.45s}.field-three{animation-delay:.9s}
+    .route{animation:route-flow 1.3s linear infinite}.route-two{animation-delay:.2s}.route-three{animation-delay:.4s}
+    @keyframes field-in{0%,12%,100%{opacity:.32;transform:translateX(-8px)}30%,76%{opacity:1;transform:translateX(0)}}
+    @keyframes route-flow{to{stroke-dashoffset:-24}}
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;opacity:1!important}}
+  </style>
+</svg>

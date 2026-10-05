@@ -1,0 +1,1 @@
+import{j as t,O as e}from"./index-vlRhp9iD.js";import{S as r}from"./SectionPage-Co-hbh2C.js";import"./PageShell-c89HhQzn.js";import"./Footer-oJqgEsQo.js";function i(){return t.jsx(r,{page:e,parent:{label:"Industries",to:"/industries"}})}export{i as component};

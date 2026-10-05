@@ -1,0 +1,1 @@
+import{j as o,i as e}from"./index-vlRhp9iD.js";import{S as t}from"./SectionPage-Co-hbh2C.js";import"./PageShell-c89HhQzn.js";import"./Footer-oJqgEsQo.js";function i(){return o.jsx(t,{page:e,parent:{label:"Technology",to:"/technology"}})}export{i as component};

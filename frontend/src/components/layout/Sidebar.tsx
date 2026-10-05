@@ -18,6 +18,7 @@ import {
   Sun,
   Moon,
   MapPin,
+  Globe2,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../hooks/useTheme';
@@ -34,6 +35,7 @@ export const Sidebar: React.FC = () => {
     { to: '/app/drilling', label: 'Live Drilling', icon: Gauge, badge: isWsConnected ? 'LIVE' : undefined },
     { to: '/app/wells', label: 'Nearby Wells', icon: Compass },
     { to: '/app/offset-map', label: 'Offset Map', icon: MapPin, badge: 'NEW' },
+    { to: '/app/spatial', label: '3D Spatial Intelligence', icon: Globe2 },
     { to: '/app/correlation', label: 'Geological Correlation', icon: Layers },
     { to: '/app/risk', label: 'Risk & Prediction', icon: ShieldAlert },
     { to: '/app/alerts', label: 'Alerts & Advisory', icon: BellRing, alertCount: activeAlertsCount },

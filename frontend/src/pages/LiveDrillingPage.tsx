@@ -39,6 +39,7 @@ export const LiveDrillingPage: React.FC = () => {
     telemetryHistory,
     activeRisk,
     simStatus,
+    isBackendOnline,
     startSim,
     pauseSim,
     stepSim,
@@ -119,14 +120,18 @@ export const LiveDrillingPage: React.FC = () => {
           {simStatus?.is_running ? (
             <button
               onClick={pauseSim}
-              className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded text-xs font-mono font-bold flex items-center gap-1 transition"
+              disabled={!isBackendOnline}
+              title={isBackendOnline ? undefined : 'Physics engine not connected'}
+              className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded text-xs font-mono font-bold flex items-center gap-1 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Pause className="w-3.5 h-3.5" /> PAUSE
             </button>
           ) : (
             <button
               onClick={startSim}
-              className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded text-xs font-mono font-bold flex items-center gap-1 transition"
+              disabled={!isBackendOnline}
+              title={isBackendOnline ? undefined : 'Physics engine not connected'}
+              className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded text-xs font-mono font-bold flex items-center gap-1 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Play className="w-3.5 h-3.5 fill-current" /> RUN
             </button>
@@ -134,16 +139,18 @@ export const LiveDrillingPage: React.FC = () => {
 
           <button
             onClick={stepSim}
-            className="p-1 hover:bg-slate-800 text-slate-300 rounded transition"
-            title="Step 1 Second"
+            disabled={!isBackendOnline}
+            className="p-1 hover:bg-slate-800 text-slate-300 rounded transition disabled:opacity-40 disabled:cursor-not-allowed"
+            title={isBackendOnline ? 'Step 1 Second' : 'Physics engine not connected'}
           >
             <StepForward className="w-4 h-4" />
           </button>
 
           <button
             onClick={() => resetSim()}
-            className="p-1 hover:bg-slate-800 text-slate-300 rounded transition"
-            title="Reset Simulator to 2500m"
+            disabled={!isBackendOnline}
+            className="p-1 hover:bg-slate-800 text-slate-300 rounded transition disabled:opacity-40 disabled:cursor-not-allowed"
+            title={isBackendOnline ? 'Reset Simulator to 2500m' : 'Physics engine not connected'}
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -154,7 +161,9 @@ export const LiveDrillingPage: React.FC = () => {
               <button
                 key={spd}
                 onClick={() => setSimSpeed(spd)}
-                className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
+                disabled={!isBackendOnline}
+                title={isBackendOnline ? undefined : 'Physics engine not connected'}
+                className={`px-1.5 py-0.5 rounded text-[11px] font-mono disabled:opacity-40 disabled:cursor-not-allowed ${
                   simStatus?.speed_multiplier === spd
                     ? 'bg-cyan-500 text-slate-950 font-bold'
                     : 'text-slate-400 hover:text-slate-200'

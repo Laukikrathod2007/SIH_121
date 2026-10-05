@@ -20,6 +20,7 @@ export const SimulatorPage: React.FC = () => {
   const {
     telemetry,
     simStatus,
+    isBackendOnline,
     startSim,
     pauseSim,
     stepSim,
@@ -90,7 +91,7 @@ export const SimulatorPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              MODULE 5: REDUCED-ORDER DRILLING PHYSICS DIGITAL TWIN CONTROLLER
+              REDUCED-ORDER DRILLING PHYSICS DIGITAL TWIN CONTROLLER
               <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded">
                 CAUSAL CONSERVATION SOLVER
               </span>
@@ -105,14 +106,28 @@ export const SimulatorPage: React.FC = () => {
         <div className="flex items-center space-x-2 text-xs font-mono">
           <span className="text-slate-400">STATE:</span>
           <span className={`px-2.5 py-1 rounded font-bold border ${
-            simStatus?.is_running
+            !isBackendOnline
+              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+              : simStatus?.is_running
               ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
               : 'bg-slate-800 text-slate-400 border-slate-700'
           }`}>
-            {simStatus?.is_running ? 'SIMULATION RUNNING' : 'PAUSED'}
+            {!isBackendOnline ? 'NOT CONNECTED' : simStatus?.is_running ? 'SIMULATION RUNNING' : 'PAUSED'}
           </span>
         </div>
       </div>
+
+      {!isBackendOnline && (
+        <div className="scada-panel-danger p-3 border-l-4 border-l-rose-500 text-xs font-mono text-rose-200 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold">Physics engine not connected.</span> This page's controls (start/pause/step/reset,
+            speed, scenario injection) call modules/04_physics_engine and modules/05_predictive_analytics, which this
+            deployment doesn't expose over HTTP/WebSocket yet. Every reading below is the last known/default telemetry
+            value, not a live simulation. Controls are disabled rather than silently doing nothing.
+          </div>
+        </div>
+      )}
 
       {/* Simulator Master Control Console */}
       <div className="scada-panel p-4 space-y-3">
@@ -127,14 +142,18 @@ export const SimulatorPage: React.FC = () => {
             {simStatus?.is_running ? (
               <button
                 onClick={pauseSim}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold font-mono text-xs rounded transition flex items-center gap-1.5 shadow-md shadow-amber-600/30"
+                disabled={!isBackendOnline}
+                title={isBackendOnline ? undefined : 'Physics engine not connected'}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold font-mono text-xs rounded transition flex items-center gap-1.5 shadow-md shadow-amber-600/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 <Pause className="w-4 h-4" /> PAUSE SIMULATION
               </button>
             ) : (
               <button
                 onClick={startSim}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold font-mono text-xs rounded transition flex items-center gap-1.5 shadow-md shadow-emerald-600/30"
+                disabled={!isBackendOnline}
+                title={isBackendOnline ? undefined : 'Physics engine not connected'}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold font-mono text-xs rounded transition flex items-center gap-1.5 shadow-md shadow-emerald-600/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 <Play className="w-4 h-4 fill-current" /> START SIMULATION
               </button>
@@ -142,14 +161,18 @@ export const SimulatorPage: React.FC = () => {
 
             <button
               onClick={stepSim}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-xs rounded border border-slate-700 transition flex items-center gap-1.5"
+              disabled={!isBackendOnline}
+              title={isBackendOnline ? undefined : 'Physics engine not connected'}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-xs rounded border border-slate-700 transition flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-800"
             >
               <StepForward className="w-4 h-4" /> STEP (1s ODE)
             </button>
 
             <button
               onClick={() => resetSim(resetDepth)}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs rounded border border-slate-700 transition flex items-center gap-1.5"
+              disabled={!isBackendOnline}
+              title={isBackendOnline ? undefined : 'Physics engine not connected'}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs rounded border border-slate-700 transition flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-800"
             >
               <RotateCcw className="w-4 h-4" /> RESET
             </button>
@@ -164,7 +187,9 @@ export const SimulatorPage: React.FC = () => {
                 <button
                   key={s}
                   onClick={() => setSimSpeed(s)}
-                  className={`px-2 py-0.5 rounded text-[11px] ${
+                  disabled={!isBackendOnline}
+                  title={isBackendOnline ? undefined : 'Physics engine not connected'}
+                  className={`px-2 py-0.5 rounded text-[11px] disabled:opacity-40 disabled:cursor-not-allowed ${
                     simStatus?.speed_multiplier === s
                       ? 'bg-cyan-500 text-slate-950 font-bold'
                       : 'text-slate-400 hover:text-slate-200'
@@ -210,7 +235,9 @@ export const SimulatorPage: React.FC = () => {
           {activeKeys.length > 0 && (
             <button
               onClick={clearScenarios}
-              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded text-xs font-bold transition border border-slate-700"
+              disabled={!isBackendOnline}
+              title={isBackendOnline ? undefined : 'Physics engine not connected'}
+              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded text-xs font-bold transition border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-800"
             >
               CLEAR ALL FAULTS (RESTORE NORMAL)
             </button>
@@ -235,7 +262,9 @@ export const SimulatorPage: React.FC = () => {
 
             <button
               onClick={() => injectScenario(sc.type, severity)}
-              className={`w-full py-2 font-mono text-xs font-bold rounded text-slate-950 transition shadow-md ${sc.btnColor}`}
+              disabled={!isBackendOnline}
+              title={isBackendOnline ? undefined : 'Physics engine not connected'}
+              className={`w-full py-2 font-mono text-xs font-bold rounded text-slate-950 transition shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none ${sc.btnColor}`}
             >
               INJECT {sc.type.replace('_', ' ')}
             </button>
@@ -246,8 +275,10 @@ export const SimulatorPage: React.FC = () => {
       {/* Internal Physics State Inspector */}
       <div className="scada-panel p-4 space-y-3">
         <div className="text-xs font-mono font-bold text-slate-200 pb-2 border-b border-slate-800 flex items-center justify-between">
-          <span>INTERNAL COUPLED ODE STATE VARIABLES (NOT DEGRADED)</span>
-          <span className="text-[10px] text-cyan-400">Ground Truth Solver</span>
+          <span>INTERNAL COUPLED ODE STATE VARIABLES {!isBackendOnline && '(DEFAULT VALUES, NOT LIVE)'}</span>
+          <span className={`text-[10px] ${isBackendOnline ? 'text-cyan-400' : 'text-slate-500'}`}>
+            {isBackendOnline ? 'Ground Truth Solver' : 'Physics engine not connected'}
+          </span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 text-xs font-mono">

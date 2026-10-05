@@ -59,7 +59,7 @@ export const RiskPredictionPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              MODULE 5: MULTI-SIGNAL PREDICTIVE RISK ANALYTICS & ML
+              MULTI-SIGNAL PREDICTIVE RISK ANALYTICS & ML (MODULES 04/05)
               <span className="text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded">
                 4-PILLAR FUSION ENGINE
               </span>
@@ -182,10 +182,14 @@ export const RiskPredictionPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Pillar 4: Module 4 Geology */}
+              {/* Pillar 4: Geology & Offsets -- the "4" here is this pillar's
+                  position in the 4-pillar list, not a modules/0X_ reference
+                  (this signal actually comes from module 02's stratigraphic
+                  correlation, not module 04's physics engine -- the old
+                  "MODULE 4 GEOLOGY" label conflated the two). */}
               <div className="p-2.5 bg-slate-900/80 border border-slate-800 rounded space-y-1">
                 <div className="flex items-center justify-between font-bold">
-                  <span className="text-slate-300">4. MODULE 4 GEOLOGY & OFFSETS (Weight: 15%)</span>
+                  <span className="text-slate-300">4. GEOLOGY & OFFSETS (Weight: 15%)</span>
                   <span className="text-emerald-400">Stratigraphic Prior</span>
                 </div>
                 <div className="text-[11px] text-slate-400">

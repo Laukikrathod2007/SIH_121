@@ -29,9 +29,9 @@ export const BackendStatusStrip: React.FC = () => {
   return (
     <div className="scada-panel px-3 py-1.5 flex items-center gap-4 text-[10px] font-mono text-slate-300 overflow-x-auto">
       <span className="text-slate-500 uppercase tracking-widest shrink-0">Backend:</span>
-      <span className="flex items-center gap-1.5"><Dot ok={m01Up} /> Module 01 · Document Intelligence (8011)</span>
+      <span className="flex items-center gap-1.5"><Dot ok={m01Up} /> Module 01 · Document Intelligence (8001)</span>
       <span className="flex items-center gap-1.5"><Dot ok={m02Up} /> Module 02 · NWIS Backend (8012)</span>
-      <span className="flex items-center gap-1.5 text-slate-600"><Dot ok={false} /> Module 03 · Physics Twin (not wired)</span>
+      <span className="flex items-center gap-1.5 text-slate-600"><Dot ok={false} /> Physics/Predictive Engine (not wired)</span>
     </div>
   );
 };

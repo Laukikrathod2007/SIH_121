@@ -43,7 +43,7 @@ export const AlertsAdvisoryPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              MODULE 6: REAL-TIME ALERTING & CLOSED-LOOP ADVISORY ENGINE
+              REAL-TIME ALERTING & CLOSED-LOOP ADVISORY ENGINE
               <span className="text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded">
                 SPE / IADC MITIGATION PROTOCOLS
               </span>

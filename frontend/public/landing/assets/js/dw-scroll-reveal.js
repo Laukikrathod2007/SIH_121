@@ -21,7 +21,7 @@
     document.querySelectorAll('#capabilities > .mx-auto > div[id]').forEach(function (el) {
       revealTargets.push(el);
     });
-    ['real-benchmarks', 'technical-foundation'].forEach(function (id) {
+    ['historical-extraction', 'technical-foundation', 'dashboard', 'benchmark-reports'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) revealTargets.push(el);
     });
@@ -52,10 +52,14 @@
     // --- Count-up for plain integer / percentage stat numbers -------------
     // Only touches text matching ^\d+%?$ -- anything else (e.g. "98/100",
     // "0.661 AUC") is left exactly as authored, no parsing risk.
+    // #dashboard is the aggregate-stats block, now on its own page
+    // (benchmarks.html) since the benchmarks content moved off the single
+    // combined landing page -- this script tag ships on both pages, so
+    // the selector just needs to match wherever that block actually is.
     var statSelectors = [
-      '#real-benchmarks .text-4xl',
-      '#real-benchmarks .text-5xl',
-      '#real-benchmarks .text-2xl.font-bold',
+      '#dashboard .text-4xl',
+      '#dashboard .text-5xl',
+      '#dashboard .text-2xl.font-bold',
     ];
     var statEls = document.querySelectorAll(statSelectors.join(', '));
     var countTargets = [];

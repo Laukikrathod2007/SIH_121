@@ -106,12 +106,18 @@ export const Header: React.FC = () => {
           <span className="font-bold">RISK: {riskLevel}</span>
         </div>
 
-        {/* Scenario Injection Selector */}
+        {/* Scenario Injection Selector -- disabled rather than silently
+            failing: it calls the physics-engine simulator, which this
+            project's backend never serves (see AppContext's telemetryWsUrl
+            comment), so without isBackendOnline gating this previously
+            appeared to do nothing when used. */}
         <div className="relative">
           <select
             onChange={handleScenarioChange}
             defaultValue=""
-            className="appearance-none bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-mono font-medium py-1.5 pl-2.5 pr-7 rounded focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+            disabled={!isBackendOnline}
+            title={isBackendOnline ? undefined : 'Physics engine not connected (modules/04_physics_engine is not yet wired)'}
+            className="appearance-none bg-slate-900 border border-amber-500/40 text-amber-300 text-xs font-mono font-medium py-1.5 pl-2.5 pr-7 rounded focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <option value="" disabled>⚡ Inject Scenario...</option>
             <option value="NORMAL">NORMAL DRILLING</option>
@@ -125,29 +131,33 @@ export const Header: React.FC = () => {
           <ChevronDown className="w-3.5 h-3.5 text-amber-400 absolute right-2 top-2.5 pointer-events-none" />
         </div>
 
-        {/* Simulator Controls */}
+        {/* Simulator Controls -- same isBackendOnline gating as the
+            scenario selector above. */}
         <div className="flex items-center bg-slate-900 border border-slate-700 rounded p-0.5">
           {simStatus?.is_running ? (
             <button
               onClick={pauseSim}
-              title="Pause Simulation"
-              className="p-1 hover:bg-slate-800 text-amber-400 rounded transition"
+              disabled={!isBackendOnline}
+              title={isBackendOnline ? 'Pause Simulation' : 'Physics engine not connected'}
+              className="p-1 hover:bg-slate-800 text-amber-400 rounded transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
             >
               <Pause className="w-3.5 h-3.5" />
             </button>
           ) : (
             <button
               onClick={startSim}
-              title="Start Simulation"
-              className="p-1 hover:bg-slate-800 text-emerald-400 rounded transition"
+              disabled={!isBackendOnline}
+              title={isBackendOnline ? 'Start Simulation' : 'Physics engine not connected'}
+              className="p-1 hover:bg-slate-800 text-emerald-400 rounded transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
             </button>
           )}
           <button
             onClick={() => resetSim()}
-            title="Reset Simulator"
-            className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition"
+            disabled={!isBackendOnline}
+            title={isBackendOnline ? 'Reset Simulator' : 'Physics engine not connected'}
+            className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -163,8 +173,8 @@ export const Header: React.FC = () => {
             <Circle className={`w-2 h-2 fill-current ${isWsConnected ? 'text-emerald-400' : 'text-slate-600'}`} />
             WS
           </div>
-          <div className="flex items-center gap-1 text-slate-400" title="ML Risk Fusion">
-            <Circle className="w-2 h-2 fill-current text-cyan-400" />
+          <div className="flex items-center gap-1 text-slate-400" title="ML Risk Fusion (physics/predictive engine)">
+            <Circle className={`w-2 h-2 fill-current ${isBackendOnline ? 'text-cyan-400' : 'text-slate-600'}`} />
             ML
           </div>
         </div>

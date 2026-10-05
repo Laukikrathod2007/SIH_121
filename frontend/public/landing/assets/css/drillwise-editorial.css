@@ -2,6 +2,64 @@
    Keep this layer separate from the imported page styles so the visual system
    can evolve without changing copy, page content, or interaction scripts. */
 
+/* The header is fixed (h-14/h-16), but nothing ever told the browser to
+   account for it when jumping to a hash target -- every anchor link on the
+   page (mega-menu items, footer links, nav pills) landed with the
+   destination's own heading hidden directly behind the header. One line
+   fixes every anchor on the site at once, no per-section changes needed. */
+html {
+  scroll-padding-top: 76px;
+}
+
+/* Mobile slide-down menu: extracted from the same server-rendered React page
+   as the desktop mega-menu, its closed/hidden state depended on three
+   Tailwind classes that never made it into this page's precompiled CSS --
+   lg:hidden, -translate-y-[calc(100%+56px)], and top-14.25 (all absent from
+   main-styles.css/global-styles.css; same root cause as the mega-menu and
+   the pipeline-tabs grid earlier). With none of those doing anything, the
+   panel sat permanently visible and badly positioned, overlapping whatever
+   else was on screen -- including the desktop mega-menu once that got
+   wired up, which is what produced the garbled double-text. Replaced here
+   with real CSS driven by our own .dw-mobile-nav-open toggle class. */
+.z-navbar-mobile-menu {
+  top: 56px;
+}
+
+/* Modules mega-menu: previously lived here as CSS patches on top of
+   inherited Radix/React markup (#_R_t99fkdb_) -- three rounds of fixes
+   (panel width, then min-width:0, then an explicit grid) each solved part
+   of the layout but a click still landed on the wrong destination every
+   time, which turned out to be the real container (panel minus its
+   decorative image sidebar) never matching what the CSS assumed. The panel
+   was rebuilt from scratch as plain inline-styled markup instead
+   (dw-mega-menu.js + the markup itself), so none of those patches are
+   needed anymore. */
+
+/* Benchmark-report cards' <details> chevron: group-open:rotate-180 is
+   another arbitrary Tailwind variant this precompiled stylesheet never
+   generated. <details>/<summary> are native, so expand/collapse already
+   works with zero JS either way -- this just restores the chevron spin. */
+details[open] summary svg {
+  transform: rotate(180deg);
+}
+summary svg {
+  transition: transform 0.2s ease;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .z-navbar-mobile-menu { display: none !important; }
+}
+@media (max-width: 1023px) {
+  .z-navbar-mobile-menu nav {
+    transform: translateY(calc(-100% - 56px));
+  }
+  .z-navbar-mobile-menu.dw-mobile-nav-open nav {
+    transform: translateY(0);
+  }
+}
+
 :root {
   --dw-paper: #fbfaf8;
   --dw-panel: #fffefd;
@@ -866,6 +924,41 @@ html.dark-theme main > section > div:nth-child(2) {
   }
 }
 
+@media (max-width: 380px) {
+  header nav {
+    gap: 6px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  header nav a[aria-label="DrillWise home"] {
+    min-width: 92px;
+  }
+
+  header nav a[aria-label="DrillWise home"] img {
+    width: 92px !important;
+  }
+
+  header nav > a[data-variant="secondary"] {
+    flex: 0 0 92px;
+    min-width: 92px;
+    white-space: nowrap;
+    justify-content: center;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    font-size: 9px !important;
+    letter-spacing: 0.35px !important;
+  }
+
+  header nav > button {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 36px;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1024,4 +1117,965 @@ header nav > div.lg\:flex > div {
 .dw-reveal.dw-in-view {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* "FIG.0X" illustration frame, in extend.ai's visual language (grid-paper
+   background, dashed border, numbered corner label, floating sequential
+   callout bubbles) -- but the callout text is our own real pipeline
+   stages (orchestrator.py, read word-by-word before building this), not
+   an invented demo. Reuses the brand's own orange rather than their blue. */
+.dw-fig-frame {
+  position: relative;
+  background-image:
+    linear-gradient(to right, rgba(201, 106, 18, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(201, 106, 18, 0.06) 1px, transparent 1px);
+  background-size: 18px 18px;
+  background-color: #fbf9f5;
+  border: 1px dashed #d7cfc2 !important;
+  padding: 14px;
+}
+.dw-fig-frame::after {
+  content: "( FIG." attr(data-fig) " )";
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  font-family: dmMono, monospace;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: #a8a29e;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.dw-fig-callout {
+  position: absolute;
+  z-index: 3;
+  background: #ffffff;
+  border: 1px solid #e5e2de;
+  border-radius: 5px;
+  box-shadow: 0 4px 14px rgba(30, 28, 25, 0.1);
+  padding: 4px 9px;
+  font-family: dmMono, monospace;
+  font-size: 10px;
+  color: #514d48;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  animation: dwFigCalloutCycle 10s ease-in-out infinite;
+}
+@keyframes dwFigCalloutCycle {
+  0%, 4% { opacity: 0; transform: translateY(4px); }
+  7%, 16% { opacity: 1; transform: translateY(0); }
+  19%, 100% { opacity: 0; transform: translateY(-4px); }
+}
+.dw-fig-callout-1 { top: 10px; left: 10px; animation-delay: 0s; }
+.dw-fig-callout-2 { top: 10px; right: 10px; animation-delay: 2s; }
+.dw-fig-callout-3 { top: 46%; right: 6px; animation-delay: 4s; }
+.dw-fig-callout-4 { bottom: 34px; right: 10px; animation-delay: 6s; }
+.dw-fig-callout-5 { bottom: 34px; left: 10px; animation-delay: 8s; }
+
+/* One accent per section instead of a neutral-gray bubble everywhere --
+   matched to the color each section's own header indicator dot already
+   uses, so the floating callouts read as that section's own voice rather
+   than a generic rainbow repeated across the page. Section 02's map got
+   the fuller beam-to-anchor treatment directly in its SVG instead, since
+   it has real point coordinates to connect to; these five are HTML-card
+   layouts (search results, stratigraphy columns, gauges) with no single
+   coordinate space to draw a precise line into, so the lighter accent-only
+   treatment is the honest version of the same idea for them. */
+[data-fig="03"] .dw-fig-callout { border-left: 3px solid #06b6d4; }
+[data-fig="04"] .dw-fig-callout { border-left: 3px solid #059669; }
+[data-fig="05"] .dw-fig-callout { border-left: 3px solid #f59e0b; }
+[data-fig="06"] .dw-fig-callout { border-left: 3px solid #ea580c; }
+[data-fig="08"] .dw-fig-callout { border-left: 3px solid #10b981; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dw-fig-callout { animation: none !important; opacity: 0 !important; }
+}
+@media (max-width: 640px) {
+  .dw-fig-callout { display: none; }
+}
+
+/* Data Extraction pipeline showcase -- a 3-column click-to-switch tab
+   system (left nav / center figure / right capabilities), same structural
+   idea as extend.ai's /parse /extract /split... pattern, rebuilt with our
+   own 5 real pipeline layers (modules/01's orchestrator.py, read word by
+   word before building this) rather than their content or assets.
+
+   The column widths are set here, in plain CSS, rather than via a Tailwind
+   arbitrary-value class (lg:grid-cols-[22%_52%_26%]) in the HTML: this
+   page's Tailwind is a precompiled bundle (main-styles.css/global-styles.css),
+   not an in-browser JIT compiler, so a brand-new utility class invented
+   after that build never gets generated and silently does nothing --
+   which is why this was rendering as a single stacked column. */
+.dw-pipeline-tabs {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+@media (min-width: 1024px) {
+  .dw-pipeline-tabs {
+    grid-template-columns: 22% 52% 26%;
+    gap: 0;
+  }
+  /* Same uncompiled-utility problem hit the per-column lg:border-r/lg:pr-6/
+     lg:border-l/lg:pl-6/lg:px-8 classes on these three columns -- replaced
+     here too, targeted by column position since they share no own class. */
+  .dw-pipeline-tabs > div:nth-child(1) {
+    border-right: 1px solid #e7e5e4;
+    padding-right: 1.5rem;
+  }
+  .dw-pipeline-tabs > div:nth-child(2) {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+  .dw-pipeline-tabs > div:nth-child(3) {
+    border-left: 1px solid #e7e5e4;
+    padding-left: 1.5rem;
+  }
+}
+
+.dw-pt-nav-item {
+  cursor: pointer;
+  padding: 16px 0;
+  border-bottom: 1px solid #e5e2de;
+}
+.dw-pt-nav-item:first-child { padding-top: 0; }
+.dw-pt-bar,
+.dw-pt-num,
+.dw-pt-desc {
+  display: none;
+}
+.dw-pt-title {
+  font-family: 'abcFavorit', ui-sans-serif, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #a8a29e;
+  transition: color 0.2s ease, font-size 0.2s ease;
+}
+.dw-pt-nav-item:hover .dw-pt-title {
+  color: #57524b;
+}
+.dw-pt-nav-item.dw-pt-active .dw-pt-bar {
+  display: block;
+  height: 2px;
+  width: 36px;
+  background: #c96a12;
+  margin-bottom: 14px;
+}
+.dw-pt-nav-item.dw-pt-active .dw-pt-num {
+  display: block;
+  font-family: dmMono, monospace;
+  font-size: 11px;
+  color: #a8a29e;
+  margin-bottom: 4px;
+}
+.dw-pt-nav-item.dw-pt-active .dw-pt-desc {
+  display: block;
+  color: #78716c;
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin-top: 8px;
+  max-width: 34ch;
+}
+.dw-pt-nav-item.dw-pt-active .dw-pt-title {
+  font-size: 23px;
+  font-weight: 700;
+  color: #1c1917;
+}
+
+.dw-pt-fig { display: none; }
+.dw-pt-fig.dw-pt-active { display: block; }
+
+/* Motion for the illustration: the whole figure eases in on tab switch
+   (display:none -> block naturally restarts a CSS animation, so this
+   replays every click with no JS needed); the pointer-line from content to
+   tag "draws" on a loop via a traveling dash; the origin dot pulses. Paths
+   and dots are targeted by their stroke-width/r attributes rather than a
+   class, since every leader line in all 5 figures shares stroke-width:1.25
+   and every anchor dot shares r:2.5, while icon strokes (checkmarks,
+   magnifiers, warning glyphs) use other widths and are left untouched. */
+.dw-pt-fig.dw-pt-active svg {
+  animation: dwPtFigIn 0.5s ease-out both;
+}
+@keyframes dwPtFigIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.dw-pt-fig.dw-pt-active path[stroke-width="1.25"] {
+  stroke-dasharray: 5 4;
+  animation: dwPtFlow 1s linear infinite;
+}
+@keyframes dwPtFlow {
+  to { stroke-dashoffset: -18; }
+}
+.dw-pt-fig.dw-pt-active circle[r="2.5"] {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dwPtDotPulse 1.6s ease-in-out infinite;
+}
+@keyframes dwPtDotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.7); }
+}
+.dw-pt-caps.dw-pt-active {
+  animation: dwPtFigIn 0.5s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dw-pt-fig.dw-pt-active svg,
+  .dw-pt-fig.dw-pt-active path[stroke-width="1.25"],
+  .dw-pt-fig.dw-pt-active circle[r="2.5"],
+  .dw-pt-caps.dw-pt-active {
+    animation: none !important;
+  }
+}
+
+/* Isometric illustration canvas for this showcase only -- same structural
+   idea as extend.ai's tilted-paper-stack figures with a top-left FIG chip
+   and curved pointer-line tags, rebuilt from scratch in our own geometry,
+   colors and content (real pipeline stages), not their artwork. Scoped to
+   .dw-pipeline-tabs so every other section keeps the original cream
+   bottom-left-label frame. */
+.dw-pipeline-tabs .dw-fig-frame {
+  background-image:
+    linear-gradient(to right, rgba(201, 106, 18, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(201, 106, 18, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-color: #f3ead9;
+  border: 1px solid #e0d5c0 !important;
+  border-radius: 10px;
+  padding: 0;
+  overflow: hidden;
+}
+.dw-processor-visual {
+  width: 100%;
+  aspect-ratio: 720 / 750;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f8eddd;
+}
+.dw-processor-visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dw-pipeline-tabs .dw-fig-frame::after {
+  top: 10px;
+  bottom: auto;
+  left: 10px;
+  background: #fffdf9;
+  border: 1px solid #e0d5c0;
+  border-radius: 4px;
+  padding: 3px 7px;
+}
+
+.dw-pt-caps { display: none; }
+.dw-pt-active-summary { display: none; }
+.dw-pt-caps.dw-pt-active { display: block; }
+
+@media (max-width: 1023px) {
+  /* Keep the editorial pipeline interactive on tablet and mobile. The old
+     fallback expanded every stage and figure, turning the feature into a
+     long, repetitive stack and preventing the tab script from doing its job. */
+  .dw-pipeline-tabs {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+  .dw-pipeline-tabs > div:first-child {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 8px 2px 12px;
+    border: 0;
+    scrollbar-width: thin;
+    scrollbar-color: #c96a12 #f1ede7;
+  }
+  .dw-pipeline-tabs > div:nth-child(2),
+  .dw-pipeline-tabs > div:nth-child(3) {
+    padding: 0;
+    border: 0;
+  }
+  .dw-pt-nav-item {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 8px 13px;
+    border: 1px solid #e5e2de;
+    border-radius: 999px;
+    background: #fff;
+    scroll-snap-align: start;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  }
+  .dw-pt-nav-item:first-child { padding-top: 8px; }
+  .dw-pt-nav-item .dw-pt-bar,
+  .dw-pt-nav-item .dw-pt-desc,
+  .dw-pt-nav-item .dw-pt-num { display: none !important; }
+  .dw-pt-nav-item .dw-pt-title {
+    display: block !important;
+    color: #57524b !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    white-space: nowrap;
+  }
+  .dw-pt-nav-item.dw-pt-active {
+    border-color: #c96a12;
+    background: #fff4e8;
+    box-shadow: 0 2px 8px rgba(201, 106, 18, 0.1);
+  }
+  .dw-pt-nav-item.dw-pt-active::before {
+    content: attr(data-tab);
+    display: inline-grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    border-radius: 50%;
+    background: #c96a12;
+    color: #fff;
+    font: 10px dmMono, monospace;
+  }
+  .dw-pt-fig,
+  .dw-pt-caps { display: none !important; }
+  .dw-pt-fig.dw-pt-active,
+  .dw-pt-caps.dw-pt-active { display: block !important; }
+  .dw-pipeline-tabs .dw-fig-frame { margin-bottom: 1.5rem; }
+  .dw-pt-active-summary {
+    display: block;
+    margin: 2px 0 14px;
+    color: #6b6258;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+}
+
+@media (max-width: 640px) {
+  .dw-pipeline-tabs { gap: 0.75rem; }
+  .dw-pipeline-tabs > div:first-child {
+    margin-right: -1.25rem;
+    padding-right: 1.25rem;
+  }
+  .dw-pipeline-tabs .dw-fig-frame { padding: 0; }
+  .dw-pt-active-summary { font-size: 12.5px; }
+}
+
+/* DrillWise processor poster. The source bundle contains a poster frame but
+   not an original processor video, so the document, extraction bounds and
+   scan pass animate locally. */
+.dw-pipeline-tabs .dw-fig-frame {
+  background-color: #f6e6d2;
+  border: 1px solid #e0d5c0 !important;
+  padding: 0;
+  overflow: hidden;
+}
+.dw-pipeline-tabs .dw-fig-frame::after {
+  top: 10px;
+  bottom: auto;
+  left: 10px;
+  background: rgba(255, 253, 249, 0.94);
+  border: 1px solid #e0d5c0;
+  border-radius: 4px;
+  padding: 3px 7px;
+  z-index: 5;
+}
+/* Landing-page finish: preserve each capability's own diagram and data,
+   while bringing the palette, illustration frames, and spacing together. */
+:root {
+  --dw-blue: #f7ead9;
+  --dw-blue-line: #e5c9a8;
+}
+
+#dw-hero-well-container {
+  background-color: #f8eddf !important;
+  background-image:
+    linear-gradient(to right, rgba(201, 106, 18, 0.075) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(201, 106, 18, 0.075) 1px, transparent 1px) !important;
+  border-color: #e5c9a8 !important;
+}
+
+#dw-hero-well-container svg [fill="#1d4ed8"],
+#dw-hero-well-container svg [stroke="#1d4ed8"] {
+  fill: #c96a12 !important;
+  stroke: #c96a12 !important;
+}
+
+#dw-hero-well-container svg [fill="#2563eb"],
+#dw-hero-well-container svg [stroke="#2563eb"] {
+  fill: #d9781b !important;
+  stroke: #d9781b !important;
+}
+
+/* Each visual stays specific to its section; shared paper frames make the
+   maps, charts, and document scenes feel like parts of one product. */
+.dw-fig-frame {
+  border: 1px solid #e5d8c6 !important;
+  border-radius: 5px !important;
+  background-color: #fcfaf6;
+  background-size: 20px 20px;
+  box-shadow: 0 12px 32px -28px rgba(76, 48, 22, 0.48);
+}
+
+.dw-fig-callout {
+  border-color: #ead9c5;
+  border-left: 2px solid #c96a12 !important;
+  border-radius: 4px;
+  box-shadow: 0 5px 16px rgba(58, 40, 22, 0.09);
+}
+
+#historical-extraction,
+#nearby-well-gis,
+#knowledge-search,
+#stratigraphy-correlation,
+#predictive-risk,
+#lookahead-alerts,
+#command-cockpit,
+#casing-program {
+  scroll-margin-top: 82px;
+}
+
+#historical-extraction > div[class*="bg-white"],
+#nearby-well-gis > div[class*="bg-white"],
+#knowledge-search > div[class*="bg-white"],
+#stratigraphy-correlation > div[class*="bg-white"],
+#predictive-risk > div[class*="bg-white"],
+#lookahead-alerts > div[class*="bg-white"],
+#command-cockpit > div[class*="bg-white"],
+#casing-program > div[class*="bg-white"] {
+  border-radius: 5px !important;
+  box-shadow: 0 10px 28px -26px rgba(44, 35, 26, 0.45) !important;
+}
+
+@media (max-width: 640px) {
+  #historical-extraction,
+  #nearby-well-gis,
+  #knowledge-search,
+  #stratigraphy-correlation,
+  #predictive-risk,
+  #lookahead-alerts,
+  #command-cockpit,
+  #casing-program {
+    scroll-margin-top: 64px;
+  }
+}
+
+/* Keep the desktop Modules panel inside its grid and let every description
+   wrap within its own cell instead of spilling over neighboring links. */
+#dw-modules-panel {
+  left: 50% !important;
+  width: min(740px, calc(100vw - 32px)) !important;
+  transform: translateX(-50%) !important;
+}
+
+#dw-modules-panel > div {
+  padding: 20px !important;
+  border-color: #e7ded2 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 18px 44px rgba(40, 32, 24, 0.14) !important;
+}
+
+#dw-modules-panel > div > div:last-child {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+}
+
+#dw-modules-panel a {
+  min-width: 0 !important;
+  align-items: flex-start !important;
+  gap: 9px !important;
+  padding: 12px 9px !important;
+  border-radius: 4px !important;
+}
+
+#dw-modules-panel a > span {
+  flex: 1 1 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  overflow-wrap: anywhere;
+}
+
+#dw-modules-panel a > span > strong {
+  line-height: 1.3 !important;
+}
+
+#dw-modules-panel a > span > span {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  line-height: 1.45 !important;
+}
+
+.dw-live-log {
+  grid-column: 1 / -1;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e2d8cc;
+  border-radius: 6px;
+  background: #fffdfa;
+  box-shadow: 0 18px 44px -38px rgba(50, 35, 19, 0.55);
+}
+.dw-live-log-head,
+.dw-live-log-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 22px;
+}
+.dw-live-log-head { border-bottom: 1px solid #eee5da; }
+.dw-live-log-head h3 {
+  margin: 8px 0 0;
+  font: 500 clamp(18px, 2vw, 25px)/1.15 var(--font-abc-favorit), Inter, sans-serif;
+  letter-spacing: -.035em;
+}
+.dw-live-log-kicker,
+.dw-live-log-depth span,
+.dw-scenario-label,
+.dw-live-log-chart-head,
+.dw-live-log-foot {
+  color: #83796e;
+  font: 9px/1.5 var(--font-dm-mono), monospace;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.dw-live-log-kicker,
+.dw-live-log-chart-head > span:last-child { display: inline-flex; align-items: center; gap: 8px; }
+.dw-live-log-kicker i,
+.dw-live-log-chart-head i {
+  width: 7px; height: 7px; border-radius: 50%; background: #c96a12;
+  box-shadow: 0 0 0 3px rgba(201, 106, 18, .12);
+  animation: dwLogPulse 1.8s ease-in-out infinite;
+}
+.dw-live-log-depth { display: grid; justify-items: end; gap: 2px; white-space: nowrap; }
+.dw-live-log-depth strong { color: #29231d; font: 600 21px/1.1 var(--font-dm-mono), monospace; letter-spacing: -.04em; }
+.dw-live-log-depth small { color: #a49a8f; font-size: 10px; font-weight: 400; }
+.dw-live-log-metrics { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); border-bottom: 1px solid #eee5da; }
+.dw-live-log-metrics > div { display: grid; gap: 4px; min-width: 0; padding: 10px 16px; border-right: 1px solid #eee5da; }
+.dw-live-log-metrics > div:last-child { border-right: 0; }
+.dw-live-log-metrics span { color: #897e72; font: 8px var(--font-dm-mono),monospace; letter-spacing: .1em; }
+.dw-live-log-metrics strong { color: #302a24; font: 500 13px var(--font-dm-mono),monospace; white-space: nowrap; }
+.dw-live-log-metrics small { color: #9a8f82; font-size: 8px; font-weight: 400; }
+.dw-live-log-layout { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 16px; padding: 16px; }
+.dw-live-log-bore {
+  position: relative; min-width: 0; min-height: 280px; overflow: hidden;
+  border: 1px solid #e8ddcf; border-radius: 4px; background: #f7f1e8;
+  background-image: linear-gradient(rgba(167, 125, 78, .08) 1px, transparent 1px),linear-gradient(90deg, rgba(167, 125, 78, .08) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.dw-log-formation { position: relative; display: flex; align-items: flex-start; height: 20%; padding: 11px 12px; border-bottom: 1px solid rgba(103, 80, 55, .16); }
+.dw-log-formation span { max-width: 42%; padding: 3px 6px; border: 1px solid rgba(103, 80, 55, .2); border-radius: 2px; background: rgba(255, 253, 249, .8); color: #5c5144; font: 8px var(--font-dm-mono), monospace; letter-spacing: .08em; }
+.dw-log-overburden { height: 15%; background: rgba(216, 204, 185, .54); }
+.dw-log-sandstone { height: 22%; background: rgba(203, 143, 77, .32); }
+.dw-log-shale { height: 20%; background: rgba(115, 105, 91, .14); }
+.dw-log-limestone { height: 18%; background: rgba(225, 212, 190, .6); }
+.dw-log-reservoir { height: 25%; background: rgba(178, 97, 39, .25); }
+.dw-log-well-path { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.dw-log-string { position: absolute; z-index: 2; right: 4%; color: #77634c; font: 7px var(--font-dm-mono),monospace; letter-spacing: .04em; background: rgba(255,253,249,.82); border: 1px solid rgba(119,99,76,.18); padding: 2px 4px; }
+.dw-log-string-a { top: 7%; }
+.dw-log-string-b { top: 15%; }
+.dw-log-string-c { top: 23%; }
+.dw-log-well-casing { fill: none; stroke: rgba(255, 253, 249, .96); stroke-width: 12; }
+.dw-log-well-bore { fill: none; stroke: #74624d; stroke-width: 3; }
+.dw-log-bit-path { fill: none; stroke: #cf711e; stroke-width: 1.5; stroke-dasharray: 4 5; stroke-dashoffset: 100; animation: dwLogPath 7s linear infinite; }
+.dw-log-bit { fill: #c96a12; stroke: #fffdfa; stroke-width: 2; filter: drop-shadow(0 0 4px rgba(201,106,18,.55)); }
+.dw-log-event { fill: #c96a12; stroke: #fffdfa; stroke-width: 2; animation: dwLogEvent 2.4s ease-out infinite; }
+.dw-log-event-line { stroke: #c96a12; stroke-width: 1; stroke-dasharray: 3 4; opacity: .8; }
+.dw-log-event-label { position: absolute; top: 61%; right: 3%; z-index: 2; max-width: 38%; color: #9c4b0d; font: 7px/1.3 var(--font-dm-mono),monospace; letter-spacing: .06em; text-align: center; background: rgba(255,253,249,.94); border: 1px solid #e8ddcf; padding: 4px 5px; }
+.dw-log-axis { position: absolute; left: 10px; right: 10px; bottom: 7px; display: flex; justify-content: space-between; color: #817466; font: 8px var(--font-dm-mono),monospace; }
+.dw-live-log-right { display: grid; grid-template-rows: auto 1fr; gap: 12px; min-width: 0; }
+.dw-scenario-stack { display: grid; gap: 5px; }
+.dw-scenario-label { padding: 0 2px 3px; }
+.dw-scenario-option { display: flex; align-items: flex-start; gap: 10px; min-width: 0; padding: 8px 10px; border: 1px solid transparent; border-left: 2px solid #e2d8cc; border-radius: 2px; background: transparent; text-align: left; cursor: pointer; transition: background .2s ease,border-color .2s ease; }
+.dw-scenario-option:hover { background: #faf4ec; }
+.dw-scenario-option.is-active { border-color: #ead9c5; border-left-color: #c96a12; background: #faf4ec; }
+.dw-scenario-option > b { color: #9a8f82; font: 9px var(--font-dm-mono),monospace; padding-top: 3px; }
+.dw-scenario-option span { display: grid; min-width: 0; gap: 2px; }
+.dw-scenario-option strong { color: #302a24; font: 600 12px/1.35 var(--font-abc-favorit),Inter,sans-serif; }
+.dw-scenario-option small { color: #84796d; font: 10px/1.4 Inter,sans-serif; }
+.dw-live-log-chart { min-height: 0; border: 1px solid #e8ddcf; border-radius: 3px; background: #fcfaf6; }
+.dw-live-log-chart-head { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid #e8ddcf; }
+.dw-live-log-chart-head > span:last-child { color: #9c4b0d; }
+.dw-log-source-labels { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); padding: 6px 0 0; color: #9a8f82; font: 8px var(--font-dm-mono),monospace; letter-spacing: .12em; }
+.dw-log-source-labels span { padding-left: 8px; }
+.dw-log-source-labels span:first-child { grid-column: 1 / 4; }
+.dw-log-source-labels span:last-child { grid-column: 4 / 7; border-left: 1px solid #e8ddcf; }
+.dw-log-track-grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); min-height: 205px; }
+.dw-log-track { position: relative; min-width: 0; padding: 22px 7px 17px; border-right: 1px solid #eee5da; }
+.dw-log-track:last-child { border-right: 0; }
+.dw-log-track:nth-child(4) { border-left: 1px solid #d9c8b3; }
+.dw-log-track b,.dw-log-track small { position: absolute; z-index: 1; left: 7px; color: #877c70; font: 7px var(--font-dm-mono),monospace; letter-spacing: .05em; }
+.dw-log-track b { top: 7px; }
+.dw-log-track small { bottom: 3px; }
+.dw-log-track svg { display: block; width: 100%; height: 100%; min-height: 110px; overflow: hidden; }
+.dw-log-gridlines { fill: none; stroke: #e9e0d5; stroke-width: 1; }
+.dw-log-curve { fill: none; stroke: #c96a12; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; transition: d .6s ease; }
+.dw-log-curve-ecd { stroke: #8c6b4c; animation-delay: .7s; }
+.dw-log-curve-gr { stroke: #d99a59; animation-delay: 1.2s; }
+.dw-log-curve[data-log="az"] { stroke: #b45819; }
+.dw-log-curve[data-log="tf"] { stroke: #b38a63; }
+.dw-log-sweep { stroke: rgba(201,106,18,.5); stroke-width: 1; animation: dwLogSweep 4s linear infinite; }
+.dw-live-log-foot { justify-content: flex-start; flex-wrap: wrap; gap: 8px 26px; border-top: 1px solid #eee5da; padding: 10px 20px; font-size: 8px; }
+.dw-live-log-foot b { color: #c96a12; }
+.dw-live-log[data-scenario="loss"] .dw-log-event { fill: #ba4d16; }
+.dw-live-log[data-scenario="formation"] .dw-log-formation { filter: saturate(.75); }
+.dw-live-log[data-scenario="formation"] .dw-log-event { fill: #9a6a39; }
+html.dark-theme .dw-live-log {
+  border-color: #33404d;
+  background: #111923;
+}
+html.dark-theme .dw-live-log-head,
+html.dark-theme .dw-live-log-foot,
+html.dark-theme .dw-live-log-chart-head,
+html.dark-theme .dw-live-log-metrics,
+html.dark-theme .dw-live-log-metrics > div { border-color: #293643; }
+html.dark-theme .dw-live-log-head h3,
+html.dark-theme .dw-live-log-depth strong,
+html.dark-theme .dw-scenario-option strong { color: #edf1f4; }
+html.dark-theme .dw-live-log-kicker,
+html.dark-theme .dw-live-log-depth span,
+html.dark-theme .dw-scenario-label,
+html.dark-theme .dw-live-log-chart-head,
+html.dark-theme .dw-live-log-foot,
+html.dark-theme .dw-log-track b,
+html.dark-theme .dw-log-track small { color: #a2adb7; }
+html.dark-theme .dw-live-log-metrics span,
+html.dark-theme .dw-live-log-metrics small,
+html.dark-theme .dw-log-source-labels { color: #a2adb7; }
+html.dark-theme .dw-live-log-metrics strong { color: #edf1f4; }
+html.dark-theme .dw-live-log-bore {
+  border-color: #33404d;
+  background-color: #141d27;
+  background-image: linear-gradient(rgba(209, 160, 104, .08) 1px, transparent 1px),linear-gradient(90deg, rgba(209, 160, 104, .08) 1px, transparent 1px);
+}
+html.dark-theme .dw-log-overburden { background: rgba(91, 86, 79, .3); }
+html.dark-theme .dw-log-sandstone { background: rgba(143, 91, 40, .3); }
+html.dark-theme .dw-log-shale { background: rgba(87, 98, 107, .2); }
+html.dark-theme .dw-log-limestone { background: rgba(140, 127, 106, .2); }
+html.dark-theme .dw-log-reservoir { background: rgba(135, 72, 30, .32); }
+html.dark-theme .dw-log-formation span,
+html.dark-theme .dw-log-event-label,
+html.dark-theme .dw-log-string {
+  border-color: #46515c;
+  background: rgba(17, 25, 35, .92);
+  color: #e3c7a7;
+}
+html.dark-theme .dw-live-log-depth small,
+html.dark-theme .dw-scenario-option small { color: #a2adb7; }
+html.dark-theme .dw-scenario-option { border-left-color: #34414d; }
+html.dark-theme .dw-scenario-option:hover,
+html.dark-theme .dw-scenario-option.is-active { border-color: #62492f; border-left-color: #d9781b; background: #1a2530; }
+html.dark-theme .dw-live-log-chart { border-color: #33404d; background: #0d141c; }
+html.dark-theme .dw-live-log-chart-head,
+html.dark-theme .dw-log-track { border-color: #293643; }
+html.dark-theme .dw-log-gridlines { stroke: #2c3946; }
+html.dark-theme .dw-log-source-labels span:last-child,
+html.dark-theme .dw-log-track:nth-child(4) { border-color: #46515c; }
+html.dark-theme #dw-modules-panel > div { background: #111923 !important; border-color: #33404d !important; }
+html.dark-theme #dw-modules-panel > div > div:first-child { color: #a2adb7 !important; }
+html.dark-theme #dw-modules-panel a:hover { background: #1a2530 !important; }
+html.dark-theme #dw-modules-panel a > span > strong { color: #edf1f4 !important; }
+html.dark-theme #dw-modules-panel a > span > span { color: #a2adb7 !important; }
+@keyframes dwLogPulse { 50% { opacity: .45; box-shadow: 0 0 0 5px rgba(201,106,18,.06); } }
+@keyframes dwLogPath { to { stroke-dashoffset: 0; } }
+@keyframes dwLogEvent { 0%,100% { r:4; opacity:1; } 50% { r:7; opacity:.65; } }
+@keyframes dwLogTrace { to { stroke-dashoffset: 80; } }
+@keyframes dwLogSweep { from { transform: translateX(0); opacity:.1; } 20% {opacity:.65} to { transform:translateX(140px);opacity:0; } }
+@media (max-width: 760px) {
+  .dw-live-log-head { align-items: flex-start; padding: 15px; }
+  .dw-live-log-metrics { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .dw-live-log-metrics > div:nth-child(3) { border-right: 0; }
+  .dw-live-log-metrics > div:nth-child(-n+3) { border-bottom: 1px solid #eee5da; }
+  html.dark-theme .dw-live-log-metrics > div:nth-child(-n+3) { border-bottom-color: #293643; }
+  .dw-live-log-layout { grid-template-columns: 1fr; padding: 10px; }
+  .dw-live-log-bore { min-height: 250px; }
+  .dw-log-track-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .dw-log-source-labels { display: none; }
+  .dw-log-track:nth-child(4) { border-left: 0; }
+  .dw-log-track:nth-child(4)::before { content: 'MWD'; position: absolute; top: 3px; left: 7px; color: #9a8f82; font: 8px var(--font-dm-mono),monospace; letter-spacing: .1em; }
+  .dw-log-track:nth-child(4),.dw-log-track:nth-child(5),.dw-log-track:nth-child(6) { margin-top: 10px; }
+  .dw-live-log-foot { padding: 10px 12px; }
+}
+@media (min-width: 761px) {
+  .dw-live-log-right { grid-template-rows: auto minmax(220px,1fr); }
+  .dw-log-track-grid { height: calc(100% - 34px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dw-live-log * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+@media (max-width: 1120px) {
+  #dw-modules-panel { width: min(680px, calc(100vw - 32px)) !important; }
+  #dw-modules-panel > div > div:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 640px) {
+  #dw-modules-panel { width: calc(100vw - 24px) !important; }
+  #dw-modules-panel > div { padding: 14px !important; }
+  #dw-modules-panel > div > div:last-child { grid-template-columns: 1fr !important; }
+}
+/* Source-backed Assam spatial feature */
+#nearby-well-gis {
+  align-items: center !important;
+}
+#nearby-well-gis > div:first-child {
+  align-self: stretch;
+}
+.dw-assam-map-card {
+  height: 100%;
+  padding: clamp(14px, 2vw, 22px) !important;
+  padding-bottom: 30px !important;
+  background: #fffdfa !important;
+  box-shadow: 0 18px 42px -36px rgba(80, 53, 27, .55) !important;
+}
+.dw-assam-map { background: #f2e7d6; border: 1px solid #e7d4ba; }
+.dw-assam-map svg { display: block; min-height: 250px; }
+.dw-assam-pin { transform-box: fill-box; transform-origin: center; animation: dw-assam-pulse 3.2s ease-out infinite; }
+.dw-assam-pin--second { animation-delay: 1.3s; }
+@keyframes dw-assam-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(201,106,18,0)); }
+  50% { filter: drop-shadow(0 0 7px rgba(201,106,18,.28)); }
+}
+.dw-map-live-dot,
+.dw-assam-map-meta i {
+  width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #c96a12;
+  box-shadow: 0 0 0 3px rgba(201,106,18,.12);
+}
+.dw-assam-map-meta {
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding-top: 12px; margin-top: 12px; border-top: 1px solid #eee5da;
+  color: #897e72; font: 8px/1.5 var(--font-dm-mono), monospace; letter-spacing: .08em;
+}
+.dw-assam-map-meta span:first-child { display: inline-flex; align-items: center; gap: 8px; color: #8b571f; }
+.dw-assam-well-list {
+  display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 9px;
+}
+.dw-assam-well-list > div {
+  display: flex; align-items: flex-start; gap: 9px; min-width: 0; padding: 11px 10px;
+  border: 1px solid #eee5da; border-radius: 4px; background: #fffdfa;
+}
+.dw-assam-well-marker {
+  display: grid; place-items: center; width: 22px; height: 22px; flex: 0 0 22px;
+  border: 1px solid #e7c9a9; border-radius: 50%; color: #a75b1b; background: #fbf1e6;
+  font: 8px var(--font-dm-mono),monospace;
+}
+.dw-assam-well-list strong,
+.dw-assam-well-list small { display: block; }
+.dw-assam-well-list strong { color: #302a24; font-size: 10px; line-height: 1.45; }
+.dw-assam-well-list small { margin-top: 4px; color: #897e72; font: 8px/1.5 var(--font-dm-mono),monospace; }
+.dw-assam-source {
+  display: block; margin-top: 10px; padding: 10px 2px 0;
+  border-top: 1px solid #eee5da; color: #8b571f; font: 8px/1.5 var(--font-dm-mono), monospace;
+  letter-spacing: .06em; text-decoration: none;
+}
+.dw-assam-source:hover { color: #c96a12; }
+#nearby-well-gis .space-y-4 { display: grid; gap: 10px; }
+#nearby-well-gis .space-y-4 > div {
+  padding: 16px !important; border-radius: 5px !important; background: rgba(255,253,250,.72) !important;
+  box-shadow: none !important; transition: border-color .2s ease, transform .2s ease;
+}
+#nearby-well-gis .space-y-4 > div:hover { border-color: #d9aa7a !important; transform: translateX(3px); }
+@media (max-width: 640px) {
+  .dw-assam-map svg { min-height: 0; }
+  .dw-assam-map-meta { font-size: 7px; }
+  .dw-assam-well-list { grid-template-columns: 1fr; }
+  .dw-assam-well-list strong { font-size: 11px; }
+  .dw-assam-well-list small { font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dw-assam-pin { animation: none; }
+  #nearby-well-gis .space-y-4 > div { transition: none; }
+}
+/* Casing program: a compact, readable well profile with the explanatory points
+   grouped beneath the visualization instead of competing in a second column. */
+.dw-casing-section {
+  position: relative;
+  margin: 0;
+  padding: clamp(42px, 5.5vw, 78px) max(24px, calc((100vw - 1460px) / 2 + 24px));
+  border-block: 1px solid #e3dbd1;
+  background: #f3f0eb;
+}
+.dw-casing-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: 34px clamp(28px, 4vw, 64px);
+  max-width: 1460px;
+  margin-inline: auto;
+}
+.dw-casing-intro,
+.dw-casing-figure,
+.dw-casing-points { min-width: 0; }
+.dw-casing-eyebrow,
+.dw-casing-figure-head,
+.dw-casing-axis-label,
+.dw-casing-ruler,
+.dw-casing-source {
+  font-family: var(--font-dm-mono), monospace;
+  text-transform: uppercase;
+  letter-spacing: .11em;
+}
+.dw-casing-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 19px;
+  color: #82796f;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.dw-casing-eyebrow > span {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 1px solid #e8c6a5;
+  border-radius: 50%;
+  color: #bd5f0b;
+  background: #fbf4eb;
+  font-size: 9px;
+}
+.dw-casing-intro h3 {
+  max-width: 620px;
+  margin: 0;
+  color: #24211e;
+  font-size: clamp(29px, 3vw, 43px);
+  font-weight: 650;
+  letter-spacing: -.055em;
+  line-height: 1.1;
+}
+.dw-casing-intro h3 span { color: #bd620f; }
+.dw-casing-intro > p {
+  max-width: 58ch;
+  margin: 20px 0 0;
+  color: #625b53;
+  font-size: 15px;
+  line-height: 1.75;
+}
+.dw-casing-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 25px;
+  padding-top: 17px;
+  border-top: 1px solid #dcd4ca;
+}
+.dw-casing-summary > span { color: #776e64; font-size: 10px; line-height: 1.5; }
+.dw-casing-summary strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #26221e;
+  font: 600 19px/1.2 var(--font-dm-mono), monospace;
+  letter-spacing: -.04em;
+}
+.dw-casing-figure.dw-fig-frame {
+  grid-column: 2;
+  grid-row: 1;
+  overflow: hidden;
+  padding: clamp(17px, 2vw, 26px);
+  border: 1px solid #e0d5c8;
+  border-radius: 7px;
+  background-color: #fffdfa;
+  background-image: linear-gradient(rgba(190, 111, 44, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(190, 111, 44, .035) 1px, transparent 1px);
+  background-size: 22px 22px;
+  box-shadow: 0 12px 32px rgba(58, 43, 27, .055);
+}
+.dw-casing-figure.dw-fig-frame::after { content: none !important; }
+.dw-casing-figure-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e7dfd5;
+  color: #514940;
+  font-size: 9px;
+  line-height: 1.5;
+}
+.dw-casing-figure-head > div { display: flex; align-items: center; gap: 9px; }
+.dw-casing-figure-head > span { color: #8b7e70; white-space: nowrap; }
+.dw-casing-figure-head i { color: #d17624; font-style: normal; }
+.dw-casing-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #d9781b; box-shadow: 0 0 0 4px rgba(217,120,27,.12); }
+.dw-casing-axis-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 0 7px;
+  color: #a09283;
+  font-size: 8px;
+}
+.dw-casing-rows { border-top: 1px solid #e9e1d8; }
+.dw-casing-row { padding: 12px 0 13px; border-bottom: 1px solid #e9e1d8; }
+.dw-casing-row > div:first-child {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 8px;
+  color: #6a6259;
+  font-size: 12px;
+}
+.dw-casing-row strong { color: #29241f; font: 600 13px var(--font-dm-mono), monospace; }
+.dw-casing-row b { color: #544b42; font: 500 10px var(--font-dm-mono), monospace; white-space: nowrap; }
+.dw-casing-track {
+  height: 5px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: repeating-linear-gradient(90deg, #e9e4de 0, #e9e4de 1px, #f3f0eb 1px, #f3f0eb 10%);
+}
+.dw-casing-track i { display: block; width: var(--depth); height: 100%; border-radius: inherit; background: linear-gradient(90deg, #e9a45c, #c65e06); }
+.dw-casing-ruler { display: flex; justify-content: space-between; margin-top: 10px; color: #918477; font-size: 8px; }
+.dw-casing-source {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid #e7dfd5;
+  color: #897e72;
+  font-size: 8px;
+  line-height: 1.6;
+  text-transform: none;
+  letter-spacing: .02em;
+}
+.dw-casing-source code { color: #54473b; font-size: inherit; }
+.dw-casing-points {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid #dcd4ca;
+}
+.dw-casing-points article {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-content: start;
+  column-gap: 13px;
+  padding: 21px clamp(14px, 2vw, 28px) 0 0;
+}
+.dw-casing-points article + article { padding-left: clamp(14px, 2vw, 28px); border-left: 1px solid #ded6cc; }
+.dw-casing-points article > span { color: #bd620f; font: 10px var(--font-dm-mono), monospace; }
+.dw-casing-points h4 { margin: 0; color: #28231e; font-size: 13px; font-weight: 650; letter-spacing: -.02em; }
+.dw-casing-points p { grid-column: 2; margin: 7px 0 0; color: #6e665d; font-size: 11px; line-height: 1.65; }
+@media (max-width: 900px) {
+  .dw-casing-layout { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .dw-casing-figure.dw-fig-frame { grid-column: 1; grid-row: auto; }
+  .dw-casing-points { grid-column: 1; }
+}
+@media (max-width: 620px) {
+  .dw-casing-section { padding: 38px 18px; }
+  .dw-casing-eyebrow { font-size: 8px; }
+  .dw-casing-intro > p { font-size: 14px; }
+  .dw-casing-summary { gap: 8px; }
+  .dw-casing-summary > span { font-size: 9px; }
+  .dw-casing-summary strong { font-size: 16px; }
+  .dw-casing-figure.dw-fig-frame { padding: 15px 13px; }
+  .dw-casing-figure-head { align-items: flex-start; flex-direction: column; gap: 5px; }
+  .dw-casing-axis-label { font-size: 7px; }
+  .dw-casing-row > div:first-child { grid-template-columns: 67px minmax(0, 1fr) auto; gap: 6px; font-size: 11px; }
+  .dw-casing-row b { font-size: 9px; }
+  .dw-casing-source { flex-direction: column; gap: 4px; }
+  .dw-casing-points { grid-template-columns: 1fr; }
+  .dw-casing-points article { padding: 17px 0; }
+  .dw-casing-points article + article { padding-left: 0; border-left: 0; border-top: 1px solid #ded6cc; }
 }

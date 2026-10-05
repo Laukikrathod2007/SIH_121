@@ -1,0 +1,1 @@
+import{j as o,F as t}from"./index-vlRhp9iD.js";import{S as e}from"./SectionPage-Co-hbh2C.js";import"./PageShell-c89HhQzn.js";import"./Footer-oJqgEsQo.js";function i(){return o.jsx(e,{page:t,parent:{label:"Solutions",to:"/solutions"}})}export{i as component};
