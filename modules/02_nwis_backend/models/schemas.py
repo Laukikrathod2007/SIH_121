@@ -213,6 +213,12 @@ class DrillingEvent(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0, default=0.90)
     source_document: Optional[str] = None
     source_page: Optional[int] = None
+    # Provenance category (Pass 6): matches the DB's `source_type` enum on
+    # drilling_events (schema.sql). Real/approved-document events are
+    # "REAL"; events from the project's own synthetic testbed fixture are
+    # "SYNTHETIC" -- never blurred together, since the UI (B6 provenance
+    # badges) depends on this being honest, not decorative.
+    source_type: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------

@@ -16,18 +16,18 @@ Endpoints:
   GET  /api/v2/corridors/{well_id}       → Risk corridors
   GET  /api/v2/ahead_of_bit/{well_id}    → Ahead-of-bit projected corridor (0-200m lookahead)
   GET  /api/v2/live/replay/{well_id}     → Real-time alert stream (SSE)
+  POST /api/v2/agent/chat                → Agentic Knowledge Copilot (SSE)
   GET  /api/v2/health                    → System health
 """
 
 from __future__ import annotations
 import asyncio
 import json
-import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from contextlib import asynccontextmanager
 from loguru import logger
@@ -42,7 +42,8 @@ from app.modules.nwis.orchestrator import NWISOrchestrator
 from app.modules.nwis.models.schemas import HazardType
 from app.modules.nwis.db.connection import is_configured as db_is_configured, healthcheck as db_healthcheck
 from app.modules.nwis.db import service as db_service
-from app.modules.nwis.auth import require_api_key, rate_limit, auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
+from app.modules.nwis.auth import require_api_key, rate_limit, rate_limit_agent, auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
+from pydantic import BaseModel
 
 store = NWISDataStore()
 
@@ -108,18 +109,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — was wide-open ("*"), which combined with zero auth meant any
-# website's JS could call this API from a victim's browser. Restricted to a
-# configurable allowlist (extra origins via NWIS_CORS_ORIGINS, comma-separated),
-# matching Module 01's approach.
-_default_origins = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
-_extra_origins = [o.strip() for o in os.environ.get("NWIS_CORS_ORIGINS", "").split(",") if o.strip()]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_default_origins + _extra_origins,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS is configured once, centrally, in Backend/app/main.py (previously
+# wide-open "*" here, which combined with zero auth meant any website's JS
+# could call this API from a victim's browser -- already fixed there with
+# a configurable allowlist). This module's own `app` instance only ever
+# runs standalone; Backend/app/integrations/_mount.py copies only
+# `.router.routes` from it onto the real served app, never middleware, so a
+# CORSMiddleware registered here was dead code in the one place CORS
+# actually matters.
 
 
 @app.exception_handler(Exception)
@@ -145,7 +142,7 @@ def _require_store():
         )
 
 
-def _get_data_source():
+def _get_data_source(active_well_id: Optional[str] = None):
     """
     Pass 5: the single entry point every historical-events/DORS/corridors/
     analyze route uses to pick its data source, following the exact
@@ -156,9 +153,10 @@ def _get_data_source():
     attribute/method surface as the real in-memory `store` (wells_by_id,
     all_wells, all_trajectories, formation_tops_by_well,
     casing_records_by_well, events_by_well, all_events,
-    get_events_for_top_wells) -- either DbStoreSnapshot (built fresh from
-    Postgres) or the real NWISDataStore singleton. Callers never branch on
-    which one they got; that's the entire point of the shared surface.
+    get_events_for_top_wells, get_telemetry_at) -- either DbStoreSnapshot
+    (built fresh from Postgres) or the real NWISDataStore singleton. Callers
+    never branch on which one they got; that's the entire point of the
+    shared surface.
 
     Raises HTTPException(503) if the database is configured but the
     snapshot build fails (connection refused, query error, etc.) -- never
@@ -166,7 +164,8 @@ def _get_data_source():
     """
     if db_is_configured():
         try:
-            return db_service.build_store_snapshot(active_well_id=store.active_well_id), "postgres"
+            target_well = active_well_id or store.active_well_id
+            return db_service.build_store_snapshot(active_well_id=target_well), "postgres"
         except Exception as exc:
             logger.error(f"DB-backed store snapshot failed (DB configured but unreachable/erroring): {exc}")
             raise HTTPException(503, detail="Database is configured but currently unavailable. Try again shortly.")
@@ -632,12 +631,13 @@ async def get_telemetry(
     depth: float = Query(..., ge=0, description="Current drill bit depth (m MD)"),
     window: int = Query(300, description="Number of recent records to return"),
 ):
-    """Get live telemetry records for the active well."""
+    """Get live telemetry records strictly for the requested well."""
     _require_store()
-    if well_id != store.active_well_id and well_id not in store.wells_by_id:
+    source, data_source = _get_data_source(active_well_id=well_id)
+    if well_id not in source.wells_by_id and well_id != store.active_well_id:
         raise HTTPException(404, f"Well '{well_id}' not found")
 
-    records = store.get_telemetry_at(depth, window=window)
+    records = source.get_telemetry_at(depth, window=window, well_id=well_id)
     latest = records[-1] if records else None
 
     return {
@@ -646,6 +646,7 @@ async def get_telemetry(
         "records_returned": len(records),
         "latest": latest.model_dump() if latest else None,
         "records": [r.model_dump() for r in records[-50:]],  # last 50 for frontend chart
+        "data_source": data_source,
     }
 
 
@@ -821,7 +822,7 @@ async def analyze_well(
     specifically stays sourced from the in-memory singleton either way).
     """
     _require_store()
-    source, data_source = _get_data_source()
+    source, data_source = _get_data_source(active_well_id=well_id)
     if well_id not in source.wells_by_id:
         raise HTTPException(404, f"Well '{well_id}' not found")
 
@@ -942,31 +943,40 @@ async def get_ahead_of_bit_corridor(
     reaches that depth (unlike GET /api/v2/corridors, which only reports
     corridors already present in the historical record for depths already
     at or behind, or barely ahead of, the bit).
+
+    Pass 5: database-backed when configured — see _get_data_source(). Every
+    store.* reference below (active_well, active_traj, active_tops, the
+    DORS inputs, AND top_offset_wells/offset_trajectories/offset_tops_map/
+    offset_events_map) now comes from the same resolved source. This is
+    the last of the 8 routes originally left on the in-memory store by
+    Pass 4 — verified live against the running server (data_source:
+    postgres) after the other 7.
     """
     _require_store()
     from app.modules.nwis.engines.dors_engine import rank_offset_wells
     from app.modules.nwis.engines.stratigraphic_correlator import formation_at_depth
     from app.modules.nwis.engines.risk_corridor_engine import compute_ahead_of_bit_corridor
 
-    active_well = store.wells_by_id.get(well_id)
+    source, data_source = _get_data_source()
+    active_well = source.wells_by_id.get(well_id)
     if not active_well:
         raise HTTPException(404, f"Well '{well_id}' not found")
 
-    active_traj = store.all_trajectories.get(well_id)
-    active_tops = store.formation_tops_by_well.get(well_id, [])
+    active_traj = source.all_trajectories.get(well_id)
+    active_tops = source.formation_tops_by_well.get(well_id, [])
     active_fm = formation_at_depth(active_tops, depth)
 
     rankings = rank_offset_wells(
         active_well=active_well,
         active_depth_m=depth,
         active_formation=active_fm.formation_name if active_fm else None,
-        all_wells=store.all_wells,
-        all_trajectories=store.all_trajectories,
-        all_formation_tops=store.formation_tops_by_well,
-        all_events=store.events_by_well,
+        all_wells=source.all_wells,
+        all_trajectories=source.all_trajectories,
+        all_formation_tops=source.formation_tops_by_well,
+        all_events=source.events_by_well,
         top_n=top_n,
     )
-    top_offset_wells = [store.wells_by_id[r.well_id] for r in rankings if r.well_id in store.wells_by_id]
+    top_offset_wells = [source.wells_by_id[r.well_id] for r in rankings if r.well_id in source.wells_by_id]
 
     result = compute_ahead_of_bit_corridor(
         active_well=active_well,
@@ -974,14 +984,16 @@ async def get_ahead_of_bit_corridor(
         active_tops=active_tops,
         current_md_m=depth,
         top_offset_wells=top_offset_wells,
-        offset_trajectories=store.all_trajectories,
-        offset_tops_map=store.formation_tops_by_well,
-        offset_events_map=store.events_by_well,
+        offset_trajectories=source.all_trajectories,
+        offset_tops_map=source.formation_tops_by_well,
+        offset_events_map=source.events_by_well,
         max_lookahead_m=max_lookahead_m,
         step_m=step_m,
     )
 
-    return result.model_dump()
+    result_dict = result.model_dump()
+    result_dict["data_source"] = data_source
+    return result_dict
 
 
 # ---------------------------------------------------------------------------
@@ -1120,6 +1132,82 @@ async def live_replay(
                 yield f"data: {json.dumps(update)}\n\n"
         except ValueError as exc:
             yield f"event: error\ndata: {json.dumps({'error': str(exc)})}\n\n"
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Agentic Knowledge Copilot — real local LLM (Ollama) tool-calling over this
+# module's own existing routes, grounded answers with citations. See
+# agent/orchestrator.py and agent/tools.py for the full design reasoning.
+# ---------------------------------------------------------------------------
+
+class AgentChatRequest(BaseModel):
+    message: str
+    active_well_id: Optional[str] = None
+    active_depth: Optional[float] = None
+
+
+@app.post("/api/v2/agent/chat", tags=["Knowledge Copilot"], dependencies=[Depends(require_api_key), Depends(rate_limit_agent)])
+async def agent_chat(request: Request, body: AgentChatRequest):
+    """
+    Server-Sent Events stream of one agentic Knowledge Copilot turn.
+    Frames: `tool_call`, `tool_result`, `answer`, `error`, and a final
+    `mode` frame telling the frontend honestly whether this turn was
+    answered by the real agent ("agentic") or Ollama was unreachable and
+    nothing was attempted ("unavailable") — the frontend must never imply
+    an LLM answered when it didn't, same honesty discipline as every other
+    optional-capability surface in this codebase (docling, cloud OCR
+    fallback, semantic search's own keyword-fallback path).
+
+    Test with: curl -N -X POST -H "X-API-Key: <key>" -H "Content-Type: application/json" \\
+      -d '{"message": "..."}' .../api/v2/agent/chat
+    (a browser EventSource can't POST or set custom headers, so the real
+    frontend integration uses manual fetch()+ReadableStream reading, same
+    as api.ts's existing openLiveReplay().)
+    """
+    if not body.message or not body.message.strip():
+        raise HTTPException(400, "message must not be empty")
+
+    from app.modules.nwis.agent.orchestrator import (
+        run_agent_turn,
+        run_keyword_fallback,
+        check_ollama_reachable,
+        OllamaUnavailable,
+    )
+
+    async def event_stream():
+        if not await check_ollama_reachable():
+            yield f"event: mode\ndata: {json.dumps({'mode': 'keyword_fallback'})}\n\n"
+            try:
+                async for event in run_keyword_fallback(
+                    body.message, active_well_id=body.active_well_id, active_depth=body.active_depth
+                ):
+                    if await request.is_disconnected():
+                        break
+                    yield f"data: {json.dumps(event, default=str)}\n\n"
+            except Exception as exc:
+                logger.warning(f"Keyword fallback failed: {exc}")
+                yield f"data: {json.dumps({'type': 'error', 'detail': 'Keyword fallback search encountered an error.'})}\n\n"
+            yield "event: done\ndata: {}\n\n"
+            return
+
+        yield f"event: mode\ndata: {json.dumps({'mode': 'agentic'})}\n\n"
+        try:
+            async for event in run_agent_turn(
+                body.message, active_well_id=body.active_well_id, active_depth=body.active_depth
+            ):
+                if await request.is_disconnected():
+                    break
+                yield f"data: {json.dumps(event, default=str)}\n\n"
+        except OllamaUnavailable as exc:
+            logger.warning(f"Agent turn failed, Ollama became unreachable mid-turn: {exc}")
+            yield f"data: {json.dumps({'type': 'error', 'detail': 'Lost connection to the AI assistant.'})}\n\n"
         yield "event: done\ndata: {}\n\n"
 
     return StreamingResponse(

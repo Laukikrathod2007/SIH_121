@@ -113,9 +113,9 @@ class NWISOrchestrator:
         top_events = store.get_events_for_top_wells(top_well_ids)
 
         # ---------------------------------------------------------------
-        # 2. Live telemetry slice for sensor anomaly scoring
+        # 2. Live telemetry slice for sensor anomaly scoring (strictly scoped to active_well_id)
         # ---------------------------------------------------------------
-        recent_telemetry = store.get_telemetry_at(current_depth_m, window=180)
+        recent_telemetry = store.get_telemetry_at(current_depth_m, window=180, well_id=active_well_id)
 
         # ---------------------------------------------------------------
         # 3. Hazard Assessments for all 5 families

@@ -19,6 +19,7 @@ from app.core.auth import (  # noqa: F401
     API_KEY,
     auth_enabled,
     generate_api_key,
+    rate_limit_agent,
     rate_limit_general as rate_limit,
     require_api_key,
 )

@@ -18,7 +18,7 @@ from typing import Any, Optional
 
 from loguru import logger
 
-from app.modules.nwis.db.connection import get_connection
+from app.modules.nwis.db.connection import get_connection, is_configured
 from app.modules.nwis.db.repositories import (
     WellRepository, TrajectoryRepository, FormationRepository, CasingRepository, EventRepository,
 )
@@ -399,6 +399,7 @@ def _event_row_to_model(row: dict[str, Any]) -> DrillingEvent:
         mitigation_description=row.get("mitigation_description"), outcome=row.get("outcome"),
         confidence=float(row["confidence"]) if row.get("confidence") is not None else 0.90,
         source_document=row.get("source_document_id"), source_page=row.get("source_page"),
+        source_type=row.get("source_type"),
     )
 
 
@@ -430,18 +431,62 @@ class DbStoreSnapshot:
             result.extend(self.events_by_well.get(wid, []))
         return result
 
-    def get_telemetry_at(self, depth_m: float, window: int = 120):
-        """Deliberately NOT backed by telemetry_records — see this
-        module's section docstring above DbStoreSnapshot for the full
-        reasoning (the DB has rows for only 2 of 14 wells; the in-memory
-        source is equally well-id-blind today, so migrating this one call
-        would add a new DB-failure mode without fixing the pre-existing
-        gap). Composed from the real in-memory NWISDataStore singleton at
-        call time instead -- NWISOrchestrator.analyze() is this method's
-        only caller, and it needs SOME answer for sensor-anomaly scoring
-        even when every other field in this snapshot is DB-backed."""
+    def get_telemetry_at(self, depth_m: float, window: int = 120, well_id: Optional[str] = None):
+        """Scope-aware telemetry retrieval.
+        Queries Postgres telemetry_records table when configured if records exist for target well;
+        otherwise checks in-memory NWISDataStore scoped strictly to target well.
+        NEVER returns telemetry belonging to a different well than requested.
+        """
+        target_well = well_id or self.active_well_id
+        if not target_well:
+            return []
+
+        # 1. Query Postgres telemetry_records for this exact target_well if configured
+        if is_configured():
+            try:
+                from psycopg.rows import dict_row
+                from app.modules.nwis.models.schemas import TelemetryRecord
+                with get_connection() as conn:
+                    with conn.cursor(row_factory=dict_row) as cur:
+                        cur.execute(
+                            """
+                            SELECT well_id, time, depth_m, rop_m_hr, wob_klbs, rpm, torque_kn_m,
+                                   standpipe_pressure_psi, flow_in_lpm, flow_out_lpm, pit_volume_bbl,
+                                   mud_weight_ppg, d_exponent
+                            FROM telemetry_records
+                            WHERE well_id = %s AND depth_m <= %s
+                            ORDER BY time DESC
+                            LIMIT %s
+                            """,
+                            (target_well, depth_m, window),
+                        )
+                        rows = cur.fetchall()
+                        if rows:
+                            rows.reverse()
+                            return [
+                                TelemetryRecord(
+                                    well_id=r["well_id"],
+                                    timestamp=r["time"].isoformat() if hasattr(r["time"], "isoformat") else str(r["time"]),
+                                    depth_m=float(r["depth_m"]),
+                                    rop_m_hr=float(r.get("rop_m_hr") or 0.0),
+                                    wob_klbs=float(r.get("wob_klbs") or 0.0),
+                                    rpm=float(r.get("rpm") or 0.0),
+                                    torque_kn_m=float(r.get("torque_kn_m") or 0.0),
+                                    standpipe_pressure_psi=float(r.get("standpipe_pressure_psi") or 0.0),
+                                    flow_in_lpm=float(r.get("flow_in_lpm") or 0.0),
+                                    flow_out_lpm=float(r.get("flow_out_lpm") or 0.0),
+                                    pit_volume_bbl=float(r.get("pit_volume_bbl") or 0.0),
+                                    mud_weight_ppg=float(r.get("mud_weight_ppg") or 9.0),
+                                    d_exponent=float(r.get("d_exponent") or 1.0),
+                                )
+                                for r in rows
+                            ]
+            except Exception as e:
+                logger.debug(f"DB telemetry fetch for {target_well} failed, falling back to in-memory store: {e}")
+
+        # 2. Check in-memory store strictly scoped to target_well
         from app.modules.nwis.data_store import NWISDataStore
-        return NWISDataStore().get_telemetry_at(depth_m, window=window)
+        return NWISDataStore().get_telemetry_at(depth_m, window=window, well_id=target_well)
 
 
 def build_store_snapshot(active_well_id: Optional[str] = None) -> DbStoreSnapshot:

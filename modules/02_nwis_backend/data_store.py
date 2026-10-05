@@ -160,6 +160,11 @@ class NWISDataStore:
                     confidence=ev.get("confidence", 0.90),
                     source_document=ev.get("source_document"),
                     source_page=ev.get("source_page"),
+                    # This whole loop reads the project's own synthetic
+                    # testbed fixture (drilling_events.json), never real
+                    # OIL/Volve source documents -- honestly SYNTHETIC,
+                    # matching the DB schema's own source_type vocabulary.
+                    source_type="SYNTHETIC",
                 )
                 self.events_by_well.setdefault(event.well_id, []).append(event)
                 self.all_events.append(event)
@@ -171,10 +176,15 @@ class NWISDataStore:
         self.active_well_id: str = telemetry_raw.get("active_well_id", "")
         telemetry_records = telemetry_raw.get("records", [])
         self.telemetry_records: List[TelemetryRecord] = []
+        self.telemetry_by_well: Dict[str, List[TelemetryRecord]] = {}
         skipped_telemetry = 0
         for rec in telemetry_records:
             try:
-                self.telemetry_records.append(TelemetryRecord(**rec))
+                if not rec.get("well_id") and self.active_well_id:
+                    rec["well_id"] = self.active_well_id
+                r = TelemetryRecord(**rec)
+                self.telemetry_records.append(r)
+                self.telemetry_by_well.setdefault(r.well_id, []).append(r)
             except Exception as e:
                 skipped_telemetry += 1
                 logger.debug(f"Skipping malformed telemetry record: {e}")
@@ -296,6 +306,10 @@ class NWISDataStore:
                 severity=e.get("severity", "MEDIUM"),
                 depth_start_md_m=e["depth_start_md_m"],
                 source_document=e.get("source_file"),
+                # Parsed from real source documents for the 2 real Volve
+                # wells (see this loop's own docstring above) -- genuinely
+                # REAL, not demonstration data.
+                source_type="REAL",
             )
             self.events_by_well.setdefault(event.well_id, []).append(event)
             self.all_events.append(event)
@@ -313,9 +327,35 @@ class NWISDataStore:
             f"({len(self.casing_records_by_well)} real wells)"
         )
 
-    def get_telemetry_at(self, depth_m: float, window: int = 120) -> List[TelemetryRecord]:
-        """Return up to `window` telemetry records near the given depth."""
-        result = [r for r in self.telemetry_records if r.depth_m <= depth_m]
+    def get_telemetry_at(
+        self,
+        depth_m: float,
+        window: int = 120,
+        well_id: Optional[str] = None,
+    ) -> List[TelemetryRecord]:
+        """Return up to `window` telemetry records near the given depth strictly for the specified well.
+
+        Telemetry Attribution Contract:
+        - When well_id is provided, ONLY telemetry records strictly belonging to that well are returned.
+        - If the target well has no telemetry records in the store, returns an empty list.
+          NEVER substitutes records from another well.
+        - When well_id is omitted/None, scopes strictly to self.active_well_id. If self.active_well_id
+          has no telemetry, returns an empty list.
+        """
+        target_well = well_id or self.active_well_id
+        if not target_well:
+            return []
+
+        well_records = self.telemetry_by_well.get(target_well)
+        if well_records is None:
+            well_records = [r for r in self.telemetry_records if r.well_id == target_well]
+            if well_records:
+                self.telemetry_by_well[target_well] = well_records
+
+        if not well_records:
+            return []
+
+        result = [r for r in well_records if r.depth_m <= depth_m]
         return result[-window:]
 
     def get_events_for_top_wells(
