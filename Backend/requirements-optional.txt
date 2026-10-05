@@ -16,3 +16,15 @@ spacy>=3.7.6
 # Pretty CLI summary tables in pipeline/orchestrator.py's print helper
 # (never used on the API request path).
 rich>=13.8.1
+
+# Semantic (embedding-based) historical knowledge search. Without it,
+# search/knowledge_search.py's _get_model() catches the ImportError and
+# falls back to case-insensitive keyword matching over the same text --
+# confirmed this pass to degrade cleanly, no crash (search_mode in the
+# response honestly reports "keyword_fallback" instead of "semantic").
+# Pulled out of the default requirements.txt because sentence-transformers
+# drags in PyTorch, which was confirmed this pass to be the single biggest
+# contributor to this backend exceeding Render's free-tier 512MB RAM cap
+# (measured ~605MB RSS with it installed; the process was OOM-killed on
+# Render with it in place).
+sentence-transformers>=3.3.0

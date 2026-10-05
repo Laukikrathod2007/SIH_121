@@ -49,9 +49,6 @@ scikit-learn>=1.5.2
 joblib>=1.4.2
 xgboost>=2.1.1
 
-# --- Historical knowledge search (semantic embeddings) ---
-sentence-transformers>=3.3.0
-
 # --- PostgreSQL / PostGIS data access (active only when NWIS_DATABASE_URL / NWIS_DB_* is set) ---
 psycopg[binary]>=3.2.0
 psycopg_pool>=3.2.0

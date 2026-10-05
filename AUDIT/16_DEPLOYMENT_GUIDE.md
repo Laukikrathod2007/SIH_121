@@ -133,13 +133,31 @@ viable without any schema compromise.
    migrations itself by design (no Alembic, no migration framework, per
    this project's own engineering constraints), so this is a one-time
    manual step.
-4. Copy the project's connection string (Project Settings → Database →
-   Connection string → URI) into `NWIS_DATABASE_URL` on the Render
-   service.
+4. **Use the Shared Pooler (Supavisor) connection string, session mode —
+   not the direct connection string.** Supabase's "Connect" dialog shows
+   several options; the direct `db.<project-ref>.supabase.co:5432` string
+   resolves to an IPv6-only address on the free tier, and Render's network
+   has no outbound IPv6 route — confirmed live during this pass: the app
+   booted fine but every DB query failed with
+   `Network is unreachable` against the IPv6 address, even though the
+   credentials and schema were correct. The Shared Pooler is IPv4 on every
+   tier and is the right choice anyway for a persistent backend service
+   (session mode, not transaction mode — this app holds long-lived pooled
+   connections via `psycopg_pool`, not one-shot serverless calls). The
+   pooler string has a different shape from the direct one — note the
+   `postgres.<project-ref>` user (not bare `postgres`) and the
+   `aws-0-<region>.pooler.supabase.com` host (confirmed the region prefix
+   is `aws-0`, not `aws-1`, for this project — Supabase's dashboard shows
+   the exact value for yours under Connect → Session pooler):
+   ```
+   postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+   ```
+   Set this on `NWIS_DATABASE_URL` in both Render and (for local testing
+   against the same Supabase instance) `Backend/.env`.
 5. Optionally run `database/migrate_seed.py` once against the Supabase
    connection string to load the synthetic + real-Volve testbed data (set
-   `NWIS_DATABASE_URL` in your local shell to the Supabase string before
-   running it, same script the local Docker setup uses).
+   `NWIS_DATABASE_URL` in your local shell to the same pooler string
+   before running it, same script the local Docker setup uses).
 
 ### 3.3 Memory mode still works, if you ever want it
 `db_is_configured()` returning false (leaving `NWIS_DATABASE_URL` unset)
