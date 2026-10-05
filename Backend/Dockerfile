@@ -52,6 +52,13 @@ COPY real_data/real_formations_fresh.json ./real_data/real_formations_fresh.json
 COPY real_data/real_events_depth_tagged_fresh.json ./real_data/real_events_depth_tagged_fresh.json
 COPY real_data/real_trajectories_witsml.json ./real_data/real_trajectories_witsml.json
 
+# The 42 DDR PDFs (~29MB) that /api/evidence serves and the frontend's
+# evidence viewer deep-links into -- see EVIDENCE_PDF_DIR in
+# Backend/app/core/config.py. Missing from the image until now (they sat
+# under old/, which is deliberately not copied), which is why a deployed
+# /health reported evidence.pdf_dir_reachable: false.
+COPY real_data/evidence_pdfs/ ./real_data/evidence_pdfs/
+
 WORKDIR /app/Backend
 
 # Render sets $PORT and expects the app to bind to it; app/core/config.py's

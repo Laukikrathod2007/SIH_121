@@ -50,7 +50,14 @@ M02_ROOT = MODULES_ROOT / "02_nwis_backend"
 M04_ROOT = MODULES_ROOT / "04_physics_engine"
 M05_ROOT = MODULES_ROOT / "05_predictive_analytics"
 
-EVIDENCE_PDF_DIR = REPO_ROOT / "old" / "evidence-server" / "pdfs"
+# The DDR PDFs that /api/evidence serves (and that the frontend's evidence
+# viewer deep-links into). These used to live under old/evidence-server/
+# purely because the retired Node process that once served them did -- but
+# they are live product data, not archive material, and old/ is deliberately
+# excluded from the deployed image, so the deployed backend reported
+# pdf_dir_reachable: false and every evidence link 404'd. They now sit in
+# real_data/ with the rest of the real-well data the app reads at runtime.
+EVIDENCE_PDF_DIR = REPO_ROOT / "real_data" / "evidence_pdfs"
 
 # NWIS_ENV values this codebase recognizes as a deliberate, acknowledged
 # non-production environment. Anything outside this set (including an
