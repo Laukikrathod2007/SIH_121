@@ -35,15 +35,40 @@ export function useNwisMapData() {
   const [wells, setWells] = useState<WellPoint[]>([]);
   const [eventsByWell, setEventsByWell] = useState<Record<string, WellEvent[]>>({});
   const [loading, setLoading] = useState(true);
+  // Distinguishes "the backend is unreachable" from "the backend answered
+  // with zero wells". Both used to collapse into wells: [] here (the
+  // .catch(() => []) below), and NearbyWellsMap's own guard then rendered
+  // `Active well "X" not found in \`wells\``, blaming the well ID for what
+  // was actually a backend outage -- a genuinely misleading error that
+  // sent real debugging down the wrong path. The page now reports the
+  // transport failure as a transport failure.
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [realWells, eventsResponse] = await Promise.all([
-        api.getWells().catch(() => []),
-        api.searchEventsStructured().catch(() => ({ events: [] } as Partial<Awaited<ReturnType<typeof api.searchEventsStructured>>>)),
-      ]);
+      setError(null);
+
+      // Wells are load-bearing: without them the map has no centre and
+      // nothing to draw, so a failure here is surfaced rather than
+      // swallowed. Events are supplementary -- the map still renders
+      // correctly with no incident rings -- so those stay best-effort.
+      let realWells: Awaited<ReturnType<typeof api.getWells>>;
+      try {
+        realWells = await api.getWells();
+      } catch (err) {
+        if (cancelled) return;
+        setWells([]);
+        setEventsByWell({});
+        setError(err instanceof Error ? err.message : String(err));
+        setLoading(false);
+        return;
+      }
+
+      const eventsResponse = await api
+        .searchEventsStructured()
+        .catch(() => ({ events: [] } as Partial<Awaited<ReturnType<typeof api.searchEventsStructured>>>));
       if (cancelled) return;
 
       const allEvents = (eventsResponse.events ?? []) as unknown as WellEvent[];
@@ -87,5 +112,5 @@ export function useNwisMapData() {
     return () => { cancelled = true; };
   }, []);
 
-  return { wells, eventsByWell, loading };
+  return { wells, eventsByWell, loading, error };
 }

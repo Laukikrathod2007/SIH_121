@@ -37,7 +37,7 @@ function basenameOf(path: string): string {
 
 export const NwisMapPage: React.FC = () => {
   const { activeWellId, setActiveWellId } = useApp();
-  const { wells, eventsByWell, loading } = useNwisMapData();
+  const { wells, eventsByWell, loading, error } = useNwisMapData();
   const [selected, setSelected] = useState<WellPoint | null>(null);
   const [evidence, setEvidence] = useState<Evidence | null>(null);
 
@@ -45,6 +45,22 @@ export const NwisMapPage: React.FC = () => {
     return (
       <div className="p-4 h-full flex items-center justify-center text-slate-500 font-mono text-xs">
         Loading real well data...
+      </div>
+    );
+  }
+
+  // A failed /api/v2/wells call used to fall through to NearbyWellsMap with
+  // wells: [], whose own guard then reported `Active well "X" not found in
+  // \`wells\`` -- pointing at the well ID when the real cause was the backend
+  // being unreachable. Report the transport failure here instead, so the
+  // map's guard is left to mean what it actually says: the well really is
+  // absent from a list that did load.
+  if (error) {
+    return (
+      <div className="p-4 h-full flex flex-col items-center justify-center gap-2 text-center font-mono text-xs">
+        <div className="text-red-500">Could not reach the backend.</div>
+        <div className="text-slate-500">Well data is unavailable, so the offset map cannot be drawn.</div>
+        <div className="text-slate-400 max-w-md break-words">{error}</div>
       </div>
     );
   }
