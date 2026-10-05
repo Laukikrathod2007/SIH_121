@@ -200,7 +200,26 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
       </div>`;
     };
 
-    // Custom Tables with SCADA Styling
+    // Custom Tables with SCADA Styling.
+    // marked's default tablecell/tablerow emit bare <th>/<td> with no
+    // padding or line-height of their own, and Tailwind's base reset
+    // (@tailwind base) strips the browser's default table/cell padding
+    // too -- so with nothing filling that gap, cells packed text edge to
+    // edge against each other, which is what made dense tables (the
+    // SIH26121 requirements matrix, etc.) read as cramped. Cells here get
+    // real padding, top alignment (so short cells don't center-stretch
+    // next to tall ones), and relaxed wrapping instead of the browser's
+    // default break-anywhere behavior on narrow columns.
+    renderer.tablecell = function (token: any) {
+      const content = this.parser.parseInline(token.tokens);
+      const tag = token.header ? 'th' : 'td';
+      const alignClass = token.align ? ` text-${token.align}` : '';
+      const cellClass = token.header
+        ? `px-4 py-3 align-bottom font-semibold whitespace-normal${alignClass}`
+        : `px-4 py-3 align-top whitespace-normal${alignClass}`;
+      return `<${tag} class="${cellClass}">${content}</${tag}>`;
+    };
+
     renderer.table = function (token: any) {
       let headerCells = '';
       if (Array.isArray(token.header)) {
@@ -224,7 +243,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
       }
 
       return `<div class="my-6 overflow-x-auto rounded-lg border border-stone-200 bg-white shadow-2xs">
-        <table class="w-full text-left text-xs sm:text-sm border-collapse">
+        <table class="w-full text-left text-sm border-collapse leading-relaxed">
           <thead class="bg-stone-100 text-xs uppercase font-mono font-bold text-stone-800 border-b border-stone-200">
             ${headerRow}
           </thead>
