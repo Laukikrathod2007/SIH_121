@@ -44,19 +44,15 @@ function landingPageAtRoot(): Plugin {
             path.resolve(__dirname, 'public/landing', file),
             'utf-8',
           );
-          // The file's own relative asset paths (href="assets/css/...", no
-          // leading slash) are correct for its real location, /landing/ --
-          // but it's being served here at a different path, so the browser
-          // would resolve them against the wrong base and every
-          // stylesheet/script/image 404s. Injecting <base href="/landing/">
-          // fixes resolution without touching the file on disk at all.
-          const withBase = landingHtml.replace(
-            /<head>/i,
-            '<head><base href="/landing/">',
-          );
+          // The file's relative asset paths (href="assets/...", no leading
+          // slash) are correct for its real location, /landing/, but it's
+          // served here at a different path -- resolution is handled by the
+          // <base href="/landing/"> the source file carries itself, so it
+          // can be served verbatim in both dev and the production build
+          // (see landingPageAtRootForBuild below).
           res.setHeader('Content-Type', 'text/html');
           res.setHeader('Cache-Control', 'no-store');
-          res.end(withBase);
+          res.end(landingHtml);
           return;
         }
         next();
@@ -65,8 +61,45 @@ function landingPageAtRoot(): Plugin {
   };
 }
 
+// Production counterpart to landingPageAtRoot() above. That plugin is
+// dev-server-only (configureServer), so `vite build` emitted the React
+// shell to dist/index.html and nothing served the landing page at "/".
+// On Vercel that was unfixable from vercel.json alone: its router runs a
+// "filesystem" phase BEFORE any rewrites, and "/" implicitly resolves to a
+// root-level index.html when one exists -- so dist/index.html (the SPA)
+// always won, and the explicit { "/" -> "/landing/index.html" } rewrite
+// never got a chance to run. React then mounted, hit App.tsx's catch-all
+// <Navigate to="/app">, and every visitor bounced past the landing page.
+//
+// Fix: after the build, make dist/index.html the LANDING page and move the
+// React shell to dist/app.html. Now the filesystem phase serving "/" ->
+// dist/index.html is exactly what we want, and /app* rewrites to app.html.
+// Asset URLs in the built shell are absolute (/assets/...), so serving it
+// from a different filename changes nothing about how it loads.
+function landingPageAtRootForBuild(): Plugin {
+  return {
+    name: 'landing-page-at-root-build',
+    apply: 'build',
+    closeBundle() {
+      const dist = path.resolve(__dirname, 'dist');
+      const spaShell = path.join(dist, 'index.html');
+      const landing = path.join(dist, 'landing', 'index.html');
+      if (!fs.existsSync(spaShell) || !fs.existsSync(landing)) return;
+
+      fs.renameSync(spaShell, path.join(dist, 'app.html'));
+      // Copied verbatim: public/landing/index.html already carries its own
+      // <base href="/landing/">, which is what makes its relative asset
+      // URLs (href="assets/...") resolve correctly while it's served from
+      // the root. No injection needed here (unlike the dev middleware
+      // above, which reads the file straight off disk before that base tag
+      // was added to the source).
+      fs.copyFileSync(landing, spaShell);
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), landingPageAtRoot()],
+  plugins: [react(), landingPageAtRoot(), landingPageAtRootForBuild()],
   server: {
     port: 5173,
     strictPort: true,
