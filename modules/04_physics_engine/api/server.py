@@ -20,6 +20,7 @@ client base and its WebSocket path `/api/v3/physics/stream`):
   GET    /api/v3/physics/historian
   WS     /api/v3/physics/stream
   POST   /api/v3/predictive/evaluate
+  GET    /api/v3/predictive/alerts/{well_id}/history
   GET    /api/v3/predictive/alerts/{well_id}
   POST   /api/v3/predictive/alerts/mitigate
   GET    /api/v3/predictive/models
@@ -43,8 +44,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
+import os
+import secrets
+
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import JSONResponse
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -60,6 +63,13 @@ MODULE_04_ROOT = Path(__file__).resolve().parent.parent
 from app.modules.physics.simulation.engine import DrillingPhysicsEngine
 from app.modules.physics.simulation.faults import ScenarioType
 from app.modules.physics.api.auth import require_api_key, rate_limit, auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
+# API_KEY is intentionally NOT imported as a bare name here: `from ... import
+# API_KEY` binds the value at import time, so a test (or anything else)
+# patching app.core.auth.API_KEY afterwards would never be seen by this
+# module -- auth_enabled() avoids this already (it's a function, so it
+# always reads the live module global); physics_stream() below needs the
+# current value too, so it goes through this same module reference instead.
+import app.core.auth as _shared_auth
 
 from app.modules.predictive_analytics.predictive.realtime_inference import RealTimeRiskInferenceService  # noqa: E402
 
@@ -81,6 +91,10 @@ risk_service = RealTimeRiskInferenceService()
 _engine_lock = asyncio.Lock()
 _historian: deque = deque(maxlen=2000)
 _ws_clients: set = set()
+# Caps concurrent WS connections -- previously unbounded, which combined
+# with the lack of auth below made /api/v3/physics/stream an unmitigated
+# resource-exhaustion surface. Override with NWIS_WS_MAX_CLIENTS.
+MAX_WS_CLIENTS = int(os.environ.get("NWIS_WS_MAX_CLIENTS", "50"))
 # Last known {md, formation} per well_id, populated by /predictive/evaluate.
 # ActiveAlert (Module 05/06) does not carry depth/formation on the alert
 # object itself -- only the fused risk payload that produced it does -- so
@@ -175,15 +189,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-_default_origins = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
-import os  # noqa: E402
-_extra_origins = [o.strip() for o in os.environ.get("NWIS_CORS_ORIGINS", "").split(",") if o.strip()]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_default_origins + _extra_origins,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS is configured once, centrally, in Backend/app/main.py -- this
+# module's own `app` instance only ever runs standalone (e.g. direct
+# module-level dev/test invocation), never as the real served app
+# (Backend/app/integrations/_mount.py copies only `.router.routes` from
+# this app onto the gateway, never its middleware), so a CORSMiddleware
+# registered here was dead code in the one place CORS actually matters.
 
 
 @app.exception_handler(Exception)
@@ -405,14 +416,27 @@ async def physics_historian(limit: int = Query(100, ge=1, le=2000)):
 # ---------------------------------------------------------------------------
 # Physics — WebSocket stream
 #
-# Not gated behind X-API-Key: a browser WebSocket constructor cannot set
-# custom headers (the same limitation documented on Module 02's SSE
-# live_replay() endpoint), so this is a known, matching gap rather than an
-# oversight. It broadcasts read-only telemetry, not a control surface.
+# A browser WebSocket constructor cannot set custom headers, so the shared
+# NWIS_API_KEY is accepted as a `?api_key=` query parameter instead of the
+# X-API-Key header every other route uses -- same shared-key model,
+# different transport (the same limitation Module 02's SSE live_replay()
+# faced, solved there by using fetch()+ReadableStream instead of the native
+# EventSource constructor; no equivalent manual socket API exists in the
+# browser for WebSocket, so a query-param token is the standard fallback).
+# Rejected BEFORE accept() with WS close code 1008 (policy violation), not
+# after, so an unauthenticated client never receives a single frame.
 # ---------------------------------------------------------------------------
 
 @app.websocket("/api/v3/physics/stream")
-async def physics_stream(websocket: WebSocket):
+async def physics_stream(websocket: WebSocket, api_key: Optional[str] = Query(default=None)):
+    if auth_enabled() and not (api_key and secrets.compare_digest(api_key, _shared_auth.API_KEY)):
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Missing or invalid api_key.")
+        return
+
+    if len(_ws_clients) >= MAX_WS_CLIENTS:
+        await websocket.close(code=status.WS_1013_TRY_AGAIN_LATER, reason="Server is at capacity.")
+        return
+
     await websocket.accept()
     _ws_clients.add(websocket)
     logger.info(f"WS client connected ({len(_ws_clients)} total)")
@@ -514,6 +538,30 @@ async def predictive_evaluate(body: EvaluateRequest):
 
     fused_output["alerts"] = [_alert_to_advisory(a) for a in raw_alerts]
     return fused_output
+
+
+@app.get("/api/v3/predictive/alerts/{well_id:path}/history", tags=["Predictive"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+async def predictive_get_alert_history(well_id: str, limit: int = 100):
+    """Read path for the persisted `alerts` table (Pass 6) -- distinct
+    from predictive_get_alerts below, which reflects the live in-memory
+    advisory engine's current session only. Three honest states: see
+    db/service.py::get_alert_history's own docstring. "unavailable" (DB
+    configured but unreachable) is a 503 with no `alerts` key, never a
+    silently-empty 200 -- same never-silent-fallback contract module 02's
+    migrated routes already use.
+
+    Registered BEFORE predictive_get_alerts below: both use a `:path`
+    converter for well_id (well IDs like "15/9-F-12" contain slashes), and
+    Starlette matches routes in registration order -- the plain
+    `{well_id:path}` route would otherwise greedily swallow ".../history"
+    into well_id itself and this route would never be reached. Confirmed
+    live: this exact failure mode happened once during this pass with the
+    routes in the other order (well_id resolved to "15/9-F-12/history")."""
+    from app.modules.physics.db import service as db_sync
+    result = db_sync.get_alert_history(well_id, limit=limit)
+    if result["status"] == "unavailable":
+        raise HTTPException(status_code=503, detail="Alert history is temporarily unavailable")
+    return result
 
 
 @app.get("/api/v3/predictive/alerts/{well_id:path}", tags=["Predictive"], dependencies=[Depends(require_api_key), Depends(rate_limit)])

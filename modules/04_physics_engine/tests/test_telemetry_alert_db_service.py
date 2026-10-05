@@ -181,3 +181,77 @@ def test_sync_evaluation_skips_unknown_well_id_without_raising():
     out = physics_db_service.sync_evaluation(_fake_envelope(well_id="NOT-A-REAL-WELL"), [])
     assert out["synced"] is False
     assert "not in wells table" in out["reason"]
+
+
+# ---------------------------------------------------------------------------
+# get_alert_history (Pass 6) — the alerts table's read path. Three honest
+# states, same tri-state discipline as module 01's SyncStatus.
+# ---------------------------------------------------------------------------
+
+def test_get_alert_history_not_configured_when_db_unconfigured(monkeypatch):
+    monkeypatch.setattr(physics_db_service, "db_is_configured", lambda: False)
+    out = physics_db_service.get_alert_history("WELL-NHK-001")
+    assert out == {"status": "not_configured", "alerts": []}
+
+
+def test_get_alert_history_unavailable_never_exposes_raw_exception(monkeypatch):
+    monkeypatch.setattr(physics_db_service, "db_is_configured", lambda: True)
+
+    def _raise(*a, **kw):
+        raise psycopg.OperationalError("connection to server at localhost:5433 failed: password=secret")
+
+    monkeypatch.setattr(physics_db_service, "get_connection", _raise)
+    out = physics_db_service.get_alert_history("WELL-NHK-001")
+    assert out == {"status": "unavailable"}
+    assert "alerts" not in out, "unavailable must carry no alerts key, never a silently-empty list"
+    assert "secret" not in str(out) and "5433" not in str(out)
+
+
+@requires_db
+def test_get_alert_history_ok_returns_real_persisted_rows_newest_first():
+    physics_db_service.sync_evaluation(_fake_envelope(sequence=10), [_fake_alert(alert_id="TESTFIXTURE-ALERT-10")])
+    physics_db_service.sync_evaluation(
+        _fake_envelope(sequence=11),
+        [_fake_alert(alert_id="TESTFIXTURE-ALERT-11", timestamp="2026-10-04T00:05:00+00:00")],
+    )
+
+    out = physics_db_service.get_alert_history("WELL-NHK-001")
+    assert out["status"] == "ok"
+    ids = [a["alert_id"] for a in out["alerts"]]
+    assert "TESTFIXTURE-ALERT-10" in ids
+    assert "TESTFIXTURE-ALERT-11" in ids
+    # newest triggered_at first
+    assert ids.index("TESTFIXTURE-ALERT-11") < ids.index("TESTFIXTURE-ALERT-10")
+
+    with get_connection() as conn:
+        conn.execute("DELETE FROM alerts WHERE alert_id IN ('TESTFIXTURE-ALERT-10', 'TESTFIXTURE-ALERT-11')")
+
+
+@requires_db
+def test_get_alert_history_row_maps_to_advisory_shape_frontend_expects():
+    physics_db_service.sync_evaluation(_fake_envelope(sequence=12), [_fake_alert(alert_id="TESTFIXTURE-ALERT-12")])
+
+    out = physics_db_service.get_alert_history("WELL-NHK-001")
+    row = next(a for a in out["alerts"] if a["alert_id"] == "TESTFIXTURE-ALERT-12")
+    assert row["hazard_type"] == "KICK"
+    assert row["severity"] == "CRITICAL"
+    assert row["headline"] == "test trigger"
+    assert row["causal_evidence_chain"] == ["test evidence"]
+    assert row["recommended_action"]["title"] == "Test mitigation"
+    assert row["recommended_action"]["steps"] == ["Do a thing"]
+    assert row["status"] == "DETECTED"  # ACTIVE -> DETECTED, same vocab as the live feed
+    assert row["created_at"]  # non-empty ISO-ish string, not a raw driver object
+
+    with get_connection() as conn:
+        conn.execute("DELETE FROM alerts WHERE alert_id = 'TESTFIXTURE-ALERT-12'")
+
+
+@requires_db
+def test_get_alert_history_empty_for_well_with_no_alerts_is_ok_not_unavailable():
+    """A well with genuinely zero persisted alerts must report status "ok"
+    with an empty list -- NOT the same response shape as "unavailable" or
+    "not_configured". This is the exact distinction your Pass 5 feedback
+    required ("no history" != "database unavailable")."""
+    out = physics_db_service.get_alert_history("WELL-NHK-002")
+    assert out["status"] == "ok"
+    assert isinstance(out["alerts"], list)

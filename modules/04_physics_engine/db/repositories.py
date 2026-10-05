@@ -84,12 +84,40 @@ class TelemetryRepository:
 
 
 class AlertRepository:
+    _HISTORY_COLUMNS = """
+        alert_id, well_id, hazard_type, severity, score, confidence,
+        trigger_reason, evidence_chain, recommended_mitigation, status,
+        triggered_at, updated_at
+    """
+
     def __init__(self, conn):
         self._conn = conn
 
     def valid_hazard_codes(self) -> set[str]:
         rows = self._conn.execute("SELECT code FROM hazard_type").fetchall()
         return {r[0] for r in rows}
+
+    def for_well(self, well_id: str, limit: int = 100) -> list[dict[str, Any]]:
+        """Persisted alert history for one well, newest first -- uses
+        idx_alerts_well (well_id, triggered_at DESC), the same index this
+        table was given at creation specifically for this query shape.
+        Returns dict rows (same row_factory idiom as module 02's
+        repositories); the caller maps them to the same AlertAdvisory-ish
+        shape the live /predictive/alerts endpoint already returns, so the
+        frontend doesn't need two alert shapes."""
+        from psycopg.rows import dict_row
+        with self._conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                f"""
+                SELECT {self._HISTORY_COLUMNS}
+                FROM alerts
+                WHERE well_id = %s
+                ORDER BY triggered_at DESC
+                LIMIT %s
+                """,
+                (well_id, limit),
+            )
+            return cur.fetchall()
 
     def upsert(self, alert: dict[str, Any]) -> None:
         """UPSERT keyed on alert_id (ActiveAlert's own stable id) — an

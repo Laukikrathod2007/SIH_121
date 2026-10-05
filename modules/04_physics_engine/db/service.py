@@ -57,6 +57,65 @@ def _alert_row(alert: dict[str, Any], valid_hazards: set[str]) -> dict[str, Any]
     }
 
 
+def get_alert_history(well_id: str, limit: int = 100) -> dict[str, Any]:
+    """Read path for the `alerts` table (Pass 6) -- this table was
+    write-only from the application's perspective until now. Returns one
+    of three honestly distinct, machine- and UI-distinguishable states
+    (same tri-state discipline as module 01's SyncStatus and the Pass 5
+    plan's A3 note), never collapsing "no history yet" and "database
+    unavailable" into the same empty response:
+
+      {"status": "ok", "alerts": [...]}        -- DB reachable, 0+ real rows
+      {"status": "not_configured", "alerts": []}  -- NWIS_DATABASE_URL unset (dev mode)
+      {"status": "unavailable"}                   -- DB configured but unreachable; caller returns 503, body carries no "alerts" key at all
+
+    Row -> AlertAdvisory-ish dict mapping reuses the same field semantics
+    as api/server.py's _alert_to_advisory (trigger_reason -> headline,
+    evidence_chain -> causal_evidence_chain, recommended_mitigation ->
+    recommended_action), so the frontend's History tab can reuse the same
+    rendering as the live feed instead of a second shape."""
+    if not db_is_configured():
+        return {"status": "not_configured", "alerts": []}
+
+    try:
+        with get_connection() as conn:
+            rows = AlertRepository(conn).for_well(well_id, limit=limit)
+    except Exception as exc:
+        logger.debug(f"Alert history read for well '{well_id}' failed: {exc}")
+        return {"status": "unavailable"}
+
+    return {"status": "ok", "alerts": [_history_row_to_advisory(r) for r in rows]}
+
+
+def _history_row_to_advisory(row: dict[str, Any]) -> dict[str, Any]:
+    mitigation = row.get("recommended_mitigation") or {}
+    severity = row.get("severity") or "ADVISORY"
+    urgency_map = {"CRITICAL": "IMMEDIATE", "WARNING": "HIGH", "ADVISORY": "MEDIUM", "CLEARED": "MEDIUM"}
+    description = mitigation.get("description", "") if isinstance(mitigation, dict) else ""
+    import re
+    steps = [p.strip() for p in re.split(r"\d+\.\s*", description) if p.strip()] if description else []
+    status_map = {"ACTIVE": "DETECTED", "ACKNOWLEDGED": "ACKNOWLEDGED", "MITIGATED": "MITIGATED", "CLEARED": "CLEARED"}
+    triggered_at = row.get("triggered_at")
+    return {
+        "alert_id": row.get("alert_id"),
+        "well_id": row.get("well_id"),
+        "hazard_type": row.get("hazard_type"),
+        "severity": severity,
+        "measured_depth_m": 0.0,  # not stored on the alerts row itself (only on the live in-memory ActiveAlert) -- honestly omitted rather than fabricated
+        "formation": "Unknown",
+        "headline": row.get("trigger_reason") or "",
+        "causal_evidence_chain": row.get("evidence_chain") or [],
+        "recommended_action": {
+            "action_id": mitigation.get("action_id", "") if isinstance(mitigation, dict) else "",
+            "title": mitigation.get("title", "") if isinstance(mitigation, dict) else "",
+            "steps": steps,
+            "urgency": urgency_map.get(severity, "MEDIUM"),
+        },
+        "status": status_map.get(row.get("status") or "ACTIVE", "DETECTED"),
+        "created_at": triggered_at.isoformat() if hasattr(triggered_at, "isoformat") else str(triggered_at),
+    }
+
+
 def sync_evaluation(
     telemetry_envelope: dict[str, Any],
     alerts: list[dict[str, Any]],
