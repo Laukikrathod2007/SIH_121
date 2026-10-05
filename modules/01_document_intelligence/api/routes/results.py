@@ -198,7 +198,7 @@ async def get_extraction_quality_report(doc_id: str):
 
 
 @router.get("/results")
-async def list_all_results():
+def list_all_results():
     """List all processed document results available on disk."""
     results = []
     for f in OUTPUT_DIR.glob("*.json"):

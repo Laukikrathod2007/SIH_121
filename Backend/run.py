@@ -41,4 +41,10 @@ if __name__ == "__main__":
         app_dir=str(BACKEND_ROOT),
         reload=not IS_PRODUCTION,
         reload_dirs=[str(BACKEND_ROOT), str(BACKEND_ROOT.parent / "modules")] if not IS_PRODUCTION else None,
+        # The deploy target polls a healthcheck endpoint every few seconds for
+        # the life of the service; with the access log on, that is a log line
+        # every few seconds forever, written to an ephemeral container disk by
+        # four separate file sinks. Real requests are already logged by the app
+        # itself. Kept on in dev, where the access log is genuinely useful.
+        access_log=not IS_PRODUCTION,
     )

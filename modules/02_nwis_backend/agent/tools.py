@@ -27,6 +27,7 @@ simulator — matching the plan's explicit scope limit.
 """
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Callable, Optional
 
 from loguru import logger
@@ -168,7 +169,8 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
 async def _tool_search_events(query: str, hazard_type: Optional[str] = None, formation: Optional[str] = None, min_severity: Optional[str] = None) -> dict:
     from app.modules.nwis.server import search_events_semantic
     try:
-        result = await search_events_semantic(
+        result = await asyncio.to_thread(
+            search_events_semantic,
             query=query, hazard_type=hazard_type, formation=formation,
             min_severity=min_severity, depth_min=None, depth_max=None, top_n=8,
         )
@@ -205,7 +207,7 @@ async def _tool_search_events(query: str, hazard_type: Optional[str] = None, for
 async def _tool_get_well(well_id: str) -> dict:
     from app.modules.nwis.server import get_well
     try:
-        result = await get_well(well_id)
+        result = await asyncio.to_thread(get_well, well_id)
     except Exception as exc:
         return _http_exception_to_tool_error(exc, well_id)
     well = result["well"]
@@ -228,7 +230,9 @@ async def _tool_get_well(well_id: str) -> dict:
 async def _tool_get_offset_ranking(well_id: str, depth: float) -> dict:
     from app.modules.nwis.server import rank_offsets
     try:
-        result = await rank_offsets(well_id=well_id, depth=depth, radius_km=25.0, top_n=10, max_distance_km=None)
+        result = await asyncio.to_thread(
+            rank_offsets, well_id=well_id, depth=depth, radius_km=25.0, top_n=10, max_distance_km=None
+        )
     except Exception as exc:
         return _http_exception_to_tool_error(exc, well_id)
     return {
@@ -253,7 +257,9 @@ async def _tool_get_offset_ranking(well_id: str, depth: float) -> dict:
 async def _tool_get_risk_corridors(well_id: str, depth: float, hazard_type: Optional[str] = None) -> dict:
     from app.modules.nwis.server import get_risk_corridors
     try:
-        result = await get_risk_corridors(well_id=well_id, depth=depth, hazard_type=hazard_type)
+        result = await asyncio.to_thread(
+            get_risk_corridors, well_id=well_id, depth=depth, hazard_type=hazard_type
+        )
     except Exception as exc:
         return _http_exception_to_tool_error(exc, well_id)
     return {
@@ -282,7 +288,7 @@ async def _tool_get_risk_corridors(well_id: str, depth: float, hazard_type: Opti
 async def _tool_get_stratigraphic_alignment(well_id: str, depth: float) -> dict:
     from app.modules.nwis.server import stratigraphic_depth_track
     try:
-        result = await stratigraphic_depth_track(well_id=well_id, depth=depth, top_n=10)
+        result = await asyncio.to_thread(stratigraphic_depth_track, well_id=well_id, depth=depth, top_n=10)
     except Exception as exc:
         return _http_exception_to_tool_error(exc, well_id)
     # align_horizons_across_wells() returns Dict[str, dict] keyed by
@@ -324,7 +330,7 @@ async def _tool_get_live_alerts(well_id: str) -> dict:
 async def _tool_get_alert_history(well_id: str) -> dict:
     from app.modules.physics.api.server import predictive_get_alert_history
     try:
-        result = await predictive_get_alert_history(well_id, limit=20)
+        result = await asyncio.to_thread(predictive_get_alert_history, well_id, limit=20)
     except Exception as exc:
         return _http_exception_to_tool_error(exc, well_id)
     # Honest tri-state passthrough — never collapse "no history" and

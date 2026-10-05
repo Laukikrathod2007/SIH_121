@@ -72,7 +72,7 @@ def _save(doc_id: str, data: dict) -> None:
 
 
 @router.get("/review/queue")
-async def review_queue():
+def review_queue():
     """
     Every document not yet reviewed whose validation_status isn't a clean
     PASS — sorted worst-first (MANUAL_REVIEW, then FAILED, then FLAGGED) so
@@ -131,7 +131,7 @@ class ReviewDecision(BaseModel):
 
 
 @router.post("/review/{doc_id}/decision")
-async def submit_review_decision(doc_id: str, body: ReviewDecision):
+def submit_review_decision(doc_id: str, body: ReviewDecision):
     """
     A human confirms a flagged/low-confidence/manual-review document is
     either trustworthy as-is (approved -> validation_status becomes PASS)
@@ -199,7 +199,7 @@ class FieldAnnotation(BaseModel):
 
 
 @router.post("/review/{doc_id}/annotate")
-async def annotate_field(doc_id: str, body: FieldAnnotation):
+def annotate_field(doc_id: str, body: FieldAnnotation):
     """
     Attach a human correction note to a specific field without automatically
     rewriting the extracted value in place — see module docstring for why.
@@ -235,7 +235,7 @@ async def annotate_field(doc_id: str, body: FieldAnnotation):
 
 
 @router.post("/review/{doc_id}/resync")
-async def resync_document(doc_id: str):
+def resync_document(doc_id: str):
     """
     Manually retry the Postgres write-through for one document — safe to
     call any number of times. Re-reads the existing JSON result (already

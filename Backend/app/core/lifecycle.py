@@ -14,6 +14,7 @@ the lifespan of the app that is actually served, this one).
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -31,6 +32,40 @@ def _log_prewarm_result(name: str):
             logger.info(f"{name} pre-warm complete")
 
     return _done
+
+
+# How often the database reachability probe runs. GET /health reads the cached
+# result of this instead of probing inline -- see cached_healthcheck() in
+# modules/02_nwis_backend/db/connection.py for why that mattered. 30s keeps the
+# reported status recent enough to be useful while reducing the probe rate from
+# "every healthcheck poll, forever" (~17k round trips/day against a free-tier
+# database) to 2/minute.
+_DB_HEALTH_REFRESH_SECONDS = 30.0
+
+
+async def _db_health_refresh_loop() -> None:
+    """Keep the database-status cache warm, off the request path.
+
+    Every iteration is contained: this task is created once and never awaited,
+    so an escaping exception would kill it silently and freeze the reported
+    status at whatever it last saw -- stale data presented as current. A failed
+    probe is already captured as a result by healthcheck() itself; this guard is
+    for anything unexpected around it.
+    """
+    from app.modules.nwis.db.connection import is_configured, refresh_health_cache
+
+    if not is_configured():
+        logger.info("Database not configured -- health refresh loop not started")
+        return
+
+    while True:
+        try:
+            await asyncio.to_thread(refresh_health_cache)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("Database health refresh raised unexpectedly")
+        await asyncio.sleep(_DB_HEALTH_REFRESH_SECONDS)
 
 
 @asynccontextmanager
@@ -66,10 +101,21 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.exception("M04 simulation loop failed to start")
 
+    db_health_task: "asyncio.Task | None" = None
+    try:
+        db_health_task = asyncio.create_task(_db_health_refresh_loop(), name="nwis-db-health-refresh")
+        logger.info("Database health refresh loop started")
+    except Exception:
+        logger.exception("Database health refresh loop failed to start")
+
     logger.success("NWIS Unified Backend ready")
     yield
 
     logger.info("NWIS Unified Backend shutting down...")
+    if db_health_task is not None:
+        db_health_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await db_health_task
     try:
         await m04_physics_predictive.stop_sim_loop()
     except Exception:

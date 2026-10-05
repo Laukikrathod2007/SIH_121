@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
@@ -189,7 +190,35 @@ def get_pool() -> "ConnectionPool":
     if _pool is None:
         logger.info("Opening NWIS database connection pool...")
         try:
-            _pool = ConnectionPool(_DSN, min_size=1, max_size=10, open=True, timeout=5.0)
+            _pool = ConnectionPool(
+                _DSN,
+                # One uvicorn worker serves this whole app, and Supabase's free
+                # tier caps total client connections hard -- max_size=10 was
+                # sized for neither. A handful is plenty for the real
+                # concurrency here (a few routes plus the telemetry writer) and
+                # leaves headroom for everything else sharing that quota.
+                min_size=1,
+                max_size=6,
+                open=True,
+                # Max wait to ACQUIRE a connection, not to run a query. Every
+                # DB-backed route now runs in a worker thread rather than on the
+                # event loop, so waiting here no longer freezes the server --
+                # it only delays the one caller. That makes a generous timeout
+                # safe again, and it needs to be generous: build_store_snapshot()
+                # holds its connection for ~1.5s (an explicit N+1, see
+                # db/service.py), so a burst of concurrent requests legitimately
+                # queues. Too low and they 503 under load they used to serve.
+                timeout=15.0,
+                # Supavisor drops server-side connections that sit idle, so a
+                # pool that never recycles eventually hands out dead ones and
+                # the failure surfaces as a mysterious stall on the next query.
+                # Recycle ahead of that instead of discovering it per-request.
+                max_idle=120.0,
+                max_lifetime=600.0,
+                # Last line of defence: verify a connection is actually alive at
+                # checkout rather than letting a dead one fail mid-statement.
+                check=ConnectionPool.check_connection,
+            )
         except Exception as exc:
             raise NWISDatabaseUnavailable(f"Could not open database connection pool: {exc}") from exc
         logger.success("NWIS database connection pool open")
@@ -253,3 +282,60 @@ def healthcheck() -> dict:
     except Exception as exc:
         logger.warning(f"Database healthcheck failed: {exc}")
         return {"configured": True, "reachable": False, "error": type(exc).__name__}
+
+
+# ---------------------------------------------------------------------------
+# Cached healthcheck
+#
+# healthcheck() above opens a real connection and runs SELECT 1 -- a round trip
+# to a hosted database, measured at 110-460ms from a dev machine and ~1s from
+# the deploy region. It was being called from GET /health, which the hosting
+# platform polls every ~5 seconds forever, from inside an `async def` handler.
+# FastAPI runs an async handler ON the event loop, so every one of those polls
+# froze the whole process -- all requests, the physics loop, everything --
+# for the duration of the round trip. That alone stalled the loop 20-30% of
+# wall-clock time with zero users, and under load it pushed the platform's own
+# healthcheck past its timeout, which killed and restarted the container.
+#
+# So the request path reads a cached answer instead, and the probe runs on a
+# timer off the request path (see refresh_health_cache below). The tri-state
+# contract documented on healthcheck() is preserved exactly; the only addition
+# is `checked_at`/`age_s`, so a reader can tell this is a cached observation
+# and judge how stale it is rather than mistaking it for a live one.
+# ---------------------------------------------------------------------------
+
+_health_cache: Optional[dict] = None
+_health_cache_at: Optional[float] = None
+
+
+def refresh_health_cache() -> dict:
+    """Run the real probe and store the result. BLOCKING -- call it from a
+    worker thread (asyncio.to_thread) or a sync context, never directly from
+    the event loop. Returns the fresh result."""
+    global _health_cache, _health_cache_at
+    result = healthcheck()
+    _health_cache = result
+    _health_cache_at = time.monotonic()
+    return result
+
+
+def cached_healthcheck() -> dict:
+    """Non-blocking database status for request handlers. Never touches a
+    socket.
+
+    The two states that are knowable without any I/O are answered exactly as
+    healthcheck() would, so a misconfigured or absent DSN is still reported
+    truthfully and immediately. Otherwise this reports the last observation,
+    tagged with its age.
+
+    Before the first refresh lands, `reachable` is None -- "configured, not yet
+    observed". That is deliberately distinct from both True and False: claiming
+    either would be inventing an observation this process has not made.
+    """
+    if _DSN_MISCONFIGURED_DETAIL is not None:
+        return {"configured": True, "reachable": False, "error": "NWISDatabaseMisconfigured"}
+    if not is_configured():
+        return {"configured": False, "reachable": None}
+    if _health_cache is None or _health_cache_at is None:
+        return {"configured": True, "reachable": None, "detail": "not_yet_probed"}
+    return {**_health_cache, "age_s": round(time.monotonic() - _health_cache_at, 1)}

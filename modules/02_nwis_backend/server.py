@@ -40,7 +40,7 @@ MODULE_ROOT = Path(__file__).parent
 from app.modules.nwis.data_store import NWISDataStore
 from app.modules.nwis.orchestrator import NWISOrchestrator
 from app.modules.nwis.models.schemas import HazardType
-from app.modules.nwis.db.connection import is_configured as db_is_configured, healthcheck as db_healthcheck
+from app.modules.nwis.db.connection import is_configured as db_is_configured, cached_healthcheck as db_healthcheck
 from app.modules.nwis.db import service as db_service
 from app.modules.nwis.auth import require_api_key, rate_limit, rate_limit_agent, auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
 from pydantic import BaseModel
@@ -178,6 +178,10 @@ def _get_data_source(active_well_id: Optional[str] = None):
 
 @app.get("/api/v2/health", tags=["System"])
 async def health():
+    # Stays `async def` on purpose, unlike the data routes below: the unified
+    # gateway's own /health awaits this through app/integrations/, and it no
+    # longer does any blocking work -- cached_healthcheck() is an in-memory
+    # read, refreshed on a timer off the request path.
     return {
         "service": "NWIS Backend Intelligence API",
         "version": "2.0.0",
@@ -216,7 +220,7 @@ async def root():
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/wells", tags=["Wells"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def list_wells(
+def list_wells(
     field: str = Query(None, description="Filter by field name"),
     status: str = Query(None, description="Filter by well status"),
 ):
@@ -235,7 +239,7 @@ async def list_wells(
 
 
 @app.get("/api/v2/wells/{well_id:path}", tags=["Wells"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_well(well_id: str):
+def get_well(well_id: str):
     """
     Get full details for a single well. This is the "active well lookup"
     leg of the Phase 1 migrated vertical slice: when the database is
@@ -293,7 +297,7 @@ async def get_well(well_id: str):
 
 
 @app.get("/api/v2/trajectory/{well_id:path}", tags=["Wells"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_trajectory(well_id: str):
+def get_trajectory(well_id: str):
     """
     Full real survey-station list (md/inclination/azimuth/tvd/ns/ew/tvdss)
     for a well, computed via minimum curvature from real WITSML/PDF survey
@@ -347,7 +351,7 @@ async def get_trajectory(well_id: str):
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/formations/{well_id:path}", tags=["Stratigraphy"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_formations(well_id: str):
+def get_formations(well_id: str):
     """Get formation tops for a well — feed for the Stratigraphic Track.
 
     Pass 4: database-backed when NWIS_DATABASE_URL is configured (reads
@@ -380,7 +384,7 @@ async def get_formations(well_id: str):
 
 
 @app.get("/api/v2/formations", tags=["Stratigraphy"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_all_formations(
+def get_all_formations(
     formation_name: str = Query(None, description="Filter by formation name"),
 ):
     """Get all formation tops across all wells.
@@ -414,7 +418,7 @@ async def get_all_formations(
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/casing/{well_id:path}", tags=["Casing"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_casing(well_id: str):
+def get_casing(well_id: str):
     """Get casing records for a well. Real data exists for 2 Volve wells only — a well with no casing data returns an empty list, not a 404, since most wells (all synthetic ones) genuinely have none.
 
     Pass 4: database-backed when NWIS_DATABASE_URL is configured (reads
@@ -439,7 +443,7 @@ async def get_casing(well_id: str):
 
 
 @app.get("/api/v2/casing", tags=["Casing"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_all_casing():
+def get_all_casing():
     """Get all casing records across all wells that have them.
 
     Pass 4: database-backed when NWIS_DATABASE_URL is configured."""
@@ -471,7 +475,7 @@ async def get_all_casing():
 # get_well_events(well_id="search") instead of reaching this endpoint at all
 # (found and fixed before this ever shipped, not left as a latent bug).
 @app.get("/api/v2/events/search", tags=["Drilling Events"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def search_events_semantic(
+def search_events_semantic(
     query: str = Query(..., min_length=1, description="Free-text search, e.g. 'mud weight increase fixed wellbore instability'"),
     hazard_type: str = Query(None, description="Optional: narrow to a hazard type first"),
     formation: str = Query(None, description="Optional: narrow to a formation first"),
@@ -524,7 +528,7 @@ async def search_events_semantic(
 
 
 @app.get("/api/v2/events/{well_id:path}", tags=["Drilling Events"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_well_events(well_id: str):
+def get_well_events(well_id: str):
     """Get all drilling events for a well (for the Evidence Proof Modal).
 
     Pass 5: database-backed when configured — see _get_data_source()."""
@@ -591,7 +595,7 @@ def _compute_facets(events: list) -> dict:
 
 
 @app.get("/api/v2/events", tags=["Drilling Events"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def search_events(
+def search_events(
     hazard_type: str = Query(None, description="Filter by hazard type (e.g. MUD_LOSS)"),
     formation: str = Query(None, description="Filter by formation name"),
     min_severity: str = Query(None, description="Minimum severity (LOW/MEDIUM/HIGH/CRITICAL)"),
@@ -626,7 +630,7 @@ async def search_events(
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/telemetry/{well_id:path}", tags=["Telemetry"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_telemetry(
+def get_telemetry(
     well_id: str,
     depth: float = Query(..., ge=0, description="Current drill bit depth (m MD)"),
     window: int = Query(300, description="Number of recent records to return"),
@@ -658,7 +662,7 @@ async def get_telemetry(
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/stratigraphic_depth_track/{well_id:path}", tags=["Stratigraphy"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def stratigraphic_depth_track(
+def stratigraphic_depth_track(
     well_id: str,
     depth: float = Query(..., ge=0, description="Active bit depth (m MD)"),
     top_n: int = Query(10, description="Number of offset wells to align"),
@@ -728,7 +732,7 @@ async def stratigraphic_depth_track(
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/offset_rank/{well_id:path}", tags=["DORS Engine"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def rank_offsets(
+def rank_offsets(
     well_id: str,
     depth: float = Query(..., ge=0, description="Current bit depth (m MD)"),
     radius_km: float = Query(25.0, description="DORS spatial SCORING DECAY divisor, NOT a hard exclusion radius — a well beyond this distance scores lower on the spatial factor but is still ranked and returned. Use max_distance_km for a real hard filter."),
@@ -804,7 +808,7 @@ async def rank_offsets(
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/analyze/{well_id:path}", tags=["NWIS Intelligence"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def analyze_well(
+def analyze_well(
     well_id: str,
     depth: float = Query(..., ge=0, description="Current bit depth (m MD)"),
     radius_km: float = Query(25.0),
@@ -854,7 +858,7 @@ async def analyze_well(
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/corridors/{well_id:path}", tags=["Risk Corridors"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_risk_corridors(
+def get_risk_corridors(
     well_id: str,
     depth: float = Query(..., ge=0, description="Current bit depth (m MD)"),
     hazard_type: str = Query(None, description="Filter by hazard type"),
@@ -929,7 +933,7 @@ async def get_risk_corridors(
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/ahead_of_bit/{well_id:path}", tags=["Risk Corridors"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_ahead_of_bit_corridor(
+def get_ahead_of_bit_corridor(
     well_id: str,
     depth: float = Query(..., ge=0, description="Current bit depth (m MD)"),
     max_lookahead_m: float = Query(200.0, ge=10.0, le=500.0, description="How far ahead to project (m)"),
@@ -1001,7 +1005,7 @@ async def get_ahead_of_bit_corridor(
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/map/wells", tags=["GIS Map"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def get_map_wells(
+def get_map_wells(
     center_well_id: str = Query(None, description="Well ID to measure distance from. Omit to return all wells unfiltered (default, unchanged behavior)."),
     radius_km: float = Query(None, description="Hard exclusion radius in km from center_well_id. Requires center_well_id. A well strictly outside this radius is NOT returned — this is a real spatial filter, unlike offset_rank's radius_km (see that endpoint's docstring)."),
 ):

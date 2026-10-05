@@ -38,6 +38,7 @@ import asyncio
 import contextlib
 import re
 import sys
+import threading
 import time
 from collections import deque
 from contextlib import asynccontextmanager
@@ -90,6 +91,11 @@ engine = DrillingPhysicsEngine(well_id="WELL-NHK-001")
 risk_service = RealTimeRiskInferenceService()
 
 _engine_lock = asyncio.Lock()
+# RealTimeRiskInferenceService.process_telemetry_point() appends to a rolling
+# history buffer on the instance, so the singleton above is NOT safe to call
+# concurrently. Inference now runs in a worker thread (to keep sklearn/XGBoost
+# off the event loop), which makes that reachable, so serialise it.
+_risk_lock = threading.Lock()
 _historian: deque = deque(maxlen=2000)
 _ws_clients: set = set()
 # Caps concurrent WS connections -- previously unbounded, which combined
@@ -565,12 +571,17 @@ def _alert_to_advisory(alert: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @app.post("/api/v3/predictive/evaluate", tags=["Predictive"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def predictive_evaluate(body: EvaluateRequest):
+def predictive_evaluate(body: EvaluateRequest):
     telemetry = body.telemetry
     if not isinstance(telemetry, dict) or not telemetry:
         raise HTTPException(status_code=400, detail="telemetry payload is required")
 
-    fused_output = risk_service.process_telemetry_point(telemetry_envelope=telemetry)
+    # risk_service is a module-level singleton whose process_telemetry_point()
+    # appends to a rolling history buffer on the instance, so it is not safe to
+    # run concurrently. This handler is a plain `def`, which FastAPI runs in its
+    # threadpool, so two in-flight evaluates really can land here at once.
+    with _risk_lock:
+        fused_output = risk_service.process_telemetry_point(telemetry_envelope=telemetry)
 
     well_id = fused_output.get("well_id", "DEFAULT")
     _last_known_position[well_id] = {
@@ -583,8 +594,14 @@ async def predictive_evaluate(body: EvaluateRequest):
     # Pass 4: best-effort write-through of this telemetry tick + any alerts
     # it produced into the canonical PostgreSQL schema. Already decimated
     # to the frontend's ~1 Hz evaluate cadence (see db/__init__.py's module
-    # docstring) -- never raises, never blocks the response below on a
-    # database outage.
+    # docstring) -- never raises on a database outage.
+    #
+    # It DOES block for the duration of the write, and this comment used to
+    # claim otherwise. That was harmless only because the write stayed off the
+    # event loop: this handler is a plain `def`, so FastAPI runs it in a worker
+    # thread. It must stay a plain `def` -- as an `async def` the SELECT+INSERT
+    # below would run ON the event loop and stall every other request, the
+    # physics loop and the platform healthcheck along with it.
     try:
         from app.modules.physics.db import service as db_sync
         db_sync.sync_evaluation(telemetry, raw_alerts)
@@ -596,7 +613,7 @@ async def predictive_evaluate(body: EvaluateRequest):
 
 
 @app.get("/api/v3/predictive/alerts/{well_id:path}/history", tags=["Predictive"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
-async def predictive_get_alert_history(well_id: str, limit: int = 100):
+def predictive_get_alert_history(well_id: str, limit: int = 100):
     """Read path for the persisted `alerts` table (Pass 6) -- distinct
     from predictive_get_alerts below, which reflects the live in-memory
     advisory engine's current session only. Three honest states: see

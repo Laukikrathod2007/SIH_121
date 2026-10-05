@@ -39,4 +39,13 @@ services:
         sync: false
       - key: GEMINIKEY3
         sync: false
-    healthCheckPath: /health
+    # /ready, not /health. This is the platform's "should I restart this
+    # container?" probe, and it must answer only that question. /health is an
+    # aggregate dependency rollup -- it reports on the database too -- so
+    # pointing the healthcheck at it means a Supabase hiccup restarts a process
+    # that is otherwise serving traffic perfectly well. Restarting fixes nothing
+    # about the database and throws away the loaded NWIS store and the running
+    # simulation state. /ready (Backend/app/main.py) is three in-memory reads,
+    # no I/O, and cannot time out. /health stays available for humans and the
+    # frontend's status UI.
+    healthCheckPath: /ready
