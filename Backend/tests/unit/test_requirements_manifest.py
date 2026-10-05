@@ -28,6 +28,12 @@ IMPORT_TO_DIST = {
     "sklearn": "scikit-learn",
     "sentence_transformers": "sentence-transformers",
     "psycopg_pool": "psycopg-pool",
+    # agent/orchestrator.py: `from google import genai` / `google.genai.errors`
+    # / `google.genai.types` -- the import's top-level name is the shared
+    # `google` namespace package, but the distribution that actually
+    # provides it (and the only `google*` entry in requirements.txt) is
+    # google-genai.
+    "google": "google-genai",
 }
 # imported directly but delivered by another declared package
 TRANSITIVE_OK = {"starlette": "fastapi", "websockets": "uvicorn[standard]", "pytest": "dev"}

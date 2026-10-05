@@ -21,6 +21,7 @@ degraded.
 from __future__ import annotations
 
 import os
+import re
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
@@ -28,9 +29,11 @@ from loguru import logger
 
 try:
     import psycopg
+    from psycopg.conninfo import conninfo_to_dict
     from psycopg_pool import ConnectionPool
 except ImportError:  # pragma: no cover — psycopg[binary]/psycopg_pool not installed
     psycopg = None
+    conninfo_to_dict = None
     ConnectionPool = None
 
 
@@ -45,9 +48,77 @@ class NWISDatabaseUnavailable(RuntimeError):
     "set up but currently down"."""
 
 
+class NWISDatabaseMisconfigured(RuntimeError):
+    """Raised when NWIS_DATABASE_URL is set but malformed in a way that
+    would silently corrupt the connection (e.g. embedded whitespace/control
+    characters that psycopg's parser folds into the last field instead of
+    rejecting) — kept distinct from NWISDatabaseUnavailable because this is
+    a configuration bug the operator must fix, not a transient network/DB
+    outage a retry would resolve.
+
+    Root cause this guards against (confirmed live on a real deploy): a
+    dashboard environment-variable field (e.g. Render's) can introduce a
+    trailing newline when a secret is pasted/saved. psycopg's own
+    conninfo parser does NOT reject this -- it silently appends the
+    newline onto whatever field comes last in the DSN (typically dbname),
+    so `.../postgres\n` connects to a database literally named
+    `"postgres\n"`, which of course doesn't exist. The resulting error
+    (`FATAL: database "postgres\n" does not exist`) looks like a wrong
+    database name, not a whitespace bug, unless you go looking for it --
+    confirmed by reproducing this exact error locally with a synthetic
+    trailing newline before writing this check.
+    """
+
+
+# Control characters (newline, carriage return, tab, etc.) anywhere in a
+# raw DSN mean something upstream corrupted the value -- a dashboard paste,
+# a stray trailing newline from a shell/file, or similar. A legitimate
+# connection string has none of these (certainly not in a plain
+# postgresql://... URL, and the `host=... key=value` form used by the
+# NWIS_DB_* fallback below doesn't produce them either since each piece is
+# read individually).
+_CONTROL_CHARS_RE = re.compile(r"[\r\n\t\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def _sanitize_dsn_env_value(raw: str) -> str:
+    """Strips ONLY leading/trailing whitespace (the artifact actually seen
+    in practice — a dashboard-introduced trailing newline) and never
+    touches interior characters, so a password containing a legitimate
+    special character (percent-encoded or not) is never altered. If
+    control characters remain anywhere after that strip, the value is
+    corrupted beyond what a safe strip can fix, and _build_dsn() below
+    raises NWISDatabaseMisconfigured rather than silently passing a
+    mangled DSN to psycopg."""
+    return raw.strip()
+
+
 def _build_dsn() -> Optional[str]:
-    explicit = os.environ.get("NWIS_DATABASE_URL")
-    if explicit:
+    explicit_raw = os.environ.get("NWIS_DATABASE_URL")
+    if explicit_raw:
+        explicit = _sanitize_dsn_env_value(explicit_raw)
+        if not explicit:
+            raise NWISDatabaseMisconfigured(
+                "NWIS_DATABASE_URL is set but contains only whitespace after stripping."
+            )
+        if _CONTROL_CHARS_RE.search(explicit):
+            raise NWISDatabaseMisconfigured(
+                "NWIS_DATABASE_URL contains an embedded control character (newline, "
+                "tab, or similar) after stripping leading/trailing whitespace -- this "
+                "is not a valid connection string and WILL silently corrupt the "
+                "database name or another field if used as-is (psycopg's parser does "
+                "not reject this; it folds the stray character into the last field). "
+                "This is almost always introduced by a dashboard/platform environment- "
+                "variable field mangling a pasted value. Re-enter NWIS_DATABASE_URL as "
+                "a single line with no trailing newline."
+            )
+        if conninfo_to_dict is not None:
+            try:
+                conninfo_to_dict(explicit)
+            except Exception as exc:
+                raise NWISDatabaseMisconfigured(
+                    f"NWIS_DATABASE_URL does not parse as a valid PostgreSQL "
+                    f"connection string: {exc}"
+                ) from exc
         return explicit
 
     host = os.environ.get("NWIS_DB_HOST")
@@ -61,7 +132,27 @@ def _build_dsn() -> Optional[str]:
     return f"host={host} port={port} dbname={dbname} user={user} password={password}"
 
 
-_DSN = _build_dsn()
+# _build_dsn() is deliberately NOT allowed to raise past this point. This
+# module's own design principle (see file docstring) is that a DB problem
+# must never crash the whole process at import time -- the in-memory store
+# is a fully supported fallback. A genuine misconfiguration (caught above)
+# is therefore converted into a loud, impossible-to-miss startup log line
+# plus a distinct is_configured()/healthcheck() state (see below), instead
+# of either a silent corrupt-DSN connection attempt (the original bug) or
+# a hard process crash (which would be a worse regression -- it would also
+# take down every feature that doesn't need the database at all).
+_DSN_MISCONFIGURED_DETAIL: Optional[str] = None
+try:
+    _DSN = _build_dsn()
+except NWISDatabaseMisconfigured as exc:
+    _DSN = None
+    _DSN_MISCONFIGURED_DETAIL = str(exc)
+    logger.critical(
+        f"NWIS_DATABASE_URL is set but misconfigured -- refusing to attempt a "
+        f"connection that would silently corrupt in a confusing way. Falling back "
+        f"to the in-memory store until this is fixed. Detail: {exc}"
+    )
+
 _pool: Optional["ConnectionPool"] = None
 
 
@@ -72,13 +163,17 @@ def is_configured() -> bool:
 def get_pool() -> "ConnectionPool":
     """Lazily create (once) and return the process-wide connection pool.
 
-    Raises NWISDatabaseNotConfigured if no DSN is set, or
-    NWISDatabaseUnavailable if psycopg itself isn't installed. Does NOT
-    eagerly connect at import time — that would make importing this module
-    fail the whole server process if the DB happens to be down, for a
-    feature (the migrated vertical slice) that is opt-in.
+    Raises NWISDatabaseMisconfigured if NWIS_DATABASE_URL was set but failed
+    validation at import time (see _build_dsn()), NWISDatabaseNotConfigured
+    if no DSN is set at all, or NWISDatabaseUnavailable if psycopg itself
+    isn't installed. Does NOT eagerly connect at import time — that would
+    make importing this module fail the whole server process if the DB
+    happens to be down, for a feature (the migrated vertical slice) that is
+    opt-in.
     """
     global _pool
+    if _DSN_MISCONFIGURED_DETAIL is not None:
+        raise NWISDatabaseMisconfigured(_DSN_MISCONFIGURED_DETAIL)
     if _DSN is None:
         raise NWISDatabaseNotConfigured(
             "No database configured. Set NWIS_DATABASE_URL (or NWIS_DB_HOST "
@@ -125,6 +220,21 @@ def get_connection() -> Iterator["psycopg.Connection"]:
 def healthcheck() -> dict:
     """Used by GET /api/v2/health — never raises; reports status instead.
 
+    Three distinct states are reported, not two — "never configured" and
+    "configured but broken" must not look identical to a caller, per this
+    project's own established tri-state-honesty pattern (see
+    NWISDatabaseMisconfigured's docstring for why: a misconfigured DSN
+    looks exactly like "not configured" from is_configured() alone, which
+    would hide a real, fixable bug behind the same payload this endpoint
+    already uses for the fully-expected "no database, running in memory
+    mode" case):
+      - never configured:        {"configured": False, "reachable": None}
+      - configured but malformed: {"configured": True, "reachable": False,
+                                    "error": "NWISDatabaseMisconfigured"}
+      - configured, DB down:      {"configured": True, "reachable": False,
+                                    "error": <other exception class name>}
+      - configured, DB up:        {"configured": True, "reachable": True}
+
     The "error" field (Pass 2 hardening) is the exception's CLASS NAME only,
     not str(exc) — psycopg's connection-failure messages include host/port/
     user (confirmed not the password, but still internal connection detail
@@ -132,6 +242,8 @@ def healthcheck() -> dict:
     in the server log line below; this function's return value is what a
     caller actually sees.
     """
+    if _DSN_MISCONFIGURED_DETAIL is not None:
+        return {"configured": True, "reachable": False, "error": "NWISDatabaseMisconfigured"}
     if not is_configured():
         return {"configured": False, "reachable": None}
     try:

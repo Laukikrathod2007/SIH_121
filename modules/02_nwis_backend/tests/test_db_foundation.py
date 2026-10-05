@@ -96,6 +96,94 @@ def test_healthcheck_error_field_is_class_name_not_full_message(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# DSN SANITIZATION / VALIDATION -- pure unit tests, no live DB required.
+#
+# Root cause this guards against (confirmed on a real Render deploy, then
+# reproduced locally byte-for-byte before this fix): a dashboard
+# environment-variable field (Render's) introduced a trailing newline onto
+# a pasted NWIS_DATABASE_URL value. psycopg's own conninfo parser does NOT
+# reject this -- it silently folds the newline into the last field
+# (dbname), producing `FATAL: database "postgres\n" does not exist`, which
+# reads like a wrong database name rather than a whitespace bug. _build_dsn()
+# must strip safe leading/trailing whitespace automatically (the actual bug
+# hit in practice) and refuse (loudly, not silently) to build a DSN that
+# still contains an embedded control character after that strip.
+# ---------------------------------------------------------------------------
+
+_VALID_DSN = "postgresql://postgres.ref:pw@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
+
+
+def test_trailing_newline_on_database_url_is_stripped_not_corrupted(monkeypatch):
+    """The actual bug: a trailing \\n (e.g. from a dashboard paste) must be
+    silently healed by _build_dsn(), not passed through to psycopg where it
+    would corrupt the last field in the DSN (confirmed separately: psycopg's
+    conninfo_to_dict folds a trailing control character into dbname)."""
+    monkeypatch.setenv("NWIS_DATABASE_URL", _VALID_DSN + "\n")
+    dsn = connection._build_dsn()
+    assert dsn == _VALID_DSN
+    assert "\n" not in dsn
+
+
+def test_leading_and_trailing_whitespace_on_database_url_is_stripped(monkeypatch):
+    monkeypatch.setenv("NWIS_DATABASE_URL", f"  {_VALID_DSN}  ")
+    assert connection._build_dsn() == _VALID_DSN
+
+
+def test_embedded_control_character_raises_misconfigured_not_silently_corrupted(monkeypatch):
+    """A control character INSIDE the DSN (not just at the edges) can't be
+    safely auto-healed by a strip -- must raise NWISDatabaseMisconfigured
+    rather than silently building a DSN that would corrupt a field."""
+    broken = _VALID_DSN.replace("/postgres", "/post\ngres")
+    monkeypatch.setenv("NWIS_DATABASE_URL", broken)
+    with pytest.raises(connection.NWISDatabaseMisconfigured):
+        connection._build_dsn()
+
+
+def test_whitespace_only_database_url_raises_misconfigured(monkeypatch):
+    monkeypatch.setenv("NWIS_DATABASE_URL", "   \n  ")
+    with pytest.raises(connection.NWISDatabaseMisconfigured):
+        connection._build_dsn()
+
+
+def test_unparseable_database_url_raises_misconfigured(monkeypatch):
+    monkeypatch.setenv("NWIS_DATABASE_URL", "not a connection string at all ???")
+    with pytest.raises(connection.NWISDatabaseMisconfigured):
+        connection._build_dsn()
+
+
+def test_module_import_time_misconfiguration_falls_back_to_unconfigured_not_crash(monkeypatch):
+    """A misconfigured DSN detected at the module-level _build_dsn() call
+    (import time) must leave the module importable and _DSN == None (same
+    externally-visible state as "never configured") -- it must NEVER raise
+    past module import, since that would crash the whole server process for
+    every feature, not just the DB-backed ones (this module's own stated
+    design principle). The distinction from genuinely-unconfigured is
+    surfaced through healthcheck()/get_pool() instead, not through import
+    succeeding or failing."""
+    monkeypatch.setenv("NWIS_DATABASE_URL", "post\ngres://broken")
+    monkeypatch.setattr(connection, "_DSN", None)
+    monkeypatch.setattr(connection, "_DSN_MISCONFIGURED_DETAIL", None)
+
+    try:
+        dsn = connection._build_dsn()
+        raised = False
+    except connection.NWISDatabaseMisconfigured as exc:
+        dsn = None
+        raised = True
+        detail = str(exc)
+
+    assert raised is True  # _build_dsn() itself still raises when called directly...
+    # ...but the module-level call site (reproduced here) must catch it:
+    monkeypatch.setattr(connection, "_DSN", dsn)
+    monkeypatch.setattr(connection, "_DSN_MISCONFIGURED_DETAIL", detail if raised else None)
+    assert connection.is_configured() is False
+    result = connection.healthcheck()
+    assert result == {"configured": True, "reachable": False, "error": "NWISDatabaseMisconfigured"}
+    with pytest.raises(connection.NWISDatabaseMisconfigured):
+        connection.get_pool()
+
+
+# ---------------------------------------------------------------------------
 # DATABASE
 # ---------------------------------------------------------------------------
 
