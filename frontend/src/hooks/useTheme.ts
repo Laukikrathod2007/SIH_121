@@ -10,7 +10,7 @@ function getInitialTheme(): Theme {
   } catch {
     /* localStorage unavailable (private mode, etc.) -- fall through to default */
   }
-  return 'dark';
+  return 'light';
 }
 
 // App-wide light/dark toggle. Applies via a `data-theme` attribute on
