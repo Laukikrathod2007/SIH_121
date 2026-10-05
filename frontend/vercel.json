@@ -6,6 +6,8 @@
   "rewrites": [
     { "source": "/benchmarks", "destination": "/landing/benchmarks.html" },
     { "source": "/app", "destination": "/app.html" },
-    { "source": "/app/:path*", "destination": "/app.html" }
+    { "source": "/app/:path*", "destination": "/app.html" },
+    { "source": "/docs", "destination": "/app.html" },
+    { "source": "/docs/:path*", "destination": "/app.html" }
   ]
 }

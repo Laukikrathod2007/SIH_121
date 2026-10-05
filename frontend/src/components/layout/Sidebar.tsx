@@ -20,6 +20,7 @@ import {
   Globe2,
   PanelLeftOpen,
   PanelLeftClose,
+  BookMarked,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../hooks/useTheme';
@@ -66,6 +67,7 @@ export const Sidebar: React.FC = () => {
     { to: '/app/documents', label: 'Document Ingestion', icon: FileUp },
     { to: '/app/simulator', label: 'Scenario Simulator', icon: Cpu, isSimActive: simStatus?.is_running },
     { to: '/app/reports', label: 'Reports & Analytics', icon: FileSpreadsheet },
+    { to: '/docs', label: 'Documentation', icon: BookMarked, badge: '24 SPECS' },
     // System Architecture (/app/status) is deliberately absent from this
     // list: it reports dependency versions, which engines are loaded, auth
     // and rate-limit settings and which ML artifacts are missing -- internal
@@ -211,28 +213,6 @@ export const Sidebar: React.FC = () => {
             {simStatus?.is_running ? `RUNNING (${simStatus.speed_multiplier}x)` : 'PAUSED'}
           </span>
         </div>
-
-        {/* Theme toggle -- moved here from the top header bar, which was
-            already packed enough that this got silently pushed off-screen
-            there with no overflow handling. Guaranteed visible here. */}
-        <div className="flex items-center bg-slate-900 border border-slate-700 rounded p-0.5 mt-1">
-          <button
-            onClick={() => setTheme('light')}
-            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded transition ${
-              theme === 'light' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Sun className="w-3 h-3" /> Light
-          </button>
-          <button
-            onClick={() => setTheme('dark')}
-            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded transition ${
-              theme === 'dark' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Moon className="w-3 h-3" /> Dark
-          </button>
-        </div>
       </div>
       ) : (
         <div className="p-2 border-t border-slate-800/80 bg-[var(--bg-elevated)] flex flex-col items-center gap-2">
@@ -244,14 +224,6 @@ export const Sidebar: React.FC = () => {
           >
             <Radio className={`w-4 h-4 ${isWsConnected ? 'text-emerald-400' : 'text-slate-400'}`} />
           </div>
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            className="p-1.5 rounded text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition"
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
         </div>
       )}
     </aside>

@@ -18,6 +18,8 @@ import { SimulatorPage } from './pages/SimulatorPage';
 import { ReportsAnalyticsPage } from './pages/ReportsAnalyticsPage';
 import { SystemStatusPage } from './pages/SystemStatusPage';
 
+import { DocsPage } from './docs/DocsPage';
+
 // Lazy-loaded: pulls in three.js + @react-three/fiber (~800kB, same cost as
 // WellInspector3DModal), only needed when the user actually opens the 3D
 // globe, not on initial load of every page in the app.
@@ -63,9 +65,41 @@ const RoutedContent: React.FC = () => {
         <Route path="/app/simulator" element={<SimulatorPage />} />
         <Route path="/app/reports" element={<ReportsAnalyticsPage />} />
         <Route path="/app/status" element={<SystemStatusPage />} />
+        <Route path="/app/docs" element={<Navigate to="/docs" replace />} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>
     </main>
+  );
+};
+
+const MainAppLayout: React.FC = () => {
+  const location = useLocation();
+  const isDocs = location.pathname.startsWith('/docs');
+
+  if (isDocs) {
+    return (
+      <Routes>
+        <Route path="/docs" element={<DocsPage />} />
+        <Route path="/docs/:slug" element={<DocsPage />} />
+        <Route path="*" element={<Navigate to="/docs" replace />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <div className="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] text-slate-100 font-sans">
+      {/* Left Navigation Sidebar */}
+      <Sidebar />
+
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 h-screen overflow-hidden">
+        {/* Top Operational Bar */}
+        <Header />
+
+        {/* Routed View Surface */}
+        <RoutedContent />
+      </div>
+    </div>
   );
 };
 
@@ -73,19 +107,7 @@ export const App: React.FC = () => {
   return (
     <AppProvider>
       <BrowserRouter>
-        <div className="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] text-slate-100 font-sans">
-          {/* Left Navigation Sidebar */}
-          <Sidebar />
-
-          {/* Main Content Area */}
-          <div className="flex flex-col flex-1 h-screen overflow-hidden">
-            {/* Top Operational Bar */}
-            <Header />
-
-            {/* Routed View Surface */}
-            <RoutedContent />
-          </div>
-        </div>
+        <MainAppLayout />
       </BrowserRouter>
     </AppProvider>
   );

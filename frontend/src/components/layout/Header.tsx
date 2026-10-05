@@ -9,10 +9,14 @@ import {
   ChevronDown,
   Circle,
   AlertTriangle,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../hooks/useTheme';
 
 export const Header: React.FC = () => {
+  const { theme, setTheme } = useTheme();
   const {
     activeWellId,
     setActiveWellId,
@@ -179,6 +183,16 @@ export const Header: React.FC = () => {
             ML
           </div>
         </div>
+
+        {/* Theme Toggle Symbol at Top */}
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="p-1.5 rounded text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          aria-label="Toggle Theme"
+        >
+          {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-cyan-400" />}
+        </button>
       </div>
     </header>
   );
