@@ -219,7 +219,7 @@ export const CopilotPage: React.FC = () => {
           {activeMode === 'agentic' ? (
             <div className="px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>AI-Assisted (Ollama / Qwen-2.5)</span>
+              <span>AI-Assisted (Gemini)</span>
             </div>
           ) : (
             <div className="px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center gap-1.5">

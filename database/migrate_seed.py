@@ -1,13 +1,18 @@
 """
 Load the existing modules/02_nwis_backend synthetic testbed into the new
-Postgres/PostGIS/pgvector/TimescaleDB schema (schema.sql).
+Postgres/PostGIS/pgvector schema (schema.sql).
 
 This does NOT touch modules/01 or modules/02's own SQLite/JSON storage --
 it's a one-way load into the new database layer so it's genuinely populated
-rather than an empty shell. Run after `docker compose up -d`:
+rather than an empty shell. Run against local Docker after `docker compose
+up -d` (the default DSN below), or against any other Postgres (e.g.
+Supabase) by setting NWIS_DATABASE_URL first -- same env var
+Backend/app/core/config.py reads, so one connection string works for both
+the seed script and the running app:
 
     pip install -r requirements.txt
-    python migrate_seed.py
+    python migrate_seed.py                              # local Docker default
+    NWIS_DATABASE_URL=postgresql://... python migrate_seed.py   # any other Postgres
 """
 from __future__ import annotations
 
@@ -25,7 +30,12 @@ os.environ.setdefault("USE_TF", "0")
 
 import psycopg
 
-DB_DSN = "host=localhost port=5433 dbname=nwis user=nwis password=nwis_dev_password"
+# NWIS_DATABASE_URL takes priority when set (the same env var the running
+# app reads, Backend/app/core/config.py) -- this was previously a hardcoded
+# local-Docker-only DSN that silently ignored NWIS_DATABASE_URL entirely,
+# so pointing it at a remote Postgres (e.g. Supabase) had no effect; the
+# script just re-seeded local Docker every time regardless of what was set.
+DB_DSN = os.environ.get("NWIS_DATABASE_URL") or "host=localhost port=5433 dbname=nwis user=nwis password=nwis_dev_password"
 
 SYNTH_DIR = Path(__file__).resolve().parent.parent / "modules" / "02_nwis_backend" / "data" / "synthetic"
 REAL_DATA_DIR = Path(__file__).resolve().parent.parent / "real_data"

@@ -2,7 +2,8 @@
 Unit and integration tests for the Agentic Knowledge Copilot:
   - Tool schemas & dispatch layer (parity, shape validation, error handling)
   - Tool implementations against real in-memory store
-  - Keyword search fallback (deterministic degradation when Ollama is offline)
+  - Keyword search fallback (deterministic degradation when every Gemini key is offline)
+  - Gemini key rotation (3-key fallback on rate-limit/auth/server errors)
   - Endpoint contract and SSE streaming response for POST /api/v2/agent/chat
 """
 import pytest
@@ -12,9 +13,13 @@ from app.modules.nwis.agent.tools import (
     TOOL_IMPLEMENTATIONS,
     execute_tool,
 )
+from app.modules.nwis.agent import orchestrator
 from app.modules.nwis.agent.orchestrator import (
     run_keyword_fallback,
-    check_ollama_reachable,
+    check_gemini_reachable,
+    _configured_keys,
+    _is_retryable_on_another_key,
+    GeminiUnavailable,
 )
 from app.modules.physics.db import service as physics_db_service
 import app.modules.nwis.server as nwis_server
@@ -181,10 +186,153 @@ async def test_run_keyword_fallback():
 
 
 @pytest.mark.asyncio
-async def test_check_ollama_reachable_returns_bool():
-    """Liveness probe completes quickly and returns a boolean."""
-    reachable = await check_ollama_reachable()
-    assert isinstance(reachable, bool)
+async def test_check_gemini_reachable_returns_bool_with_no_keys_configured(monkeypatch):
+    """No GEMINIKEY* env vars set -> reachable probe must return False, not raise."""
+    monkeypatch.delenv("GEMINIKEY1", raising=False)
+    monkeypatch.delenv("GEMINIKEY2", raising=False)
+    monkeypatch.delenv("GEMINIKEY3", raising=False)
+    reachable = await check_gemini_reachable()
+    assert reachable is False
+
+
+def test_configured_keys_reads_all_three_env_vars_and_skips_blank(monkeypatch):
+    monkeypatch.setenv("GEMINIKEY1", "key-one")
+    monkeypatch.delenv("GEMINIKEY2", raising=False)
+    monkeypatch.setenv("GEMINIKEY3", "  ")  # blank/whitespace-only must be skipped, not sent as a key
+    assert _configured_keys() == ["key-one"]
+
+
+def test_configured_keys_empty_when_none_set(monkeypatch):
+    for name in ("GEMINIKEY1", "GEMINIKEY2", "GEMINIKEY3"):
+        monkeypatch.delenv(name, raising=False)
+    assert _configured_keys() == []
+
+
+class _FakeAPIError(Exception):
+    """Stands in for google.genai.errors.APIError without needing a real
+    HTTP response object -- only .code is read by _is_retryable_on_another_key."""
+    def __init__(self, code: int):
+        self.code = code
+        super().__init__(f"fake API error {code}")
+
+
+def test_rate_limit_and_auth_and_server_errors_are_retryable_on_another_key(monkeypatch):
+    from google.genai import errors as genai_errors
+
+    # Patch the real APIError class check target with our fake that still
+    # IS a genai_errors.APIError instance for isinstance() to accept, by
+    # making the fake inherit from it directly instead.
+    class FakeAPIError(genai_errors.APIError):
+        def __init__(self, code: int):
+            self.code = code
+            self.status = None
+            self.message = "fake"
+            Exception.__init__(self, f"fake API error {code}")
+
+    assert _is_retryable_on_another_key(FakeAPIError(429)) is True   # rate limit / quota
+    assert _is_retryable_on_another_key(FakeAPIError(401)) is True   # bad/revoked key
+    assert _is_retryable_on_another_key(FakeAPIError(403)) is True   # forbidden
+    assert _is_retryable_on_another_key(FakeAPIError(500)) is True   # transient server error
+    assert _is_retryable_on_another_key(FakeAPIError(400)) is False  # malformed request -- same on every key
+    assert _is_retryable_on_another_key(ConnectionError("down")) is True
+    assert _is_retryable_on_another_key(ValueError("not a network/API error")) is False
+
+
+@pytest.mark.asyncio
+async def test_gemini_generate_rotates_through_all_three_keys_then_raises(monkeypatch):
+    """All three keys configured, all three fail with a retryable error ->
+    GeminiUnavailable, having genuinely tried all three (not just the first)."""
+    monkeypatch.setenv("GEMINIKEY1", "key-1")
+    monkeypatch.setenv("GEMINIKEY2", "key-2")
+    monkeypatch.setenv("GEMINIKEY3", "key-3")
+
+    attempted_keys: list[str] = []
+
+    class _FakeModels:
+        async def generate_content(self, *, model, contents, config):
+            raise ConnectionError("simulated down")
+
+    class _FakeAio:
+        def __init__(self):
+            self.models = _FakeModels()
+
+    class _FakeClient:
+        def __init__(self, *, api_key):
+            attempted_keys.append(api_key)
+            self.aio = _FakeAio()
+
+    monkeypatch.setattr(orchestrator.genai, "Client", _FakeClient)
+
+    with pytest.raises(GeminiUnavailable):
+        await orchestrator._gemini_generate([], with_tools=False)
+
+    assert attempted_keys == ["key-1", "key-2", "key-3"]
+
+
+@pytest.mark.asyncio
+async def test_gemini_generate_succeeds_on_second_key_after_first_fails(monkeypatch):
+    """key 1 rate-limited, key 2 succeeds -> returns key 2's response,
+    never tries key 3."""
+    monkeypatch.setenv("GEMINIKEY1", "key-1")
+    monkeypatch.setenv("GEMINIKEY2", "key-2")
+    monkeypatch.setenv("GEMINIKEY3", "key-3")
+
+    attempted_keys: list[str] = []
+    sentinel_response = object()
+
+    class _FakeModels:
+        def __init__(self, key):
+            self._key = key
+
+        async def generate_content(self, *, model, contents, config):
+            if self._key == "key-1":
+                raise ConnectionError("simulated down")
+            return sentinel_response
+
+    class _FakeAio:
+        def __init__(self, key):
+            self.models = _FakeModels(key)
+
+    class _FakeClient:
+        def __init__(self, *, api_key):
+            attempted_keys.append(api_key)
+            self.aio = _FakeAio(api_key)
+
+    monkeypatch.setattr(orchestrator.genai, "Client", _FakeClient)
+
+    result = await orchestrator._gemini_generate([], with_tools=False)
+    assert result is sentinel_response
+    assert attempted_keys == ["key-1", "key-2"]  # key-3 never attempted
+
+
+@pytest.mark.asyncio
+async def test_gemini_generate_raises_immediately_on_non_retryable_error(monkeypatch):
+    """A malformed-request-style error (not retryable) must not burn
+    through all three keys -- every key would fail identically."""
+    monkeypatch.setenv("GEMINIKEY1", "key-1")
+    monkeypatch.setenv("GEMINIKEY2", "key-2")
+
+    attempted_keys: list[str] = []
+
+    class _FakeModels:
+        async def generate_content(self, *, model, contents, config):
+            raise ValueError("malformed request, not a network/API error")
+
+    class _FakeAio:
+        def __init__(self):
+            self.models = _FakeModels()
+
+    class _FakeClient:
+        def __init__(self, *, api_key):
+            attempted_keys.append(api_key)
+            self.aio = _FakeAio()
+
+    monkeypatch.setattr(orchestrator.genai, "Client", _FakeClient)
+
+    with pytest.raises(GeminiUnavailable):
+        await orchestrator._gemini_generate([], with_tools=False)
+
+    assert attempted_keys == ["key-1"]  # fails fast, never tries key-2
 
 
 def test_agent_chat_empty_message_400():

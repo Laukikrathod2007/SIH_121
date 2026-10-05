@@ -1142,7 +1142,7 @@ async def live_replay(
 
 
 # ---------------------------------------------------------------------------
-# Agentic Knowledge Copilot — real local LLM (Ollama) tool-calling over this
+# Agentic Knowledge Copilot — Gemini-backed tool-calling loop over this
 # module's own existing routes, grounded answers with citations. See
 # agent/orchestrator.py and agent/tools.py for the full design reasoning.
 # ---------------------------------------------------------------------------
@@ -1159,11 +1159,12 @@ async def agent_chat(request: Request, body: AgentChatRequest):
     Server-Sent Events stream of one agentic Knowledge Copilot turn.
     Frames: `tool_call`, `tool_result`, `answer`, `error`, and a final
     `mode` frame telling the frontend honestly whether this turn was
-    answered by the real agent ("agentic") or Ollama was unreachable and
-    nothing was attempted ("unavailable") — the frontend must never imply
-    an LLM answered when it didn't, same honesty discipline as every other
-    optional-capability surface in this codebase (docling, cloud OCR
-    fallback, semantic search's own keyword-fallback path).
+    answered by the real agent ("agentic") or every configured Gemini key
+    was unreachable/exhausted and nothing was attempted ("keyword_fallback")
+    — the frontend must never imply an LLM answered when it didn't, same
+    honesty discipline as every other optional-capability surface in this
+    codebase (docling, cloud OCR fallback, semantic search's own
+    keyword-fallback path).
 
     Test with: curl -N -X POST -H "X-API-Key: <key>" -H "Content-Type: application/json" \\
       -d '{"message": "..."}' .../api/v2/agent/chat
@@ -1177,12 +1178,12 @@ async def agent_chat(request: Request, body: AgentChatRequest):
     from app.modules.nwis.agent.orchestrator import (
         run_agent_turn,
         run_keyword_fallback,
-        check_ollama_reachable,
-        OllamaUnavailable,
+        check_gemini_reachable,
+        GeminiUnavailable,
     )
 
     async def event_stream():
-        if not await check_ollama_reachable():
+        if not await check_gemini_reachable():
             yield f"event: mode\ndata: {json.dumps({'mode': 'keyword_fallback'})}\n\n"
             try:
                 async for event in run_keyword_fallback(
@@ -1205,8 +1206,8 @@ async def agent_chat(request: Request, body: AgentChatRequest):
                 if await request.is_disconnected():
                     break
                 yield f"data: {json.dumps(event, default=str)}\n\n"
-        except OllamaUnavailable as exc:
-            logger.warning(f"Agent turn failed, Ollama became unreachable mid-turn: {exc}")
+        except GeminiUnavailable as exc:
+            logger.warning(f"Agent turn failed, all Gemini keys became unreachable mid-turn: {exc}")
             yield f"data: {json.dumps({'type': 'error', 'detail': 'Lost connection to the AI assistant.'})}\n\n"
         yield "event: done\ndata: {}\n\n"
 

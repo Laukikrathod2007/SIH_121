@@ -40,6 +40,9 @@ loguru>=0.7.2
 pymupdf>=1.24.9
 httpx>=0.27.2
 
+# --- Agentic Knowledge Copilot: Gemini API client ---
+google-genai>=2.25.0
+
 # --- Machine learning: hazard models, anomaly detection, risk fusion ---
 numpy>=1.26.4
 scikit-learn>=1.5.2

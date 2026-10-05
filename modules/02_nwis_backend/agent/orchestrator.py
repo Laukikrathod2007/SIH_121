@@ -1,58 +1,93 @@
 """
-Agentic Knowledge Copilot — the tool-calling loop over a local LLM
-(Ollama), grounded entirely in this project's own real data via the tool
-catalog in agent/tools.py.
+Agentic Knowledge Copilot — the tool-calling loop over Google's Gemini API
+(gemini-2.5-flash), grounded entirely in this project's own real data via
+the tool catalog in agent/tools.py.
 
-Design, per the approved plan and this project's own established
-patterns:
-  - Local, free LLM via Ollama's /api/chat endpoint (confirmed working
-    live before this was written: qwen2.5:7b-instruct correctly selects
-    a tool and extracts arguments from natural language, and correctly
-    synthesizes a grounded final answer from a real tool result fed
-    back to it).
-  - The system prompt enforces a grounding discipline matching this
-    project's zero-hallucination philosophy (already documented in
-    CopilotPage.tsx's own header comment, HistoricalIntelligencePage.tsx's
-    "Illustrative summary" labeling, PdfEvidenceViewer.tsx's refusal to
-    fabricate a highlight box): never state a fact that didn't come back
+Design, per the approved plan and this project's own established patterns:
+  - Gemini (free-tier) instead of a locally-hosted Ollama model — chosen so
+    the deployed instance (Render free tier has no GPU/4.7GB RAM budget for
+    a local 7B model) gets the full agentic experience without hosting an
+    LLM ourselves. tools.py's OpenAI/Ollama-style TOOL_SCHEMAS are converted
+    to Gemini's FunctionDeclaration shape by _to_gemini_tool() below —
+    tools.py itself is untouched; it stays the single source of truth for
+    the tool catalog across whichever LLM backend calls it.
+  - THREE separate Gemini API keys (GEMINIKEY1/2/3), each from a separate
+    free-tier Google account, rotated on failure — not for redundancy
+    against one flaky key, but to multiply the effective free request
+    quota roughly 3x before the Copilot has to fall back to keyword search.
+    A request tries key 1; on a rate-limit/quota error (HTTP 429) or a
+    transient server error (5xx) it tries key 2, then key 3; only once ALL
+    THREE have failed does the turn raise GeminiUnavailable and the caller
+    falls back to the deterministic keyword path. A genuine auth error
+    (bad key, 401/403) is treated the same as a rate limit here — skip to
+    the next key — since from the caller's perspective both mean "this key
+    can't serve this request right now," and the whole point of three keys
+    is to never surface that distinction to the end user.
+  - The system prompt enforces the same grounding discipline the Ollama
+    version used (unchanged): never state a fact that didn't come back
     from a tool call; cite well_id/event_id/source_document for every
     claim; say so plainly when nothing relevant was found.
   - A bounded loop (MAX_TOOL_ROUNDS) prevents a runaway tool-call cycle.
-  - If Ollama is unreachable at all (not running, model not pulled,
-    network error), this module raises OllamaUnavailable rather than
-    silently returning a degraded answer — the caller (server.py's new
-    route) is responsible for falling back to the existing keyword-match
-    CopilotPage logic equivalent and reporting an honest "mode" to the
-    frontend, exactly as it already does for every other optional
-    capability in this codebase (docling, cloud OCR fallback, semantic
-    search's own keyword-fallback path).
+  - If every configured key fails (or none are configured at all), this
+    module raises GeminiUnavailable rather than silently returning a
+    degraded answer — the caller (server.py's route) falls back to the
+    existing deterministic keyword-match path and reports an honest "mode"
+    to the frontend, exactly as the Ollama version did and exactly as every
+    other optional capability in this codebase already does (docling,
+    cloud OCR fallback, semantic search's own keyword-fallback path).
 """
 from __future__ import annotations
 
-import json
 import os
 from typing import Any, AsyncIterator, Optional
 
-import httpx
+from google import genai
+from google.genai import errors as genai_errors
+from google.genai import types as genai_types
 from loguru import logger
 
 from app.modules.nwis.agent.tools import TOOL_SCHEMAS, execute_tool
 
-OLLAMA_URL = os.environ.get("NWIS_OLLAMA_URL", "http://localhost:11434").rstrip("/")
-OLLAMA_MODEL = os.environ.get("NWIS_OLLAMA_MODEL", "qwen2.5:7b-instruct")
+GEMINI_MODEL = os.environ.get("NWIS_GEMINI_MODEL", "gemini-flash-lite-latest")
 MAX_TOOL_ROUNDS = 4
-# Ollama's own default load timeout for a model that isn't already
-# resident in memory can be well over a minute on CPU -- generous but
-# bounded, so a genuinely unreachable Ollama fails fast (connect_timeout)
-# while a slow-but-working first load doesn't get killed mid-generation.
-_TIMEOUT = httpx.Timeout(connect=3.0, read=120.0, write=10.0, pool=5.0)
+
+# Three separate free-tier Google accounts' API keys, rotated on failure to
+# multiply the effective free quota (see module docstring). Read lazily via
+# _configured_keys() rather than frozen at import time, so tests can
+# monkeypatch os.environ and so a key added/rotated via a process restart
+# is picked up without any other code change.
+_KEY_ENV_VARS = ("GEMINIKEY1", "GEMINIKEY2", "GEMINIKEY3")
 
 
-class OllamaUnavailable(RuntimeError):
-    """Raised when Ollama cannot be reached or errors at the HTTP layer --
-    kept distinct from a normal model response so the caller can fall back
-    honestly instead of surfacing a raw connection error to the user."""
+def _configured_keys() -> list[str]:
+    return [v for v in (os.environ.get(name, "").strip() for name in _KEY_ENV_VARS) if v]
 
+
+class GeminiUnavailable(RuntimeError):
+    """Raised when every configured Gemini key has failed (or none are
+    configured at all) -- kept distinct from a normal model response so the
+    caller can fall back honestly instead of surfacing a raw API error."""
+
+
+def _to_gemini_tool(schemas: list[dict[str, Any]]) -> genai_types.Tool:
+    """Converts tools.py's OpenAI/Ollama-style TOOL_SCHEMAS (a list of
+    {"type": "function", "function": {name, description, parameters}})
+    into one Gemini Tool with a FunctionDeclaration per entry. tools.py's
+    `parameters` is already plain JSON Schema, which FunctionDeclaration
+    accepts directly (confirmed live: enum/required/object nesting all
+    convert correctly with no manual Schema construction needed)."""
+    declarations = [
+        genai_types.FunctionDeclaration(
+            name=entry["function"]["name"],
+            description=entry["function"]["description"],
+            parameters=entry["function"]["parameters"],
+        )
+        for entry in schemas
+    ]
+    return genai_types.Tool(function_declarations=declarations)
+
+
+_GEMINI_TOOL = _to_gemini_tool(TOOL_SCHEMAS)
 
 SYSTEM_PROMPT = """You are the Knowledge Copilot for eRTMAC-NWIS, a drilling decision-support \
 system for Oil India Limited. You help drilling engineers find relevant offset-well \
@@ -77,32 +112,95 @@ well/event data in a direct answer.
 """
 
 
-async def _ollama_chat(messages: list[dict[str, Any]], *, with_tools: bool) -> dict[str, Any]:
-    payload: dict[str, Any] = {"model": OLLAMA_MODEL, "messages": messages, "stream": False}
-    if with_tools:
-        payload["tools"] = TOOL_SCHEMAS
-    try:
-        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-            resp = await client.post(f"{OLLAMA_URL}/api/chat", json=payload)
-            resp.raise_for_status()
-            return resp.json()
-    except (httpx.ConnectError, httpx.TimeoutException) as exc:
-        raise OllamaUnavailable(f"Could not reach Ollama at {OLLAMA_URL}: {type(exc).__name__}") from exc
-    except httpx.HTTPStatusError as exc:
-        raise OllamaUnavailable(f"Ollama returned HTTP {exc.response.status_code}") from exc
+def _is_retryable_on_another_key(exc: Exception) -> bool:
+    """True for exactly the failure modes a different key might not hit:
+    rate limit/quota (429), auth (401/403 -- a revoked or mistyped key),
+    and transient server-side errors (5xx). False for anything else (a
+    genuine 400 bad-request from a malformed payload would fail identically
+    on every key, so there's no point burning all three on it)."""
+    if isinstance(exc, genai_errors.APIError):
+        code = getattr(exc, "code", None)
+        return code in (401, 403, 429) or (code is not None and code >= 500)
+    return isinstance(exc, (ConnectionError, TimeoutError))
 
 
-async def check_ollama_reachable() -> bool:
+async def _gemini_generate(
+    contents: list[genai_types.Content], *, with_tools: bool
+) -> genai_types.GenerateContentResponse:
+    """Tries each configured key in order, returning the first successful
+    response. Raises GeminiUnavailable only once every key has been tried
+    and failed (or none are configured)."""
+    keys = _configured_keys()
+    if not keys:
+        raise GeminiUnavailable("No Gemini API key configured (set GEMINIKEY1, optionally 2/3).")
+
+    config = genai_types.GenerateContentConfig(
+        system_instruction=SYSTEM_PROMPT,
+        tools=[_GEMINI_TOOL] if with_tools else None,
+        # Manual control over the tool-calling loop (see module docstring) —
+        # this project streams each tool_call/tool_result to the frontend
+        # as it happens, which the SDK's automatic_function_calling loop
+        # does not expose a hook for.
+        automatic_function_calling=genai_types.AutomaticFunctionCallingConfig(disable=True),
+    )
+
+    last_exc: Optional[Exception] = None
+    for key_index, key in enumerate(keys, start=1):
+        try:
+            client = genai.Client(api_key=key)
+            response = await client.aio.models.generate_content(
+                model=GEMINI_MODEL, contents=contents, config=config,
+            )
+            return response
+        except Exception as exc:  # noqa: BLE001 — deliberately broad, see _is_retryable_on_another_key
+            last_exc = exc
+            if _is_retryable_on_another_key(exc):
+                logger.warning(
+                    f"Gemini key #{key_index} failed ({type(exc).__name__}: {exc}) — "
+                    f"trying next key." if key_index < len(keys) else
+                    f"Gemini key #{key_index} failed ({type(exc).__name__}: {exc}) — no more keys."
+                )
+                continue
+            # Not a "try another key" failure (e.g. a malformed request) —
+            # every key would hit the same error, so fail fast.
+            raise GeminiUnavailable(f"Gemini request failed: {type(exc).__name__}: {exc}") from exc
+
+    raise GeminiUnavailable(
+        f"All {len(keys)} configured Gemini key(s) failed. Last error: "
+        f"{type(last_exc).__name__}: {last_exc}"
+    ) from last_exc
+
+
+async def check_gemini_reachable() -> bool:
     """A cheap, fast liveness probe — used by the route handler to decide
-    up front whether to attempt the agentic path at all, so a genuinely
-    down Ollama fails over to keyword-fallback immediately rather than
-    after a slow timeout on the first real chat call."""
-    try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(connect=2.0, read=3.0, write=2.0, pool=2.0)) as client:
-            resp = await client.get(f"{OLLAMA_URL}/api/tags")
-            return resp.status_code == 200
-    except Exception:
+    up front whether to attempt the agentic path at all. Tries only the
+    first configured key with a minimal request; a real turn still rotates
+    through all three on failure, this probe is just a fast up-front check
+    so a totally unconfigured/dead setup fails over to keyword-fallback
+    immediately rather than after the first real chat call's full retry
+    sequence."""
+    keys = _configured_keys()
+    if not keys:
         return False
+    try:
+        client = genai.Client(api_key=keys[0])
+        await client.aio.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=[genai_types.Content(role="user", parts=[genai_types.Part(text="ping")])],
+            config=genai_types.GenerateContentConfig(max_output_tokens=1),
+        )
+        return True
+    except Exception as exc:
+        # A rate-limited first key does not mean Gemini-the-feature is
+        # down — it might still serve a real request on key 2/3. Only
+        # report "unreachable" for the probe's own purpose (should we
+        # attempt the agentic path at all) when the failure isn't the kind
+        # a key rotation would fix.
+        return _is_retryable_on_another_key(exc) and len(keys) > 1
+
+
+def _part_to_dict(part: genai_types.Part) -> dict[str, Any]:
+    return {"function_call": part.function_call, "text": part.text}
 
 
 async def run_agent_turn(
@@ -118,12 +216,12 @@ async def run_agent_turn(
       {"type": "answer", "text": str}
       {"type": "error", "detail": str}
 
-    Raises OllamaUnavailable if Ollama cannot be reached at all — the
-    caller falls back to the non-agentic path in that case; every other
-    failure mode (a tool erroring, the model producing no final answer
-    after MAX_TOOL_ROUNDS) is reported as a normal "error" event instead,
-    since Ollama itself IS reachable in that case and a fallback would be
-    dishonest about what actually happened.
+    Raises GeminiUnavailable if every configured key fails (or none are
+    configured) — the caller falls back to the non-agentic path in that
+    case; every other failure mode (a tool erroring, the model producing no
+    final answer after MAX_TOOL_ROUNDS) is reported as a normal "error"
+    event instead, since Gemini itself IS reachable in that case and a
+    fallback would be dishonest about what actually happened.
     """
     context_line = ""
     if active_well_id:
@@ -132,18 +230,27 @@ async def run_agent_turn(
             context_line += f" at a current bit depth of {active_depth:.1f}m MD"
         context_line += ". Use this well/depth when the user's question doesn't name one explicitly."
 
-    messages: list[dict[str, Any]] = [
-        {"role": "system", "content": SYSTEM_PROMPT + context_line},
-        {"role": "user", "content": user_message},
+    # Gemini's system_instruction is set per-request in config (above), not
+    # as a message in `contents` — context_line still needs to reach the
+    # model, so it's prepended to the first user turn instead.
+    contents: list[genai_types.Content] = [
+        genai_types.Content(role="user", parts=[genai_types.Part(text=user_message + context_line)]),
     ]
+    global SYSTEM_PROMPT  # noqa: PLW0603 — read-only use below; not reassigned
 
     for round_num in range(MAX_TOOL_ROUNDS):
-        response = await _ollama_chat(messages, with_tools=True)
-        message = response.get("message", {})
-        tool_calls = message.get("tool_calls") or []
+        response = await _gemini_generate(contents, with_tools=True)
+        candidates = response.candidates or []
+        if not candidates:
+            yield {"type": "error", "detail": "The assistant did not produce a response."}
+            return
 
-        if not tool_calls:
-            final_text = (message.get("content") or "").strip()
+        parts = candidates[0].content.parts if candidates[0].content else []
+        function_calls = [p.function_call for p in parts if p.function_call is not None]
+        text_parts = [p.text for p in parts if p.text]
+
+        if not function_calls:
+            final_text = "".join(text_parts).strip()
             if final_text:
                 yield {"type": "answer", "text": final_text}
             else:
@@ -152,32 +259,32 @@ async def run_agent_turn(
 
         # The model may request several tool calls in one round; execute
         # each for real and feed every result back before the next round.
-        messages.append({"role": "assistant", "content": message.get("content", ""), "tool_calls": tool_calls})
-        for call in tool_calls:
-            fn = call.get("function", {})
-            name = fn.get("name", "")
-            arguments = fn.get("arguments") or {}
-            if isinstance(arguments, str):
-                try:
-                    arguments = json.loads(arguments)
-                except json.JSONDecodeError:
-                    arguments = {}
+        contents.append(genai_types.Content(role="model", parts=parts))
+        response_parts: list[genai_types.Part] = []
+        for call in function_calls:
+            name = call.name or ""
+            arguments = dict(call.args or {})
             yield {"type": "tool_call", "tool": name, "arguments": arguments}
 
             result = await execute_tool(name, arguments)
             yield {"type": "tool_result", "tool": name, "result": result}
-            messages.append({"role": "tool", "content": json.dumps(result, default=str)})
+            response_parts.append(
+                genai_types.Part(function_response=genai_types.FunctionResponse(name=name, response=result))
+            )
+        contents.append(genai_types.Content(role="user", parts=response_parts))
 
     # Exhausted MAX_TOOL_ROUNDS without a final answer — ask once more
     # with tools disabled so the model is forced to synthesize from
     # whatever it has gathered so far, rather than looping forever.
     try:
-        response = await _ollama_chat(messages, with_tools=False)
-        final_text = (response.get("message", {}).get("content") or "").strip()
+        response = await _gemini_generate(contents, with_tools=False)
+        candidates = response.candidates or []
+        parts = candidates[0].content.parts if candidates and candidates[0].content else []
+        final_text = "".join(p.text for p in parts if p.text).strip()
         if final_text:
             yield {"type": "answer", "text": final_text}
             return
-    except OllamaUnavailable:
+    except GeminiUnavailable:
         pass
     yield {"type": "error", "detail": "Could not reach a final answer within the allowed number of lookups."}
 
@@ -188,9 +295,10 @@ async def run_keyword_fallback(
     active_well_id: Optional[str] = None,
     active_depth: Optional[float] = None,
 ) -> AsyncIterator[dict[str, Any]]:
-    """Deterministic, keyword-search fallback when Ollama is unavailable.
-    Yields tool_call, tool_result, and a grounded answer assembled from
-    actual database results, citing all sources honestly."""
+    """Deterministic, keyword-search fallback when Gemini is unavailable
+    (no keys configured, or all three failed). Yields tool_call,
+    tool_result, and a grounded answer assembled from actual database
+    results, citing all sources honestly."""
     yield {"type": "tool_call", "tool": "search_events", "arguments": {"query": user_message}}
     search_res = await execute_tool("search_events", {"query": user_message})
     yield {"type": "tool_result", "tool": "search_events", "result": search_res}
@@ -204,7 +312,7 @@ async def run_keyword_fallback(
         rank_res = await execute_tool("get_offset_ranking", {"well_id": well_id, "depth": depth})
         yield {"type": "tool_result", "tool": "get_offset_ranking", "result": rank_res}
 
-    parts = ["**[Keyword Search Mode — Local AI Assistant Unavailable]**\n"]
+    parts = ["**[Keyword Search Mode — AI Assistant Unavailable]**\n"]
     events = search_res.get("results", [])
     if events:
         parts.append(f"Retrieved {len(events)} relevant historical event(s) matching your query ({search_res.get('data_source', 'in-memory')}):")
@@ -243,4 +351,3 @@ async def run_keyword_fallback(
 
     final_text = "\n".join(parts)
     yield {"type": "answer", "text": final_text}
-
