@@ -36,6 +36,22 @@ RUN pip install --no-cache-dir -r Backend/requirements.txt
 COPY Backend/ ./Backend/
 COPY modules/ ./modules/
 
+# The real-Volve-well data layer that modules/02_nwis_backend/data_store.py
+# reads directly off disk (REAL_CASING_DATA_PATH / REAL_FORMATIONS_PATH /
+# REAL_EVENTS_PATH / REAL_TRAJECTORIES_PATH) for the in-memory-store fallback
+# path specifically -- confirmed missing from this image in a real Render
+# deploy (data_store.py's own _read_json() has a safe [] default, so the app
+# didn't crash, but silently served 0 real wells/casing/events instead of
+# the intended 2 real Volve wells' worth of data). Only the 6 small JSON
+# files the code actually reads are copied -- NOT the rest of real_data/
+# (source PDFs under real_data/volve/, raw WITSML under real_data/witsml/,
+# generator/validation scripts, _tmp_results/) which together are ~130MB of
+# build-time-only material this image has no runtime need for.
+COPY real_data/real_casing_records_all.json ./real_data/real_casing_records_all.json
+COPY real_data/real_formations_fresh.json ./real_data/real_formations_fresh.json
+COPY real_data/real_events_depth_tagged_fresh.json ./real_data/real_events_depth_tagged_fresh.json
+COPY real_data/real_trajectories_witsml.json ./real_data/real_trajectories_witsml.json
+
 WORKDIR /app/Backend
 
 # Render sets $PORT and expects the app to bind to it; app/core/config.py's
