@@ -41,7 +41,7 @@ export const RiskPredictionPage: React.FC = () => {
     { rank: 3, name: 'd_exponent_slope', importance: 0.0904, category: 'Drilling Mechanics' },
     { rank: 4, name: 'stick_slip_index', importance: 0.0882, category: 'Torsional Dynamics' },
     { rank: 5, name: 'd_exponent_deviation', importance: 0.0814, category: 'Geology' },
-    { rank: 6, name: 'xi (Stratigraphic Coord)', importance: 0.0593, category: 'Module 4 Subsurface' },
+    { rank: 6, name: 'xi (Stratigraphic Coord)', importance: 0.0593, category: 'Subsurface Geology' },
     { rank: 7, name: 'pp_margin_bar', importance: 0.0488, category: 'Pressure Regime' },
     { rank: 8, name: 'delta_flow (Flow Imbalance)', importance: 0.0476, category: 'Hydraulics' },
     { rank: 9, name: 'standpipe_pressure_bar', importance: 0.0421, category: 'Hydraulics' },
@@ -59,16 +59,16 @@ export const RiskPredictionPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              MODULE 5: MULTI-SIGNAL PREDICTIVE RISK ANALYTICS & ML
+              MULTI-SIGNAL PREDICTIVE RISK ANALYTICS &amp; ML
               <span className="text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded">
                 4-PILLAR FUSION ENGINE
               </span>
             </div>
             <div className="text-xs text-slate-400 font-mono">
-              Deterministic Rules (35%) + Isolation Forest (20%) + 6-Class XGBoost (30%) + Mod 4 Geology (15%)
+              Deterministic Rules (35%) + Isolation Forest (20%) + 6-Class XGBoost (30%) + Geology (15%)
             </div>
-            <div className="text-[10px] text-slate-500 font-mono mt-1" title="See AUDIT/11_RISK_ARCHITECTURE_DECISION.md for the full architecture note.">
-              Independent engine from Command Center's hazard cards (module 02's DORS/4-Pillar scoring) —
+            <div className="text-[10px] text-slate-500 font-mono mt-1" title="This is a deliberately independent calculation from the offset-well historical scoring shown elsewhere in the app.">
+              Independent engine from Command Center's hazard cards (offset-well historical scoring) —
               different formula, different taxonomy, deliberately not reconciled (hover for details).
             </div>
           </div>
@@ -186,10 +186,10 @@ export const RiskPredictionPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Pillar 4: Module 4 Geology */}
+              {/* Pillar 4: Geology & Offsets */}
               <div className="p-2.5 bg-slate-900/80 border border-slate-800 rounded space-y-1">
                 <div className="flex items-center justify-between font-bold">
-                  <span className="text-slate-300">4. MODULE 4 GEOLOGY & OFFSETS (Weight: 15%)</span>
+                  <span className="text-slate-300">4. GEOLOGY &amp; OFFSETS (Weight: 15%)</span>
                   <span className="text-emerald-400">Stratigraphic Prior</span>
                 </div>
                 <div className="text-[11px] text-slate-400">

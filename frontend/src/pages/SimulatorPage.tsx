@@ -90,7 +90,7 @@ export const SimulatorPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              MODULE 5: REDUCED-ORDER DRILLING PHYSICS DIGITAL TWIN CONTROLLER
+              REDUCED-ORDER DRILLING PHYSICS DIGITAL TWIN CONTROLLER
               <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded">
                 CAUSAL CONSERVATION SOLVER
               </span>

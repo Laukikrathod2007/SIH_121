@@ -85,7 +85,7 @@ export const GeologicalCorrelationPage: React.FC = () => {
         setActiveFormations(activeForms);
         setCorridors(corridorRes.corridors || []);
       } catch (err) {
-        if (!cancelled) setError('Failed to load stratigraphic correlation data from the NWIS backend (module 02).');
+        if (!cancelled) setError('Could not load stratigraphic correlation data. Contact your system administrator if this persists.');
         console.error(err);
       } finally {
         if (!cancelled) setLoading(false);
@@ -170,11 +170,11 @@ export const GeologicalCorrelationPage: React.FC = () => {
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
               STRATIGRAPHIC CORRELATION & LOOKAHEAD CORRIDOR
               <span className="text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded">
-                LIVE: /api/v2/stratigraphic_depth_track + /api/v2/offset_rank
+                LIVE
               </span>
             </div>
             <div className="text-xs text-slate-400 font-mono">
-              Eliminating the "Trajectory Trap" | Formation-relative TVD penetration (d_strat) | Top 3 DORS-ranked offset wells | NWIS Module 02
+              Eliminating the "Trajectory Trap" | Formation-relative TVD penetration (d_strat) | Top 3 DORS-ranked offset wells
             </div>
           </div>
         </div>
@@ -266,7 +266,7 @@ export const GeologicalCorrelationPage: React.FC = () => {
                 )}
               </div>
               <div className="text-[10px] text-slate-500">
-                ξ = d_strat_m (TVD penetration into formation) ÷ formation thickness_m — both from /api/v2 real data.
+                ξ = d_strat_m (TVD penetration into formation) ÷ formation thickness_m — both measured values, not estimates.
               </div>
             </div>
 
@@ -279,7 +279,7 @@ export const GeologicalCorrelationPage: React.FC = () => {
           {/* Top-3 (+ optional pinned) Offset Well Columns */}
           {columnIds.length === 0 && !loading && (
             <div className="md:col-span-2 xl:col-span-3 flex items-center justify-center p-6 text-center text-slate-400 text-xs font-mono bg-slate-900/50 rounded border border-slate-800">
-              No ranked offset wells returned by /api/v2/offset_rank for this well.
+              No ranked offset wells available for this well.
             </div>
           )}
           {columnIds.map((wellId, idx) => {
@@ -385,7 +385,7 @@ export const GeologicalCorrelationPage: React.FC = () => {
         <div className="flex items-center justify-between pb-2 border-b border-slate-800">
           <div className="text-xs font-mono font-bold text-slate-200 flex items-center gap-2">
             <TrendingDown className="w-4 h-4 text-cyan-400" />
-            AHEAD-OF-BIT LOOKAHEAD RISK CORRIDORS (GET /api/v2/corridors/{activeWellId})
+            AHEAD-OF-BIT LOOKAHEAD RISK CORRIDORS ({activeWellId})
           </div>
           <div className="text-[11px] font-mono text-cyan-400">
             {corridors.length} corridor{corridors.length === 1 ? '' : 's'} ahead of {depth.toFixed(0)}m MD

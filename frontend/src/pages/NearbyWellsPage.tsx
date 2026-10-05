@@ -29,6 +29,9 @@ import { haversineKm } from '../lib/globeGeometry';
 const WellInspector3DModal = lazy(() =>
   import('../components/WellInspector3DModal').then((m) => ({ default: m.WellInspector3DModal }))
 );
+const PdfEvidenceViewer = lazy(() =>
+  import('../components/PdfEvidenceViewer').then((m) => ({ default: m.PdfEvidenceViewer }))
+);
 
 export const NearbyWellsPage: React.FC = () => {
   const { activeWellId, setActiveWellId, wells, activeWell, telemetry } = useApp();
@@ -52,6 +55,7 @@ export const NearbyWellsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [radiusKm, setRadiusKm] = useState<number>(25);
   const [show3D, setShow3D] = useState<boolean>(false);
+  const [evidenceEvent, setEvidenceEvent] = useState<DrillingEvent | null>(null);
 
   const depth = telemetry?.measured_depth_m || 2450.0;
 
@@ -328,6 +332,30 @@ export const NearbyWellsPage: React.FC = () => {
                         <span>IADC Code: {evt.iadc_npt_code || 'N/A'}</span>
                         <span className="text-cyan-400">{evt.formation}</span>
                       </div>
+                      <div className="text-[10px] flex items-center justify-between pt-0.5">
+                        {evt.source_type && (
+                          <span
+                            className={`px-1 py-0.5 rounded font-bold ${
+                              evt.source_type === 'REAL'
+                                ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                                : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                            }`}
+                            title={evt.source_type === 'REAL' ? 'Parsed from a real source document' : 'Project demonstration/testbed data'}
+                          >
+                            {evt.source_type}
+                          </span>
+                        )}
+                        {evt.source_document ? (
+                          <button
+                            onClick={() => setEvidenceEvent(evt)}
+                            className="flex items-center gap-1 text-cyan-400 hover:text-cyan-300 hover:underline ml-auto"
+                          >
+                            <FileText className="w-3 h-3" /> View Source
+                          </button>
+                        ) : (
+                          <span className="text-slate-500 ml-auto">No source document on record</span>
+                        )}
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -370,6 +398,17 @@ export const NearbyWellsPage: React.FC = () => {
             offsetWellId={dorsOffsets[0]?.well_id !== selectedWellId ? dorsOffsets[0]?.well_id : dorsOffsets[1]?.well_id}
             offsetWellName={dorsOffsets[0]?.well_id !== selectedWellId ? dorsOffsets[0]?.well_id : dorsOffsets[1]?.well_id}
             onClose={() => setShow3D(false)}
+          />
+        </Suspense>
+      )}
+
+      {evidenceEvent && (
+        <Suspense fallback={null}>
+          <PdfEvidenceViewer
+            onClose={() => setEvidenceEvent(null)}
+            sourceFilename={evidenceEvent.source_document || undefined}
+            page={evidenceEvent.source_page ?? 1}
+            contextLabel={`${evidenceEvent.event_type} — ${evidenceEvent.well_id} — event ${evidenceEvent.event_id}`}
           />
         </Suspense>
       )}

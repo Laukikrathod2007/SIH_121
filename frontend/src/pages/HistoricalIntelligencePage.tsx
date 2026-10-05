@@ -48,7 +48,7 @@ export const HistoricalIntelligencePage: React.FC = () => {
       setTotalIndexed(data.total_candidates);
     } catch (err) {
       console.error('Failed to search events', err);
-      setError('Failed to reach /api/v2/events/search on the NWIS backend (module 02).');
+      setError('Could not reach the drilling knowledge search service. Contact your system administrator if this persists.');
       setResults([]);
     } finally {
       setLoading(false);
@@ -74,11 +74,11 @@ export const HistoricalIntelligencePage: React.FC = () => {
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
               HISTORICAL DRILLING KNOWLEDGE SEARCH
               <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded">
-                GET /api/v2/events/search
+                LIVE
               </span>
             </div>
             <div className="text-xs text-slate-400 font-mono">
-              Free-text / semantic search over drilling event narratives, mitigation & outcome text (NWIS Module 02)
+              Free-text / semantic search over drilling event narratives, mitigation &amp; outcome text
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   BellRing,
   AlertTriangle,
@@ -9,15 +9,45 @@ import {
   RotateCcw,
   Send,
   Zap,
+  History,
+  Radio,
+  Loader2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { api } from '../services/api';
 import { AlertAdvisory } from '../types';
+
+type HistoryState = 'loading' | 'ok' | 'not_configured' | 'unavailable';
 
 export const AlertsAdvisoryPage: React.FC = () => {
   const { alerts, activeWellId, mitigateAlert, refreshAlerts } = useApp();
 
   const [acknowledgedAlerts, setAcknowledgedAlerts] = useState<Record<string, boolean>>({});
   const [mitigatingId, setMitigatingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'live' | 'history'>('live');
+  const [historyAlerts, setHistoryAlerts] = useState<AlertAdvisory[]>([]);
+  const [historyState, setHistoryState] = useState<HistoryState>('loading');
+
+  const loadHistory = useCallback(async () => {
+    setHistoryState('loading');
+    try {
+      const result = await api.getAlertHistory(activeWellId);
+      setHistoryAlerts(result.alerts);
+      setHistoryState(result.status === 'not_configured' ? 'not_configured' : 'ok');
+    } catch {
+      // A real 503 (database configured but unreachable) lands here --
+      // never rendered as a silently-empty "ok" list (see api.ts's own
+      // docstring on getAlertHistory).
+      setHistoryAlerts([]);
+      setHistoryState('unavailable');
+    }
+  }, [activeWellId]);
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      loadHistory();
+    }
+  }, [activeTab, loadHistory]);
 
   const handleAcknowledge = (id: string) => {
     setAcknowledgedAlerts((prev) => ({ ...prev, [id]: true }));
@@ -43,7 +73,7 @@ export const AlertsAdvisoryPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              MODULE 6: REAL-TIME ALERTING & CLOSED-LOOP ADVISORY ENGINE
+              REAL-TIME ALERTS &amp; RECOMMENDED ACTIONS
               <span className="text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded">
                 SPE / IADC MITIGATION PROTOCOLS
               </span>
@@ -82,7 +112,117 @@ export const AlertsAdvisoryPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Live / History tab switcher — kept visually distinct so a
+          persisted historical alert is never mistaken for an active one,
+          or vice versa (Pass 6 requirement). */}
+      <div className="scada-panel p-1.5 flex items-center gap-1.5">
+        <button
+          onClick={() => setActiveTab('live')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-mono font-bold transition ${
+            activeTab === 'live'
+              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+              : 'text-slate-400 hover:bg-slate-800 border border-transparent'
+          }`}
+        >
+          <Radio className="w-3.5 h-3.5" /> LIVE ALERTS ({alerts.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-mono font-bold transition ${
+            activeTab === 'history'
+              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+              : 'text-slate-400 hover:bg-slate-800 border border-transparent'
+          }`}
+        >
+          <History className="w-3.5 h-3.5" /> ALERT HISTORY
+        </button>
+      </div>
+
+      {activeTab === 'history' && (
+        <div className="space-y-3">
+          <div className="scada-panel p-2.5 text-[11px] font-mono text-slate-400 flex items-center gap-2">
+            <History className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            Persisted alert record for <span className="text-cyan-400 font-bold">{activeWellId}</span> — this
+            reflects everything saved to the shared database, including from earlier sessions, not just alerts
+            raised during this browser session.
+          </div>
+
+          {historyState === 'loading' && (
+            <div className="scada-panel p-8 text-center text-slate-400 text-xs font-mono flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading alert history…
+            </div>
+          )}
+
+          {historyState === 'not_configured' && (
+            <div className="scada-panel p-8 text-center space-y-2">
+              <AlertTriangle className="w-8 h-8 text-amber-400 mx-auto" />
+              <div className="text-sm font-bold text-slate-200 font-mono">Alert history is not enabled in this environment</div>
+              <div className="text-xs text-slate-400 font-mono">
+                No shared database is configured, so persisted alert history cannot be recorded or retrieved here.
+              </div>
+            </div>
+          )}
+
+          {historyState === 'unavailable' && (
+            <div className="scada-panel p-8 text-center space-y-3">
+              <AlertTriangle className="w-8 h-8 text-rose-400 mx-auto" />
+              <div className="text-sm font-bold text-slate-200 font-mono">Alert history is temporarily unavailable</div>
+              <div className="text-xs text-slate-400 font-mono">
+                The shared database could not be reached. This does not mean the history is empty — try again shortly.
+              </div>
+              <button
+                onClick={loadHistory}
+                className="mx-auto flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded text-xs font-mono transition"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> RETRY
+              </button>
+            </div>
+          )}
+
+          {historyState === 'ok' && historyAlerts.length === 0 && (
+            <div className="scada-panel p-8 text-center space-y-2">
+              <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto" />
+              <div className="text-sm font-bold text-slate-200 font-mono">No recorded alerts for this well yet</div>
+              <div className="text-xs text-slate-400 font-mono">
+                Nothing has been persisted to the shared alert history for this well.
+              </div>
+            </div>
+          )}
+
+          {historyState === 'ok' && historyAlerts.length > 0 && (
+            <div className="space-y-2">
+              {historyAlerts.map((alert) => (
+                <div key={alert.alert_id} className="scada-panel p-3 border border-slate-800 rounded-lg space-y-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                          alert.severity === 'CRITICAL'
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                            : alert.severity === 'WARNING'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                            : 'bg-slate-800 text-slate-300 border border-slate-700'
+                        }`}
+                      >
+                        {alert.severity} — {alert.hazard_type}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500">{alert.alert_id}</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {new Date(alert.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-300 font-sans">{alert.headline}</div>
+                  <div className="text-[10px] font-mono text-slate-500">STATUS: {alert.status}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Active Alerts List */}
+      {activeTab === 'live' && (
       <div className="space-y-4">
         {alerts.length > 0 ? (
           alerts.map((alert) => {
@@ -224,6 +364,7 @@ export const AlertsAdvisoryPage: React.FC = () => {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

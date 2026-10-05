@@ -52,7 +52,7 @@ export const SystemStatusPage: React.FC = () => {
       setErrorM01(null);
     } else {
       setHealthM01(null);
-      setErrorM01('Unreachable — is the NWIS backend running (cd Backend && python run.py)?');
+      setErrorM01('Unreachable. Contact your system administrator if this persists.');
     }
 
     if (m02.status === 'fulfilled') {
@@ -60,7 +60,7 @@ export const SystemStatusPage: React.FC = () => {
       setErrorM02(null);
     } else {
       setHealthM02(null);
-      setErrorM02('Unreachable — is the NWIS backend running (cd Backend && python run.py)?');
+      setErrorM02('Unreachable. Contact your system administrator if this persists.');
     }
 
     if (m04status.status === 'fulfilled') {
@@ -68,7 +68,7 @@ export const SystemStatusPage: React.FC = () => {
       setErrorM04(null);
     } else {
       setStatusM04(null);
-      setErrorM04('Unreachable — is the NWIS backend running (cd Backend && python run.py)?');
+      setErrorM04('Unreachable. Contact your system administrator if this persists.');
     }
     setModelsM04(m04models.status === 'fulfilled' ? m04models.value : null);
 
@@ -94,11 +94,10 @@ export const SystemStatusPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              SYSTEM STATUS — LIVE BACKEND HEALTH
+              SYSTEM STATUS — LIVE SERVICE HEALTH
             </div>
             <div className="text-xs text-slate-400 font-mono">
-              GET /api/v1/health (module 01) · GET /api/v2/health (module 02) ·{' '}
-              {lastChecked ? `last checked ${lastChecked.toLocaleTimeString()}` : ''}
+              {lastChecked ? `Last checked ${lastChecked.toLocaleTimeString()}` : 'Checking…'}
             </div>
           </div>
         </div>
@@ -112,12 +111,12 @@ export const SystemStatusPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Module 01 & 02 Health Cards */}
+      {/* Document Intelligence & Well Intelligence Health Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Module 01 */}
+        {/* Document Intelligence */}
         <div className="scada-panel p-4 space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-            <span className="text-xs font-mono font-bold text-slate-200">MODULE 01 — DOCUMENT INTELLIGENCE (/api/v1)</span>
+            <span className="text-xs font-mono font-bold text-slate-200">DOCUMENT INTELLIGENCE</span>
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border flex items-center gap-1 ${
               m01Healthy ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
             }`}>
@@ -150,10 +149,10 @@ export const SystemStatusPage: React.FC = () => {
           )}
         </div>
 
-        {/* Module 02 */}
+        {/* Well Intelligence */}
         <div className="scada-panel p-4 space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-            <span className="text-xs font-mono font-bold text-slate-200">MODULE 02 — NWIS BACKEND INTELLIGENCE (/api/v2)</span>
+            <span className="text-xs font-mono font-bold text-slate-200">WELL INTELLIGENCE</span>
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border flex items-center gap-1 ${
               m02Healthy ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
             }`}>
@@ -191,11 +190,12 @@ export const SystemStatusPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Module 04/05 — real check via /api/v3/physics/status (liveness) and
-          /api/v3/predictive/models (honest fitted/unfitted ML status) */}
+      {/* Simulation & Predictive Risk — real check via live physics status
+          (liveness) and the predictive model registry (honest
+          fitted/unfitted ML status) */}
       <div className={`scada-panel p-4 space-y-2 border-l-4 ${m04Healthy ? 'border-l-emerald-500' : 'border-l-amber-500'}`}>
         <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-          <span className="text-xs font-mono font-bold text-slate-200">MODULE 04/05 — PHYSICS DIGITAL TWIN / PREDICTIVE ML (/api/v3)</span>
+          <span className="text-xs font-mono font-bold text-slate-200">SIMULATION &amp; PREDICTIVE RISK</span>
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold border flex items-center gap-1 ${
             m04Healthy ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
           }`}>

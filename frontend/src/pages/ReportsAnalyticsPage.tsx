@@ -41,7 +41,7 @@ export const ReportsAnalyticsPage: React.FC = () => {
         setTotalNpt(data.total_npt_hours);
         setNptError(null);
       } catch (err) {
-        if (!cancelled) setNptError('Failed to load NPT breakdown from /api/v2/events (module 02).');
+        if (!cancelled) setNptError('Could not load the NPT downtime breakdown. Contact your system administrator if this persists.');
         console.error(err);
       } finally {
         if (!cancelled) setNptLoading(false);
@@ -98,7 +98,7 @@ export const ReportsAnalyticsPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              MODULE 7: OPERATIONAL REPORTING, NPT ANALYTICS & DATA EXPORT
+              OPERATIONAL REPORTING, NPT ANALYTICS &amp; DATA EXPORT
               <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded">
                 EXPORT ENGINE
               </span>
@@ -158,7 +158,7 @@ export const ReportsAnalyticsPage: React.FC = () => {
         {/* NPT Hours Lost */}
         <div className="scada-panel p-4 space-y-3">
           <div className="text-xs font-mono font-bold text-slate-200 pb-2 border-b border-slate-800 flex items-center justify-between">
-            <span>HISTORICAL NPT DOWNTIME BY HAZARD CATEGORY (GET /api/v2/events)</span>
+            <span>HISTORICAL NPT DOWNTIME BY HAZARD CATEGORY</span>
             <span className="text-[11px] text-rose-400">
               {nptLoading ? 'Loading…' : `Total Lost Time: ${totalNpt.toFixed(1)} hrs`}
             </span>

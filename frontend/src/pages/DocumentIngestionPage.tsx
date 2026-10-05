@@ -13,7 +13,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { api } from '../services/api';
-import { DocumentExtractionResult, ExtractedField, JobStatusResponse, ReviewQueueItem } from '../types';
+import { DocumentExtractionResult, ExtractedField, JobStatusResponse, ReviewQueueItem, ReviewDecisionResult, PostgresSyncStatus } from '../types';
 import { PdfEvidenceViewer } from '../components/PdfEvidenceViewer';
 
 // Real upload -> job poll -> result flow against modules/01_document_intelligence:
@@ -33,6 +33,26 @@ function fieldValue(f: ExtractedField | number | null | undefined): string {
   return f.raw_text || '—';
 }
 
+// Pass 5: plain, user-facing copy for the closed PostgresSyncStatus enum —
+// never shows a raw exception or a developer-oriented term like "write-
+// through" or "DB unreachable". "not_configured" is a neutral statement of
+// environment, not an error (this dev/demo environment simply has no
+// shared database wired up yet).
+function syncStatusCopy(status: PostgresSyncStatus | null): { label: string; tone: 'ok' | 'muted' | 'warn'; retry: boolean } {
+  switch (status) {
+    case 'synced':
+      return { label: 'Saved to shared knowledge base', tone: 'ok', retry: false };
+    case 'not_configured':
+      return { label: 'Not yet saved (shared database not enabled in this environment)', tone: 'muted', retry: false };
+    case 'unavailable':
+      return { label: 'Temporarily unable to save — retry shortly', tone: 'warn', retry: true };
+    case 'error':
+      return { label: 'Save failed — retry', tone: 'warn', retry: true };
+    default:
+      return { label: '', tone: 'muted', retry: false };
+  }
+}
+
 export const DocumentIngestionPage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -43,6 +63,12 @@ export const DocumentIngestionPage: React.FC = () => {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewDecision, setReviewDecision] = useState<string | null>(null);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
+  // Pass 5: the knowledge-base handoff outcome and the document's shared-
+  // database sync state — both already returned by the backend since
+  // Pass 4/5 but previously discarded here without being shown anywhere.
+  const [decisionOutcome, setDecisionOutcome] = useState<ReviewDecisionResult | null>(null);
+  const [syncStatus, setSyncStatus] = useState<PostgresSyncStatus | null>(null);
+  const [resyncing, setResyncing] = useState(false);
 
   // Review Queue panel (Priority 6 remediation, 2026-10-04): surfaces
   // GET /api/v1/review/queue, a real backend endpoint that previously had
@@ -61,7 +87,7 @@ export const DocumentIngestionPage: React.FC = () => {
       const res = await api.getReviewQueue();
       setQueue(res.queue);
     } catch (err) {
-      setQueueError('Could not reach /api/v1/review/queue on module 01.');
+      setQueueError('Could not load the review queue. Contact your system administrator if this persists.');
       console.error(err);
     } finally {
       setQueueLoading(false);
@@ -75,9 +101,11 @@ export const DocumentIngestionPage: React.FC = () => {
   const openQueuedDocument = useCallback(async (docId: string) => {
     setError(null);
     setReviewDecision(null);
+    setDecisionOutcome(null);
     try {
       const doc = await api.getReviewDetail(docId);
       setResult(doc);
+      setSyncStatus(doc.postgres_sync_status ?? null);
       setJobId(null);
       setJobStatus(null);
     } catch (err) {
@@ -106,6 +134,7 @@ export const DocumentIngestionPage: React.FC = () => {
           if (status.document_id) {
             const doc = await api.getResult(status.document_id);
             setResult(doc);
+            setSyncStatus(doc.postgres_sync_status ?? null);
           }
           setUploading(false);
         } else if (status.status === 'FAILED') {
@@ -115,7 +144,7 @@ export const DocumentIngestionPage: React.FC = () => {
         }
       } catch (err) {
         if (pollRef.current) clearInterval(pollRef.current);
-        setError('Lost connection to the backend while polling job status (is it still running? cd Backend && python run.py).');
+        setError('Lost connection to the server while checking extraction progress. Contact your system administrator if this persists.');
         setUploading(false);
         console.error(err);
       }
@@ -131,13 +160,15 @@ export const DocumentIngestionPage: React.FC = () => {
     setResult(null);
     setJobStatus(null);
     setReviewDecision(null);
+    setDecisionOutcome(null);
+    setSyncStatus(null);
     setUploading(true);
     try {
       const job = await api.ingestDocument(file);
       setJobId(job.job_id);
       startPolling(job.job_id);
     } catch (err) {
-      setError('Failed to reach /api/v1/ingest on the backend (is it running? cd Backend && python run.py).');
+      setError('Could not reach the document processing service. Contact your system administrator if this persists.');
       setUploading(false);
       console.error(err);
     }
@@ -153,13 +184,28 @@ export const DocumentIngestionPage: React.FC = () => {
     if (!result) return;
     setReviewSubmitting(true);
     try {
-      await api.submitReviewDecision(result.document_id, { reviewer: 'frontend-operator', decision });
+      const outcome = await api.submitReviewDecision(result.document_id, { reviewer: 'frontend-operator', decision });
       setReviewDecision(decision);
+      setDecisionOutcome(outcome);
+      setSyncStatus(outcome.postgres_sync_status);
       loadQueue(); // the decided document should drop out of the pending queue
     } catch (err) {
       console.error('Failed to submit review decision', err);
     } finally {
       setReviewSubmitting(false);
+    }
+  };
+
+  const resyncCurrentDocument = async () => {
+    if (!result) return;
+    setResyncing(true);
+    try {
+      const outcome = await api.resyncDocument(result.document_id);
+      setSyncStatus(outcome.postgres_sync_status);
+    } catch (err) {
+      console.error('Failed to resync document', err);
+    } finally {
+      setResyncing(false);
     }
   };
 
@@ -175,9 +221,9 @@ export const DocumentIngestionPage: React.FC = () => {
           </div>
           <div>
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              MODULE 01: DOCUMENT INTELLIGENCE & OCR EXTRACTION
+              DOCUMENT INTELLIGENCE & OCR EXTRACTION
               <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded">
-                LIVE: POST /api/v1/ingest
+                LIVE
               </span>
             </div>
             <div className="text-xs text-slate-400 font-mono">
@@ -202,7 +248,7 @@ export const DocumentIngestionPage: React.FC = () => {
           <div className="text-xs font-mono font-bold text-slate-200 flex items-center gap-2">
             DOCUMENT REVIEW QUEUE
             <span className="text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded">
-              GET /api/v1/review/queue
+              LIVE
             </span>
           </div>
           <span className="text-[10px] text-slate-500 font-mono">{queue.length} pending</span>
@@ -308,7 +354,7 @@ export const DocumentIngestionPage: React.FC = () => {
           </div>
 
           <div className="pt-2 border-t border-slate-800 text-[10px] font-mono text-slate-400">
-            Requires the NWIS backend running (cd Backend &amp;&amp; python run.py)
+            Requires the document processing service to be running
           </div>
         </div>
 
@@ -441,10 +487,16 @@ export const DocumentIngestionPage: React.FC = () => {
                 </div>
               )}
 
+              {!needsReview && !reviewDecision && result.validation_status === 'PASS' && result.review_decision === 'approved' && (
+                <div className="mt-3 p-2 text-xs font-mono text-emerald-400 flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  No review needed — automatically added to the shared knowledge base.
+                </div>
+              )}
               {needsReview && (
                 <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded flex items-center justify-between text-xs font-mono">
                   <span className="text-amber-300">
-                    This document needs human review (POST /api/v1/review/{result.document_id}/decision).
+                    This document needs human review before it enters the shared knowledge base.
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -468,8 +520,47 @@ export const DocumentIngestionPage: React.FC = () => {
                 <div className="mt-3 p-2 text-xs font-mono text-slate-300 flex items-center gap-1.5">
                   {reviewDecision === 'approved' ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> : <XCircle className="w-3.5 h-3.5 text-rose-400" />}
                   Review recorded: {reviewDecision}
+                  {decisionOutcome && reviewDecision === 'approved' && (
+                    decisionOutcome.events_migrated_to_knowledge_base > 0 ? (
+                      <span className="text-slate-400">
+                        — {decisionOutcome.events_migrated_to_knowledge_base} event{decisionOutcome.events_migrated_to_knowledge_base === 1 ? '' : 's'} added to the shared knowledge base
+                        {decisionOutcome.events_skipped > 0 && `, ${decisionOutcome.events_skipped} could not be matched to a known well or hazard type`}
+                      </span>
+                    ) : decisionOutcome.events_skipped > 0 ? (
+                      <span className="text-slate-400">
+                        — {decisionOutcome.events_skipped} extracted event{decisionOutcome.events_skipped === 1 ? '' : 's'} could not be matched to a known well or hazard type, so none were added to the shared knowledge base
+                      </span>
+                    ) : null
+                  )}
                 </div>
               )}
+
+              {/* Pass 5: shared-database sync state for this document —
+                  honest tri-state copy (never a raw exception), with a
+                  retry action wired to the idempotent /resync route when
+                  a sync attempt failed or couldn't reach the database. */}
+              {syncStatus && (() => {
+                const copy = syncStatusCopy(syncStatus);
+                const toneClass = copy.tone === 'ok'
+                  ? 'text-emerald-400'
+                  : copy.tone === 'warn'
+                  ? 'text-amber-300'
+                  : 'text-slate-500';
+                return (
+                  <div className={`mt-1 px-2 text-[11px] font-mono flex items-center gap-2 ${toneClass}`}>
+                    <span>{copy.label}</span>
+                    {copy.retry && (
+                      <button
+                        onClick={resyncCurrentDocument}
+                        disabled={resyncing}
+                        className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded disabled:opacity-50"
+                      >
+                        {resyncing ? 'Retrying…' : 'Retry'}
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="mt-3 pt-2 border-t border-slate-800 text-[10px] font-mono text-slate-500 flex items-center justify-between">
                 <span>document_id: {result.document_id}</span>

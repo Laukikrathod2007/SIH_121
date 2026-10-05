@@ -37,7 +37,7 @@ export const GlobeMapPage: React.FC = () => {
           setError(null);
         }
       } catch (e) {
-        if (!cancelled) setError('Could not reach module 02 (GET /api/v2/map/wells).');
+        if (!cancelled) setError('Could not load the well map data. Contact your system administrator if this persists.');
       } finally {
         if (!cancelled) setLoading(false);
       }
