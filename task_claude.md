@@ -1,566 +1,285 @@
-We are transforming this repository from a working SIH prototype into a serious, production-shaped product for **SIH Problem Statement 26121: eRTMAC-NWIS / Nearby Wells Intelligence System**.
-
-IMPORTANT:
-- This is an IMPLEMENTATION task, not another audit.
-- Do not merely describe what should be done.
-- Inspect the existing repository and then MODIFY THE CODEBASE.
-- Do not ask me for clarification. Make technically defensible decisions from the existing code.
-- Preserve functionality that already works.
-- Do not rewrite working modules unnecessarily.
-- Do not fabricate capabilities or data.
-- Do not add fake metrics, fake production telemetry, or fake AI.
-- Do not spend time on visual redesign in this pass.
-- Do not break the existing frontend routes or currently working APIs.
-- After implementation, actually run the relevant services/tests and verify the changes against the running system.
-
-CONTEXT FROM PREVIOUS VERIFIED ENGINEERING WORK
-
-The repository currently has:
-- frontend/ → React + TypeScript application
-- modules/01_document_intelligence/ → FastAPI :8001
-- modules/02_nwis_backend/ → FastAPI :8002
-- modules/04_physics_engine/ → FastAPI :8003 and hosts predictive analytics functionality
-- evidence-server/ → :4100
-- PostgreSQL/PostGIS/pgvector/TimescaleDB infrastructure exists in the repository but is NOT currently the authoritative runtime datastore
-- M02 currently relies heavily on in-memory data
-- real Volve data exists
-- synthetic well/event/telemetry data exists
-- document ingestion, semantic search, offset-well intelligence, geological correlation, risk analysis, physics simulation and 3D visualization already work
-- real-data-trained STUCK_PIPE and WELLBORE_INSTABILITY model artifacts are now wired and validated
-- M02 and M05 risk engines are intentionally independent
-- telemetry used by the physics system is simulation, not real OIL India eRTMAC telemetry
-- all of the above has already been runtime-verified
-
-The goal of THIS PASS is to establish a real backend foundation so later work can stop depending on ad-hoc in-memory structures.
-
-==================================================
-PHASE 1 OBJECTIVE
-==================================================
-
-Create the canonical persistent data layer for NWIS.
-
-The application should move toward:
-
-Frontend
-   ↓
-API
-   ↓
-Domain/service layer
-   ↓
-Repository/data-access layer
-   ↓
-PostgreSQL + PostGIS + pgvector/time-series support
-
-Do NOT migrate every endpoint in this pass.
-First build the correct foundation and migrate one representative vertical path to prove it works.
-
-==================================================
-1. FIRST INSPECT THE EXISTING DATABASE IMPLEMENTATION
-==================================================
-
-Before editing:
-- inspect database/
-- inspect all SQL/schema/init/migration files
-- inspect Docker/database configuration
-- inspect existing PostgreSQL/PostGIS/TimescaleDB/pgvector setup
-- inspect existing Python dependencies
-- inspect M01/M02 models and data structures
-- inspect how wells, trajectories, formations, events, casing, documents and telemetry are currently represented
-- inspect current IDs and field names
-- inspect seed scripts and sample data
-- inspect environment/configuration handling
-
-Do not invent a parallel schema if an existing schema can be corrected and reused.
-
-Preserve useful existing schema/data wherever practical.
-
-==================================================
-2. DEFINE A CANONICAL NWIS DOMAIN MODEL
-==================================================
-
-Create a clear canonical model for at least these entities:
-
-1. Well
-2. WellTrajectory
-3. Formation
-4. DrillingEvent
-5. CasingProgram
-6. Document
-7. DocumentExtraction
-8. Evidence
-9. TelemetryRecord
-10. RiskPrediction
-11. ModelVersion
-12. AuditLog
-
-Use the repository's existing terminology where possible.
-
-For each entity establish:
-- primary key
-- external/source identifier where applicable
-- relationships
-- timestamps
-- units
-- nullable vs required fields
-- provenance/source
-- created_at / updated_at where appropriate
-
-Important:
-- Do not silently change existing well IDs.
-- Support IDs containing `/`, `-`, `_`, etc.
-- Preserve real Volve identifiers.
-- Distinguish synthetic/simulated/real provenance explicitly.
-- Do not mix simulation data and real-source data without a provenance field.
-
-Add an explicit provenance concept such as:
-
-source_type:
-  REAL
-  SYNTHETIC
-  SIMULATED
-  IMPORTED
-  DERIVED
-
-Use the exact naming convention that best fits the repository, but keep it consistent everywhere.
-
-==================================================
-3. DATABASE SCHEMA
-==================================================
-
-Implement the schema in the project's actual database technology.
-
-Prefer the existing database stack rather than adding unnecessary dependencies.
-
-The schema must support:
-
-WELLS
-- well identity
-- field/basin
-- operator/source
-- latitude/longitude
-- metadata
-- provenance
-
-TRAJECTORIES
-- measured depth
-- coordinates
-- inclination/azimuth where available
-- geometry where appropriate
-
-FORMATIONS
-- formation name
-- top/bottom depth
-- source/provenance
-
-DRILLING EVENTS
-- event type
-- depth
-- severity
-- description
-- formation
-- timestamp/date
-- source document/evidence relationship
-- provenance
-
-CASING PROGRAMS
-- hole section
-- casing size
-- depth
-- cement information where available
-- provenance
-
-DOCUMENTS
-- filename
-- document type
-- source
-- checksum/hash
-- ingestion timestamp
-- extraction status
-- review status
-- provenance
-
-DOCUMENT EXTRACTIONS
-- extracted field/entity
-- value
-- confidence
-- extraction method
-- page/section reference
-- validation status
-
-EVIDENCE
-- document
-- page/section
-- well
-- event
-- formation
-- text/snippet/reference
-- provenance
-
-TELEMETRY
-- well
-- timestamp
-- depth
-- RPM
-- torque
-- WOB
-- ROP
-- pressure
-- temperature
-- ECD
-- flow/fuel/etc. only where supported by existing implementation
-- provenance
-- source
-
-RISK PREDICTIONS
-- well
-- hazard
-- probability/risk output
-- model version
-- source
-- confidence if actually available
-- timestamp
-- supporting evidence relationship if available
-
-MODEL VERSIONS
-- model name
-- hazard
-- version
-- artifact location/reference
-- training source
-- metrics
-- feature schema/version
-- status
-- created_at
-
-AUDIT LOGS
-- actor/system
-- action
-- entity
-- entity_id
-- timestamp
-- metadata/context
-
-Do not create fields solely for presentation.
-
-==================================================
-4. GEOSPATIAL DESIGN
-==================================================
-
-Because this is NWIS and spatial intelligence is core:
-
-- use PostGIS where the existing stack supports it
-- represent well locations using proper geographic coordinates
-- use a consistent SRID
-- do NOT store only ad-hoc lat/lon strings
-- add appropriate spatial indexes
-- ensure nearby-well queries can eventually use database-side geographic filtering
-
-The canonical distance calculation should be consistent with the Haversine behavior already established in the application.
-
-Do not create a second competing geographic formula.
-
-==================================================
-5. TIME-SERIES DESIGN
-==================================================
-
-Telemetry must be structured so the existing simulation can later write into the same canonical telemetry store used by future real eRTMAC adapters.
-
-Do not label simulation as live production data.
-
-Provide a clear source/provenance distinction:
-
-SIMULATED telemetry
-vs
-REAL telemetry
-
-The schema should support indexed time/depth queries.
-
-Use TimescaleDB features only if they already exist and are appropriate. Do not add unnecessary infrastructure just for appearance.
-
-==================================================
-6. MIGRATIONS
-==================================================
-
-Introduce proper migrations using the repository's existing migration mechanism.
-
-If there is no usable migration mechanism:
-- add Alembic for the Python database layer
-- configure it correctly
-- create an initial canonical migration
-- make migrations reproducible from a clean database
-
-Do not rely on:
-- manually editing a live DB
-- one-off scripts that cannot be replayed
-- undocumented SQL
-
-A clean machine should be able to initialize the database deterministically.
-
-==================================================
-7. SEED / IMPORT THE EXISTING DATA
-==================================================
-
-Build a deterministic seed/import path using existing repository data.
-
-At minimum make it possible to load:
-- existing wells
-- trajectories
-- formations
-- drilling events
-- casing data
-- relevant real Volve records
-- existing synthetic records where they are already used by the application
+# FINAL EMERGENCY PASS — SIH-26121 Demo Readiness, Critical Fixes & Production Roadmap
 
-Preserve provenance.
+We are presenting **eRTMAC-NWIS (Nearby Wells Intelligence System), SIH Problem Statement 26121**, to Smart India Hackathon judges.
 
-DO NOT duplicate records every time seed runs.
+The immediate priority is to make the existing product as reliable, coherent, and demo-ready as possible. At the same time, we need a clear engineering roadmap documenting everything still required to achieve a genuinely production-grade solution.
 
-Make ingestion idempotent.
+**This is an implementation task, NOT another planning or documentation exercise.** Inspect the actual current codebase, running application, test results, and `AUDIT/14_FINAL_SIH_ACCEPTANCE.md`. Fix every actionable defect that could produce incorrect results, break a demo workflow, mislead a judge, compromise data integrity, or undermine a core SIH requirement.
 
-For example:
-running seed twice should not create two copies of the same well/event/document.
+Do not assume the previous audit is perfectly accurate. Verify the actual runtime and current code before making changes.
 
-==================================================
-8. DATA ACCESS LAYER
-==================================================
+## 1. Critical correctness fixes
 
-Create a clean repository/data-access layer.
+### A. Fix the known well-specific telemetry correlation defect
 
-Do not allow API routes to directly manipulate database sessions everywhere.
+The previous final audit identified a defect in `NWISOrchestrator.analyze()`: telemetry correlation can use data from a different well than the well currently being analyzed.
 
-Establish a structure equivalent to:
+Trace the complete data flow from the active well and telemetry source through correlation and downstream risk analysis.
 
-domain/
-repositories/
-services/
+- Scope telemetry correctly to the requested well.
+- Ensure changing the active well changes the analysis inputs accordingly.
+- Handle missing, stale, or insufficient telemetry without substituting unrelated data.
+- Verify that downstream risk calculations use the correct well's actual available inputs.
+- Add regression tests proving that analysis for well A never consumes well B's telemetry.
+- Test multiple wells, missing telemetry, and edge cases.
 
-or whatever architecture best matches the existing repository.
+Do not merely modify the function signature or filter the final response. Correct the underlying data flow and verify the actual behavior.
 
-The important separation is:
+### B. Verify genuine document intelligence and NLP capabilities
 
-API route
-  ↓
-service/business logic
-  ↓
-repository
-  ↓
-database
+Inspect the extraction pipeline that actually executes at runtime. Establish which stages genuinely use OCR, NLP, semantic models, deterministic rules, and regular expressions.
 
-Keep business logic out of raw SQL handlers.
+If a critical extraction capability is missing, implement the smallest meaningful, testable improvement using the project's existing dependencies and available resources.
 
-Do not create needless abstractions purely for architecture theater.
+Verify extraction against representative documents, including cases with ambiguous well names, missing depth values, malformed fields, scanned PDFs, and different report formats where supported.
 
-==================================================
-9. MIGRATE ONE REAL VERTICAL SLICE
-==================================================
+Preserve:
 
-This pass MUST prove the architecture with one actual working flow.
+- Source document and page references.
+- Extracted values and confidence information.
+- Well identity and depth validation.
+- Human review, correction, approval, and rejection.
+- Database persistence, provenance, and idempotent retries.
+- Honest reporting of unsupported formats and extraction failures.
 
-Choose the core NWIS flow:
+Do not describe regex-only processing as an advanced NLP or AI capability. Do not add an elaborate new AI pipeline merely to make the architecture appear more impressive.
 
-GET active well
-→ retrieve nearby wells
-→ retrieve well metadata
+### C. Verify predictive analytics and risk scoring
 
-Move this flow to the canonical database.
+Inspect the trained-model artifacts, model-loading paths, runtime outputs, fallback behavior, and hazard-specific logic.
 
-The representative path should support:
+The previous audit reported that the Isolation Forest and XGBoost components are unfitted fallbacks on this checkout. Verify whether that remains true.
 
-- active well lookup
-- nearby well lookup
-- geospatial distance filtering
-- well metadata retrieval
+- Fix broken model-loading and fallback behavior.
+- Ensure working deterministic risk rules remain operational when ML models are unavailable.
+- Check hazard outputs for mud losses, stuck pipe, kicks/overpressure, torque and drag abnormalities, cementing issues, and other supported hazards.
+- Verify that displayed scores reflect actual computed inputs.
+- Distinguish rule-based assessments, trained-model predictions, historical risk context, and simulator-generated scenarios.
+- Communicate insufficient evidence, unavailable models, and unsupported hazard pathways honestly.
+- Do not fabricate training data, model accuracy, confidence values, or predictions.
+- Do not retrain models without suitable data and an independently testable justification.
 
-The existing API response contract should remain compatible with the frontend.
+Fix any broken or misleading behavior. Preserve validated formulas and existing physics behavior unless a demonstrable defect requires a narrowly scoped correction.
 
-Do not make the frontend understand database internals.
+## 2. Verify and repair every critical judge-facing workflow
 
-The existing 2D map and 3D globe must continue working.
+Exercise the following complete user journeys through the actual browser and live backend. Repair defects as you encounter them.
 
-==================================================
-10. RADIUS SEMANTICS
-==================================================
+### Workflow 1: Nearby-well intelligence
 
-Preserve the already-fixed API semantics:
+Select an active well, change the search radius, inspect the radius-filtered map, compare offset relevance, open a well dossier, and inspect its trajectory, formations, casing, and historical incidents.
 
-- radius_km may remain a scoring-decay parameter where applicable
-- max_distance_km must be the explicit hard geographic filter
-- map/wells should support explicit center_well_id + radius_km hard filtering as already established
+Verify correct distances, well selection, active-well propagation, and consistency between the map, ranking, dossier, and correlation views.
 
-Do not regress this.
+### Workflow 2: Historical knowledge and evidence
 
-Use database-side geographic filtering for the newly migrated path.
+Search historical drilling events using free text and structured filters. Open an event, inspect its supporting evidence, and follow the source-document link.
 
-==================================================
-11. CONFIGURATION
-==================================================
+Verify that source references point to the correct document/page when available. Missing evidence must produce an honest message, not a fabricated viewer or dead button.
 
-Make database configuration environment-driven.
+### Workflow 3: Geological and depth correlation
 
-No secrets in source.
+Compare available wells across relevant formations and depths. Verify trajectory handling, formation-relative alignment, depth references, and missing-data behavior.
 
-Support at least:
+Correct any inconsistent well attribution, invalid mappings, corrupted trajectory data, or misleading correlations.
 
-DATABASE_URL
+### Workflow 4: Document ingestion and knowledge handoff
 
-and/or the project's existing DB variables.
+Upload a representative PDF, inspect the extraction output and provenance, correct or approve the findings, observe the synchronization status, and verify the document-to-knowledge-base handoff.
 
-Provide a clear development configuration.
+Confirm that approved, valid events become retrievable through the historical knowledge interface, and that retries do not create duplicates.
 
-Do not destroy the existing local development startup flow.
+Verify database-unavailable behavior and recovery without losing successfully extracted work.
 
-Make connection failures explicit and readable.
+### Workflow 5: Risk assessment and mitigation
 
-==================================================
-12. API SCHEMAS
-==================================================
+Inspect the active well's risk outlook, relevant offset-well evidence, contributing factors, and mitigation recommendations.
 
-Introduce typed request/response schemas for the migrated endpoints.
+Verify the relationship between the active well, formation/depth context, historical incidents, telemetry, and risk outputs. Do not allow unrelated telemetry or stale state to influence the analysis.
 
-Python:
-- Pydantic response/request models
+### Workflow 6: Simulator, alerts, and alert history
 
-Frontend:
-- preserve existing TypeScript types
-- make types match actual API responses
-- eliminate obvious duplicated incompatible definitions if encountered
+Run a clearly labelled simulator scenario. Verify telemetry, detected hazards, recommendations, live alerts, and persisted alert history.
 
-Do not redesign the frontend yet.
+Restart the backend and confirm historical records survive. Ensure simulated telemetry and alerts are never represented as actual OIL field operations.
 
-==================================================
-13. TESTS
-==================================================
+### Workflow 7: Overall product experience
 
-Add real tests for the new foundation.
+Navigate between the major pages as a judge would. Ensure the active well stays consistent and that every primary control performs its advertised action.
 
-At minimum:
+Fix broken navigation, dead buttons, stale data, incorrect empty states, inconsistent labels, misleading loading indicators, unusable layouts, and browser-console or network errors that affect the core workflow.
 
-DATABASE
-- migration from clean DB
-- seed idempotency
+**Do not claim a workflow is verified merely because its API returns HTTP 200.** Verify the actual user-visible result.
 
-WELL
-- create/load well
-- retrieve by ID
-- preserve special-character IDs
+## 3. Data integrity, provenance, and integration honesty
 
-GEO
-- nearby-well query
-- max distance filtering
-- correct geographic behavior
+Inspect the full backend-to-frontend path for well identity, source type, timestamps, units, depth values, confidence, document references, and derived outputs.
 
-API
-- active well endpoint
-- nearby wells endpoint
-- frontend-compatible response
+Keep the following categories distinct throughout the product:
 
-PROVENANCE
-- real vs synthetic vs simulated records remain distinguishable
+- Real records from verified source material.
+- Imported records.
+- Synthetic demonstration records.
+- Simulated telemetry and scenarios.
+- Derived analyses and predictions.
 
-Do not just test imports.
+Ensure PostgreSQL remains the shared source of truth for migrated domains when configured. Critical ranking, correlation, search, risk, alert, and document-handoff workflows must not silently use stale in-memory records while implying that they are current database-backed results.
 
-==================================================
-14. BACKWARD COMPATIBILITY
-==================================================
+Check data synchronization and error handling. Database failures must be observable, recoverable where appropriate, and clearly communicated without exposing raw database exceptions to ordinary users.
 
-After implementation:
+Do not delete previous seed data, audit records, or verification records just to make counts or screenshots look cleaner. Correct demonstrable data-integrity errors safely and preserve an audit trail where appropriate.
 
-- existing M01 :8001 should still work
-- existing M02 :8002 should still work
-- existing M04/M05 :8003 should still work
-- evidence-server :4100 should still work
-- frontend :5173 should still work
-- existing major dashboard routes should still load
-- 2D nearby-wells functionality must still work
-- 3D globe functionality must still work
+### External integration boundaries
 
-Do not modify working UI behavior unless required by the new persistence layer.
+The project does not have permission to invent access to Oil India Limited's private operational data, credentials, or live eRTMAC streams.
 
-==================================================
-15. CLEANUP
-==================================================
+Implement and verify everything that can be delivered in the current environment. Where actual external access is unavailable:
 
-As part of this pass, clean only what is directly related to the foundation:
+- Maintain a concrete integration boundary with defined contracts, validation, configuration, and failure handling.
+- Test the boundary using clearly labelled fixtures or available public data.
+- Distinguish the external dependency from an unfinished local implementation.
+- Never relabel Equinor Volve data as OIL or Upper Assam data.
+- Never imply that simulated telemetry is a live field feed.
 
-- duplicate DB configuration
-- stale database URLs
-- stale schema references
-- duplicate model definitions for the same canonical entity
-- obvious dead DB initialization paths
+## 4. Final user-facing UI/UX sweep
 
-Do NOT start a repository-wide dead-code cleanup in this pass.
+Review the actual judge-facing interface, not just the source code.
 
-That belongs in a later hardening pass.
+Ensure that ordinary product screens contain no internal module numbers, developer-only terminology, raw API/database errors, exposed implementation details, or misleading technical diagnostics.
 
-==================================================
-16. DOCUMENTATION
-==================================================
+Use clear operational language suitable for drilling engineers and judges. The product should explain what the data means, why an alert was generated, what evidence supports a recommendation, and what the user should do next.
 
-Create/update concise technical documentation describing:
+Verify provenance badges, evidence links, data-source indicators, loading states, empty states, error messages, retry actions, and active-well consistency across the application.
 
-- canonical database architecture
-- entities and relationships
-- provenance model
-- migration commands
-- seed/import commands
-- local DB startup
-- representative API path
-- why PostgreSQL is now the source of truth for the migrated path
+Keep detailed diagnostics in the designated diagnostics area rather than exposing raw implementation information throughout the normal workflow.
 
-Do not write marketing copy.
+Do not spend time on cosmetic redesign unless it materially improves usability or fixes a demonstrated problem. Prioritize correctness and dependable interactions.
 
-==================================================
-17. VERIFICATION
-==================================================
+## 5. Engineering constraints
 
-At the end, actually perform verification.
+- No Alembic, ORM migration framework, or unnecessary infrastructure.
+- Do not drop tables, truncate records, reset Docker volumes, or delete existing data.
+- Preserve the current package structure, unified backend, working API contracts, authentication, authorization, rate limits, and security controls.
+- Do not disable tests, weaken validation, suppress failures, or return fabricated success responses.
+- Do not add dependencies without a concrete technical justification.
+- Preserve existing physics equations, model artifacts, and risk algorithms unless a demonstrated defect requires a narrowly scoped fix.
+- Avoid broad rewrites. Reuse the existing services, repositories, and domain logic.
+- Check that exactly one intended backend process is listening on the expected port before trusting runtime verification. Confirm the listener PID instead of assuming the restart or reload succeeded.
 
-Run:
-- backend tests
-- database migration
-- seed/import
-- relevant API tests
-- frontend typecheck/build
-- actual running services
-- browser verification of the affected frontend path if available
+## 6. Run final tests and verify the actual application
 
-Check for:
-- startup failures
-- SQL errors
-- migration errors
-- duplicate records
-- CORS errors
-- contract mismatches
-- broken existing routes
-- incorrect geographic results
+After each significant fix, run the relevant regression tests. Then run the complete established backend test suite, frontend TypeScript check, and production build.
 
-Do not claim "verified" unless you actually ran it.
+Start or restart the actual application and perform the seven browser workflows above.
 
-==================================================
-18. FINAL RESPONSE FORMAT
-==================================================
+Verify:
 
-When finished, give me a concise engineering report containing:
+- Correct active-well and telemetry attribution.
+- Real PostgreSQL reads and writes for the expected workflows.
+- Honest error states when the database is unavailable.
+- Persistence after a genuine backend restart.
+- Document-ingestion and review recovery.
+- Correct source evidence and provenance.
+- Live-versus-simulated distinctions.
+- No critical console errors, broken primary controls, or failing core network requests.
 
-1. WHAT CHANGED
-2. DATABASE ARCHITECTURE
-3. CANONICAL ENTITIES
-4. MIGRATIONS CREATED
-5. DATA IMPORT / SEEDING
-6. ENDPOINTS MIGRATED
-7. TESTS RUN + RESULTS
-8. EXISTING FUNCTIONALITY VERIFIED
-9. FILES CHANGED
-10. REMAINING TECHNICAL DEBT
-11. EXACT COMMANDS TO RUN THE NEW FOUNDATION
+Use both automated regression tests and live verification. If a test takes a long time, determine whether it is progressing before terminating it. Report actual test results instead of estimating or assuming success.
 
-Most importantly:
+Fix every critical or high-impact issue found during this pass. Do not knowingly leave a demo-breaking defect unresolved merely because the existing audit previously marked the system complete.
 
-DO THE IMPLEMENTATION NOW.
+## 7. Additional deliverable: Production-grade readiness roadmap
 
-Do not stop after analysis.
-Do not generate a hypothetical plan instead of changing the code.
-Do not fabricate successful tests.
-Do not hide failures.
+Create a new Markdown file:
 
-The next engineering pass will build on whatever is actually implemented here, so leave the repository in a clean, working state.
+**`AUDIT/15_PRODUCTION_READINESS_ROADMAP.md`**
+
+This file must document everything that remains to turn the current SIH prototype into a genuinely production-grade implementation of PS 26121.
+
+This must be a concrete engineering roadmap grounded in the actual codebase, test evidence, and current system behavior, not a generic checklist.
+
+Include the following sections:
+
+### A. Current implementation status
+
+Summarize what is implemented and verified, what is partially implemented, what is missing, and what depends on external access or data.
+
+Reference actual application workflows, services, models, database paths, tests, and existing audits wherever useful.
+
+### B. Remaining product and SIH requirements
+
+Identify any incomplete or insufficiently validated capabilities across all seven expected outcomes in the official problem statement:
+
+1. AI/NLP/OCR-based document extraction and structuring.
+2. Radius-based geospatial visualization of nearby wells.
+3. Searchable historical knowledge and mitigation measures.
+4. Geological, drilling, reservoir, depth, and formation correlation.
+5. Predictive analytics for principal drilling hazards.
+6. Proactive alerts and recommendations.
+7. User-friendly dashboards for field and office personnel.
+
+For each remaining gap, explain the actual behavior today, what's missing, what needs to change, and how completion will be verified.
+
+### C. Data, integration, and model readiness
+
+Cover authorized OIL/eRTMAC integration, real operational datasets, data ingestion, quality validation, provenance, synchronization, and database reliability.
+
+For ML, cover adequate training data, representative validation, false-positive and false-negative measurement, calibration, drift monitoring, explainability, model versioning, and the limits of the current unfitted fallback models.
+
+Distinguish an unavailable private dataset from an engineering defect that can already be fixed locally.
+
+### D. Production engineering and operational readiness
+
+Identify required work around:
+
+- Authentication, authorization, and security testing.
+- Secrets and configuration management.
+- Logging, observability, monitoring, and alerting.
+- Backups, disaster recovery, and database restoration.
+- Concurrency, load testing, performance, and availability.
+- Deployment, configuration, and recovery procedures.
+- Audit trails, evidence traceability, and data retention.
+- Domain-expert validation, human oversight, and safe failure behavior.
+- Field trials and acceptance by qualified operational stakeholders.
+
+Prioritize risks that could cause incorrect well attribution, misleading risk predictions, missed alerts, data loss, or unsafe interpretation.
+
+### E. Prioritized implementation plan
+
+Classify remaining work into:
+
+- **P0: Release blockers** — issues that prevent safe or reliable deployment.
+- **P1: Critical capabilities** — necessary for a dependable operational product.
+- **P2: Production hardening** — security, reliability, scalability, and maintainability improvements.
+- **P3: Future enhancements** — optional improvements that should not block core readiness.
+
+For each item, provide its evidence, required work, dependencies, measurable acceptance criteria, and verification procedure. Give estimates only when there is a defensible basis; do not invent precise delivery commitments.
+
+### F. Explicit production-grade acceptance gates
+
+Define concrete conditions that must be satisfied before describing the system as production-ready for its intended environment.
+
+**Clearly distinguish SIH demo readiness from operational readiness for real drilling activities.** A working hackathon demonstration does not establish field safety, predictive accuracy, or deployment readiness.
+
+Separate verified facts, known gaps, inferred risks, and external dependencies. Never mark work complete without evidence or claim that an integration exists when it does not.
+
+This file must remain useful as a standalone engineering handover so future developers can continue the project without repeating the forensic audit process.
+
+## 8. Final report
+
+Update `AUDIT/14_FINAL_SIH_ACCEPTANCE.md` only after implementation and verification. Correct any claim that overstates actual functionality, model capability, or test coverage.
+
+Then deliver a concise final response containing:
+
+1. **Critical defects fixed**, with emphasis on well-specific telemetry correctness and other data-integrity issues.
+2. **Actual test and build results**, including failures or skips.
+3. **Browser-verified judge-facing workflows.**
+4. **Location of `AUDIT/15_PRODUCTION_READINESS_ROADMAP.md`.**
+5. **Remaining limitations** that materially affect the demo or prevent genuine operational deployment.
+
+Do not generate another long architecture audit or spend the pass merely documenting defects.
+
+## Definition of done
+
+This task is complete only when the critical defects have been fixed, regression tests pass, the actual application has been exercised end to end, and the roadmap accurately documents the remaining path to production.
+
+**The immediate priority is a dependable judge-facing demonstration. The longer-term priority is a genuinely validated, production-grade drilling decision-support system. Address both goals without confusing one for the other. Implement, test, verify, and document the actual result. Do not stop at recommendations.**
