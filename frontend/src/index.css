@@ -338,8 +338,8 @@ input[type='range'].scada-slider::-moz-range-thumb {
 /* Technical Documentation Prose (PS054 Clean Editorial Standard) */
 .prose-technical {
   color: #292524;
-  line-height: 1.8;
-  font-size: 0.975rem;
+  line-height: 1.75;
+  font-size: 1.0625rem;
 }
 
 .prose-technical h1 {

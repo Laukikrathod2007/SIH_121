@@ -6,7 +6,7 @@
 
 ## 1. The "Trajectory Trap" in Subsurface Well Comparison
 
-A fatal error in primitive drilling analysis systems is comparing wells directly using **Measured Depth (MD)**—the cumulative length of drill pipe run into the hole. 
+A fatal error in primitive drilling analysis systems is comparing wells directly using **Measured Depth (MD)**, the cumulative length of drill pipe run into the hole. 
 
 ```mermaid
 graph TD

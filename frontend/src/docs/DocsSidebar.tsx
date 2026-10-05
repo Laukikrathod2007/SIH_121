@@ -68,14 +68,14 @@ export const DocsSidebar: React.FC<DocsSidebarProps> = ({ currentSlug, onSelectD
       {onSelectDoc && (
         <div className="flex items-center justify-between p-3 border-b border-stone-200 bg-[#f5f5f4]">
           <div className="flex items-center gap-2">
-            <div className="size-6 bg-stone-900 text-white font-mono font-bold text-[10px] flex items-center justify-center rounded-xs">
+            <div className="size-6 bg-stone-900 text-white font-mono font-bold text-[12px] flex items-center justify-center rounded-xs">
               DW
             </div>
             <div>
               <span className="font-mono text-xs font-bold text-stone-900 uppercase tracking-wider block leading-tight">
                 DRILLWISE DOCS
               </span>
-              <span className="font-mono text-[9px] text-stone-500 uppercase tracking-widest block">
+              <span className="font-mono text-[11px] text-stone-500 uppercase tracking-widest block">
                 SIH26121 · OIL INDIA
               </span>
             </div>
@@ -96,14 +96,14 @@ export const DocsSidebar: React.FC<DocsSidebarProps> = ({ currentSlug, onSelectD
           <Link
             to="/app"
             onClick={onSelectDoc}
-            className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-sm bg-stone-900 text-white font-mono text-[11px] font-semibold tracking-wider uppercase shadow-2xs hover:bg-stone-800 transition"
+            className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-sm bg-stone-900 text-white font-mono text-[13px] font-semibold tracking-wider uppercase shadow-2xs hover:bg-stone-800 transition"
           >
             <Terminal className="w-3.5 h-3.5 text-amber-400" />
             <span>Rig Cockpit</span>
           </Link>
           <a
             href="/benchmarks"
-            className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-sm border border-stone-300 bg-stone-50 hover:bg-stone-100 text-stone-800 font-mono text-[11px] font-semibold tracking-wider uppercase transition shadow-2xs"
+            className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-sm border border-stone-300 bg-stone-50 hover:bg-stone-100 text-stone-800 font-mono text-[13px] font-semibold tracking-wider uppercase transition shadow-2xs"
           >
             <BarChart2 className="w-3.5 h-3.5 text-stone-500" />
             <span>Benchmarks</span>
@@ -136,14 +136,14 @@ export const DocsSidebar: React.FC<DocsSidebarProps> = ({ currentSlug, onSelectD
               {/* Category Header */}
               <button
                 onClick={() => toggleCategory(category.name)}
-                className="w-full flex items-center justify-between px-2 py-1 rounded text-[11px] font-mono uppercase tracking-wider text-stone-500 hover:text-stone-900 transition font-bold group"
+                className="w-full flex items-center justify-between px-2 py-1 rounded text-[13px] font-mono uppercase tracking-wider text-stone-500 hover:text-stone-900 transition font-bold group"
               >
                 <div className="flex items-center gap-2 truncate">
                   <Icon className="w-3.5 h-3.5 text-stone-700 group-hover:text-stone-950 transition" />
                   <span className="truncate">{category.name}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-stone-400">
-                  <span className="text-[10px] font-mono">{category.items.length}</span>
+                  <span className="text-[12px] font-mono">{category.items.length}</span>
                   {isCollapsed ? (
                     <ChevronRight className="w-3 h-3 text-stone-400" />
                   ) : (
@@ -175,7 +175,7 @@ export const DocsSidebar: React.FC<DocsSidebarProps> = ({ currentSlug, onSelectD
                         <div className="flex items-center gap-1 shrink-0">
                           {item.badge && (
                             <span
-                              className={`text-[9px] font-mono px-1.5 py-0.2 rounded uppercase ${
+                              className={`text-[11px] font-mono px-1.5 py-0.2 rounded uppercase ${
                                 isActive
                                   ? 'bg-stone-900 text-white font-semibold'
                                   : 'bg-stone-200/80 text-stone-600 group-hover:text-stone-800'
@@ -196,17 +196,17 @@ export const DocsSidebar: React.FC<DocsSidebarProps> = ({ currentSlug, onSelectD
       </div>
 
       {/* Footer Info Box */}
-      <div className="p-3 border-t border-stone-200 bg-[#f5f5f4] text-[11px] font-mono text-stone-600 space-y-1">
+      <div className="p-3 border-t border-stone-200 bg-[#f5f5f4] text-[13px] font-mono text-stone-600 space-y-1">
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5 font-semibold text-stone-800">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
             <span>23 Core Specifications</span>
           </span>
-          <span className="text-[10px] bg-stone-200 text-stone-700 px-1 py-0.2 rounded font-semibold uppercase">
+          <span className="text-[12px] bg-stone-200 text-stone-700 px-1 py-0.2 rounded font-semibold uppercase">
             SIH 2026
           </span>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px] text-stone-500 pt-0.5">
+        <div className="flex items-center gap-1.5 text-[12px] text-stone-500 pt-0.5">
           <Users className="w-3 h-3 text-stone-400" />
           <span>Team: Midnight Ciphers</span>
         </div>

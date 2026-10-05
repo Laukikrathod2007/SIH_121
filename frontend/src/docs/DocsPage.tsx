@@ -6,8 +6,6 @@ import {
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
-  Share2,
-  Check,
   Users,
 } from 'lucide-react';
 import { getDocBySlug, getPrevNextDocs, type DocItem } from './docsRegistry';
@@ -22,14 +20,13 @@ export const DocsPage: React.FC = () => {
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
 
   const activeDoc: DocItem = getDocBySlug(slug || 'overview') || getDocBySlug('overview')!;
   const { prev, next } = getPrevNextDocs(activeDoc.slug);
 
   // Update page title
   useEffect(() => {
-    document.title = `${activeDoc.title} — eRTMAC-NWIS Docs | SIH26121`;
+    document.title = `${activeDoc.title} · eRTMAC-NWIS Docs | SIH26121`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
     const mainEl = document.getElementById('docs-content-viewport');
     if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
@@ -48,18 +45,11 @@ export const DocsPage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
-  };
-
   return (
     <div className="min-h-screen bg-[#f6f5f3] text-[#1c1917] flex flex-col font-sans selection:bg-amber-100 selection:text-amber-900">
       {/* Top Navbar */}
       <DocsNavbar
         currentSlug={activeDoc.slug}
-        onOpenSearch={() => setIsSearchOpen(true)}
         onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
         isMobileSidebarOpen={isMobileSidebarOpen}
       />
@@ -107,44 +97,31 @@ export const DocsPage: React.FC = () => {
             {/* Document Header Banner */}
             <header className="border-b border-stone-200 pb-6 space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-stone-200 text-stone-800 uppercase font-bold">
+                <span className="text-[12px] font-mono px-2 py-0.5 rounded bg-stone-200 text-stone-800 uppercase font-bold">
                   {activeDoc.category}
                 </span>
                 {activeDoc.badge && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-200 font-semibold">
+                  <span className="text-[12px] font-mono px-2 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-200 font-semibold">
                     {activeDoc.badge}
                   </span>
                 )}
-                <span className="flex items-center gap-1 text-[10px] font-mono text-stone-600 bg-white px-2 py-0.5 rounded border border-stone-200">
+                <span className="flex items-center gap-1 text-[12px] font-mono text-stone-600 bg-white px-2 py-0.5 rounded border border-stone-200">
                   <Clock className="w-3 h-3 text-stone-400" />
                   {activeDoc.readingTime}
                 </span>
-                <span className="flex items-center gap-1 text-[10px] font-mono text-stone-600 bg-white px-2 py-0.5 rounded border border-stone-200">
+                <span className="flex items-center gap-1 text-[12px] font-mono text-stone-600 bg-white px-2 py-0.5 rounded border border-stone-200">
                   <ShieldCheck className="w-3 h-3 text-emerald-600" />
                   SIH26121 · OIL INDIA LIMITED
                 </span>
-                <span className="flex items-center gap-1 text-[10px] font-mono text-stone-600 bg-white px-2 py-0.5 rounded border border-stone-200">
+                <span className="flex items-center gap-1 text-[12px] font-mono text-stone-600 bg-white px-2 py-0.5 rounded border border-stone-200">
                   <Users className="w-3 h-3 text-[#c96a12]" />
                   Midnight Ciphers
                 </span>
               </div>
 
-              <div className="flex items-start justify-between gap-4">
-                <h1 className="text-3xl sm:text-4xl font-serif font-bold text-stone-950 tracking-tight leading-tight">
-                  {activeDoc.title}
-                </h1>
-                <button
-                  onClick={handleShare}
-                  className="p-2 rounded border border-stone-300 bg-white hover:bg-stone-50 text-stone-600 hover:text-stone-950 transition shrink-0 shadow-2xs"
-                  title="Copy link to document"
-                >
-                  {copiedLink ? (
-                    <Check className="w-4 h-4 text-emerald-600" />
-                  ) : (
-                    <Share2 className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
+              <h1 className="text-3xl sm:text-4xl font-sans font-semibold text-stone-950 tracking-tight leading-tight">
+                {activeDoc.title}
+              </h1>
 
               <p className="text-base text-stone-600 font-sans leading-relaxed">
                 {activeDoc.description}

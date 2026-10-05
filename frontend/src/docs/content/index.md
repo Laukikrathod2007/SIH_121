@@ -1,4 +1,4 @@
-# eRTMAC-NWIS — Nearby Wells Intelligence System
+# eRTMAC-NWIS: Nearby Wells Intelligence System
 ### An AI-Powered Offset-Well Knowledge & Operational Decision Support Platform for Well Construction
 **Problem Statement ID:** SIH26121 | **Organization:** Oil India Limited (OIL) | **Theme:** Smart Automation | **Category:** Software
 
@@ -8,7 +8,7 @@
 
 **eRTMAC-NWIS** (*internal engineering codename: eWIS / DrillWise*) is an enterprise-grade drilling decision support platform developed for **Oil India Limited (OIL)** under Smart India Hackathon 2026 Problem Statement **SIH26121**. The platform bridges the mission-critical gap between real-time surface/downhole rig monitoring and decades of institutional drilling experience locked inside unstructured historical well reports.
 
-During active well construction, drilling through complex lithologies—such as the high-pressure, fractured, or depleted sand-shale sequences of the **Upper Assam Basin (Nahorkatiya, Baghjan, Moran, Hugrijan fields)**—exposes operators to severe downhole hazards:
+During active well construction, drilling through complex lithologies, such as the high-pressure, fractured, or depleted sand-shale sequences of the **Upper Assam Basin (Nahorkatiya, Baghjan, Moran, Hugrijan fields)**, exposes operators to severe downhole hazards:
 * **Lost Circulation (Mud Losses)** into under-pressured or naturally fractured reservoirs.
 * **Differential & Mechanical Stuck Pipe** across thick permeable sandstones and swelling shales.
 * **Formation Fluid Influxes (Kicks)** and sudden overpressure transitions that threaten well control.

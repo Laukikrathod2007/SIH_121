@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUp, Bot, Terminal, Printer, Bookmark, Users } from 'lucide-react';
+import { ArrowUp, Terminal, Bookmark, Users } from 'lucide-react';
 
 interface DocsTableOfContentsProps {
   content: string;
@@ -15,6 +15,20 @@ interface HeadingItem {
 export const DocsTableOfContents: React.FC<DocsTableOfContentsProps> = ({ content }) => {
   const [activeId, setActiveId] = useState<string>('');
 
+  // Headings in source markdown can themselves be links, e.g.
+  // "### [Architecture & System Design](file:///docs/architecture/...)"
+  // (see index.md's knowledge-base-structure section). The renderer's own
+  // heading slugs (MarkdownRenderer.tsx) are built from marked's already-
+  // parsed inline HTML, so stripping tags there is enough -- but this
+  // component re-parses the raw markdown independently for the "On this
+  // page" rail, so it has to unwrap [text](url) itself or the link syntax
+  // (brackets, the raw file:// URL) leaks straight into the sidebar label.
+  const stripMarkdownInline = (raw: string) =>
+    raw
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/[*`_]/g, '')
+      .trim();
+
   const headings: HeadingItem[] = useMemo(() => {
     if (!content) return [];
     const lines = content.split('\n');
@@ -27,7 +41,7 @@ export const DocsTableOfContents: React.FC<DocsTableOfContentsProps> = ({ conten
       if (h2Match) {
         const rawText = h2Match[1].trim();
         if (!rawText.startsWith('#')) {
-          const cleanText = rawText.replace(/[*`_]/g, '').trim();
+          const cleanText = stripMarkdownInline(rawText);
           const id = cleanText
             .toLowerCase()
             .replace(/[^\w\s-]/g, '')
@@ -37,7 +51,7 @@ export const DocsTableOfContents: React.FC<DocsTableOfContentsProps> = ({ conten
       } else if (h3Match) {
         const rawText = h3Match[1].trim();
         if (!rawText.startsWith('#')) {
-          const cleanText = rawText.replace(/[*`_]/g, '').trim();
+          const cleanText = stripMarkdownInline(rawText);
           const id = cleanText
             .toLowerCase()
             .replace(/[^\w\s-]/g, '')
@@ -96,9 +110,9 @@ export const DocsTableOfContents: React.FC<DocsTableOfContentsProps> = ({ conten
   }
 
   return (
-    <aside className="hidden xl:block w-64 shrink-0 py-6 px-4 space-y-6 text-xs sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto select-none border-l border-stone-200 bg-[#fafaf9]">
+    <aside className="hidden xl:flex xl:flex-col w-64 shrink-0 py-6 px-4 text-xs sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto select-none border-l border-stone-200 bg-[#fafaf9]">
       <div>
-        <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-stone-500 font-bold mb-3">
+        <div className="flex items-center gap-2 text-[13px] font-mono uppercase tracking-wider text-stone-500 font-bold mb-3">
           <Bookmark className="w-3.5 h-3.5 text-stone-700" />
           <span>ON THIS PAGE</span>
         </div>
@@ -111,7 +125,7 @@ export const DocsTableOfContents: React.FC<DocsTableOfContentsProps> = ({ conten
                 key={`${h.id}-${i}`}
                 onClick={() => scrollToHeading(h.id)}
                 className={`block text-left w-full truncate transition-all py-1 ${
-                  h.level === 3 ? 'pl-4 text-[11px]' : 'pl-1 font-medium'
+                  h.level === 3 ? 'pl-4 text-[13px]' : 'pl-1 font-medium'
                 } ${
                   isActive
                     ? 'text-stone-950 font-bold border-l-2 border-stone-900 -ml-px'
@@ -127,49 +141,38 @@ export const DocsTableOfContents: React.FC<DocsTableOfContentsProps> = ({ conten
       </div>
 
       {/* Helpful Action Links */}
-      <div className="pt-4 border-t border-stone-200 space-y-2">
+      <div className="mt-6 pt-4 border-t border-stone-200 space-y-2">
         <button
           onClick={scrollToTop}
-          className="flex items-center gap-2 text-stone-600 hover:text-stone-900 transition text-[11px] font-mono"
+          className="flex items-center gap-2 text-stone-600 hover:text-stone-900 transition text-[13px] font-mono"
         >
           <ArrowUp className="w-3.5 h-3.5 text-stone-500" />
           <span>Back to top</span>
         </button>
 
         <Link
-          to="/app/copilot"
-          className="flex items-center gap-2 text-stone-600 hover:text-stone-950 transition text-[11px] font-mono"
-        >
-          <Bot className="w-3.5 h-3.5 text-stone-700" />
-          <span>Ask Subsurface Copilot</span>
-        </Link>
-
-        <Link
           to="/app"
-          className="flex items-center gap-2 text-stone-600 hover:text-stone-950 transition text-[11px] font-mono"
+          className="flex items-center gap-2 text-stone-600 hover:text-stone-950 transition text-[13px] font-mono"
         >
           <Terminal className="w-3.5 h-3.5 text-stone-700" />
           <span>Launch Rig Cockpit</span>
         </Link>
-
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 text-stone-600 hover:text-stone-900 transition text-[11px] font-mono"
-        >
-          <Printer className="w-3.5 h-3.5 text-stone-500" />
-          <span>Print / Save PDF</span>
-        </button>
       </div>
 
-      {/* Evaluation Context Card */}
-      <div className="p-3 rounded-sm bg-white border border-stone-200 text-[11px] space-y-1.5 font-mono shadow-2xs">
-        <div className="flex items-center gap-1.5 font-bold text-stone-900">
-          <Users className="w-3.5 h-3.5 text-[#c96a12]" />
-          <span>Midnight Ciphers</span>
+      {/* Evaluation Context Card -- pinned to the bottom of the sticky
+          sidebar (mt-auto on a flex-col parent) instead of sitting
+          directly under the action links with a large dead gap below it
+          whenever the heading list is short. */}
+      <div className="mt-auto pt-6">
+        <div className="p-3 rounded-sm bg-white border border-stone-200 text-[13px] space-y-1.5 font-mono shadow-2xs">
+          <div className="flex items-center gap-1.5 font-bold text-stone-900">
+            <Users className="w-3.5 h-3.5 text-[#c96a12]" />
+            <span>Midnight Ciphers</span>
+          </div>
+          <p className="text-stone-600 leading-relaxed text-[12px]">
+            Smart India Hackathon 2026 · Problem Statement SIH26121 for Oil India Limited (Duliajan).
+          </p>
         </div>
-        <p className="text-stone-600 leading-relaxed text-[10px]">
-          Smart India Hackathon 2026 · Problem Statement SIH26121 for Oil India Limited (Duliajan).
-        </p>
       </div>
     </aside>
   );

@@ -90,7 +90,7 @@ export const DocsSearchModal: React.FC<DocsSearchModalProps> = ({ isOpen, onClos
               <X className="w-4 h-4" />
             </button>
           )}
-          <span className="hidden sm:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-stone-100 text-stone-500 border border-stone-300">
+          <span className="hidden sm:inline-block text-[12px] font-mono px-1.5 py-0.5 rounded bg-stone-100 text-stone-500 border border-stone-300">
             ESC
           </span>
         </div>
@@ -126,11 +126,11 @@ export const DocsSearchModal: React.FC<DocsSearchModalProps> = ({ isOpen, onClos
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-bold">
+                      <span className="text-[12px] font-mono uppercase tracking-wider text-stone-500 font-bold">
                         {item.doc.category}
                       </span>
                       {item.doc.badge && (
-                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-stone-100 text-stone-700 border border-stone-200">
+                        <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-stone-100 text-stone-700 border border-stone-200">
                           {item.doc.badge}
                         </span>
                       )}
@@ -154,7 +154,7 @@ export const DocsSearchModal: React.FC<DocsSearchModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Footer Shortcut Bar */}
-        <div className="px-4 py-2.5 border-t border-stone-200 bg-[#f5f5f4] flex items-center justify-between text-[11px] font-mono text-stone-500">
+        <div className="px-4 py-2.5 border-t border-stone-200 bg-[#f5f5f4] flex items-center justify-between text-[13px] font-mono text-stone-500">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
               <kbd className="px-1 py-0.5 rounded bg-white text-stone-700 border border-stone-300">↑</kbd>

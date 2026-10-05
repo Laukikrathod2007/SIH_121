@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Menu, X, Terminal, BarChart2, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Menu, X, BarChart2 } from 'lucide-react';
 
 interface DocsNavbarProps {
   currentSlug: string;
-  onOpenSearch: () => void;
   onToggleMobileSidebar: () => void;
   isMobileSidebarOpen: boolean;
 }
 
 export const DocsNavbar: React.FC<DocsNavbarProps> = ({
   currentSlug,
-  onOpenSearch,
   onToggleMobileSidebar,
   isMobileSidebarOpen,
 }) => {
@@ -31,12 +29,12 @@ export const DocsNavbar: React.FC<DocsNavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full border-b border-stone-200 bg-[#f6f5f3]">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 sm:border-x border-stone-200/90 bg-[#fafaf9]/95 backdrop-blur-xs">
-        <div className="flex items-center justify-between h-14 sm:h-16 gap-3">
+        <div className="flex items-center justify-between h-16 sm:h-[4.5rem] gap-3">
           {/* Mobile sidebar toggle button */}
           <div className="flex items-center gap-3">
             <button
               onClick={onToggleMobileSidebar}
-              className="lg:hidden p-1.5 rounded border border-stone-300 bg-white text-stone-700 hover:text-stone-950 hover:bg-stone-100 transition"
+              className="lg:hidden p-1.5 rounded-full border border-stone-300 bg-white text-stone-700 hover:text-stone-950 hover:bg-stone-100 transition"
               aria-label="Toggle Documentation Navigation Sidebar"
               title="Topics Menu"
             >
@@ -44,38 +42,40 @@ export const DocsNavbar: React.FC<DocsNavbarProps> = ({
             </button>
 
             {/* Brand Logo & Indicators */}
-            <Link to="/" className="flex items-center gap-2.5 text-left group">
-              <div className="size-8 bg-stone-900 text-white font-mono font-bold text-xs flex items-center justify-center rounded-xs tracking-tighter shrink-0">
-                DW
-              </div>
-              <div className="min-w-0">
+            <Link to="/" className="flex items-center gap-3 text-left group">
+              <img
+                src="/brand/drillwise-icon-mark.png"
+                alt="DrillWise"
+                className="size-9 object-contain shrink-0"
+              />
+              <div className="min-w-0 hidden sm:block">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-stone-950 uppercase tracking-wider group-hover:text-stone-700 transition-colors">
-                    DRILLWISE
+                  <span className="font-sans text-[15px] font-semibold text-stone-950 tracking-tight group-hover:text-stone-700 transition-colors">
+                    DrillWise
                   </span>
-                  <span className="font-mono text-[9px] bg-stone-200 text-stone-800 px-1.5 py-0.5 rounded uppercase font-semibold">
+                  <span className="font-mono text-[12px] bg-stone-100 text-stone-500 border border-stone-200 px-1.5 py-0.5 rounded-full tracking-wide">
                     SIH26121
                   </span>
                 </div>
-                <span className="block font-mono text-[10px] text-stone-500 uppercase tracking-widest leading-none mt-0.5 truncate">
-                  OIL INDIA LIMITED · eRTMAC-NWIS
+                <span className="block font-mono text-[12px] text-stone-400 tracking-wide leading-none mt-1 truncate">
+                  Oil India Limited · eRTMAC-NWIS
                 </span>
               </div>
             </Link>
           </div>
 
           {/* Center Navigation Links - Desktop */}
-          <nav className="hidden xl:flex items-center gap-0.5">
+          <nav className="hidden xl:flex items-center gap-0.5 bg-stone-100/70 rounded-full p-1">
             {topNavLinks.map((link) => {
               const isActive = currentSlug === link.slug;
               return (
                 <Link
                   key={link.slug}
                   to={`/docs/${link.slug}`}
-                  className={`px-2.5 py-1 rounded font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                  className={`px-3 py-1.5 rounded-full font-mono text-[13px] tracking-wide transition-colors ${
                     isActive
-                      ? 'bg-stone-200 text-stone-950 font-bold'
-                      : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                      ? 'bg-white text-stone-950 font-semibold shadow-2xs'
+                      : 'text-stone-500 hover:text-stone-900'
                   }`}
                 >
                   {link.label}
@@ -86,46 +86,23 @@ export const DocsNavbar: React.FC<DocsNavbarProps> = ({
 
           {/* Right Action Tools */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Search Trigger */}
-            <button
-              onClick={onOpenSearch}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-sm border border-stone-300 bg-white text-stone-600 hover:text-stone-950 hover:border-stone-400 transition-colors text-xs font-mono shadow-2xs"
-              title="Search documentation (Cmd+K / Ctrl+K)"
-            >
-              <Search className="w-3.5 h-3.5 text-stone-500" />
-              <span className="hidden sm:inline text-stone-600 font-sans text-xs">Search specs...</span>
-              <kbd className="hidden sm:inline font-mono text-[10px] text-stone-400 border border-stone-200 px-1.5 py-0.2 rounded bg-stone-50">
-                ⌘K
-              </kbd>
-            </button>
-
-            {/* Launch Rig Cockpit (/app) */}
-            <Link
-              to="/app"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-stone-900 text-white hover:bg-stone-800 transition text-[11px] font-mono uppercase font-semibold tracking-wider shadow-2xs"
-            >
-              <Terminal className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden md:inline">Rig Cockpit</span>
-            </Link>
-
             {/* Validation Benchmarks */}
             <a
               href="/benchmarks"
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm border border-stone-300 bg-white text-stone-700 hover:bg-stone-100 transition text-[11px] font-mono uppercase tracking-wider shadow-2xs"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-stone-300 bg-white text-stone-700 hover:text-stone-950 hover:border-stone-400 transition-colors text-[13px] font-mono uppercase tracking-wider shadow-2xs"
             >
               <BarChart2 className="w-3.5 h-3.5 text-stone-500" />
               <span>Benchmarks</span>
             </a>
 
-            {/* Problem Statement Link */}
-            <Link
-              to="/docs/problem-statement"
-              className="hidden lg:flex items-center gap-1 px-2.5 py-1.5 rounded-sm border border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100 transition text-[11px] font-mono uppercase tracking-wider"
-              title="Problem Statement SIH26121"
+            {/* Mobile overflow toggle */}
+            <button
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              className="sm:hidden p-1.5 rounded-full border border-stone-300 bg-white text-stone-700 hover:text-stone-950 hover:bg-stone-100 transition"
+              aria-label="Toggle documentation links"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>PS-121</span>
-            </Link>
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
         </div>
       </div>
@@ -145,24 +122,14 @@ export const DocsNavbar: React.FC<DocsNavbarProps> = ({
               </Link>
             ))}
           </div>
-          <div className="flex gap-2 pt-2">
-            <Link
-              to="/app"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 flex items-center justify-center gap-2 p-2 rounded bg-stone-900 text-white font-semibold"
-            >
-              <Terminal className="w-4 h-4 text-amber-400" />
-              <span>Rig Cockpit</span>
-            </Link>
-            <a
-              href="/benchmarks"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 flex items-center justify-center gap-2 p-2 rounded border border-stone-300 bg-white text-stone-800"
-            >
-              <BarChart2 className="w-4 h-4" />
-              <span>Benchmarks</span>
-            </a>
-          </div>
+          <a
+            href="/benchmarks"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-center gap-2 p-2 rounded border border-stone-300 bg-white text-stone-800"
+          >
+            <BarChart2 className="w-4 h-4" />
+            <span>Benchmarks</span>
+          </a>
         </div>
       )}
     </header>
