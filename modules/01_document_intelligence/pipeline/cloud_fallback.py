@@ -59,16 +59,18 @@ try:
 except ImportError:
     HTTPX_AVAILABLE = False
 
-# Load module_root/.env if present, so NWIS_REDUCTO_API_KEY / NWIS_EXTEND_API_KEY
-# can live in a local, git-ignored file instead of requiring shell env vars to
-# be set in every terminal session. Real environment variables always win
-# (override=False) — a value already exported in the shell is never clobbered
-# by .env. Safe no-op if python-dotenv isn't installed or no .env exists.
-try:
-    from dotenv import load_dotenv
-    load_dotenv(Path(__file__).parent.parent / ".env", override=False)
-except ImportError:
-    pass
+# NWIS_REDUCTO_API_KEY / NWIS_EXTEND_API_KEY / NWIS_EXTEND_WORKSPACE_ID /
+# NWIS_CLOUD_FALLBACK_ENABLED live in the ONE unified env file,
+# Backend/.env — already loaded by app.core.config at process startup
+# (that import always runs first: this module is only ever reached via
+# app.modules.document_intelligence, itself only importable after
+# Backend/app/main.py has imported app.core.config). No separate
+# load_dotenv() here — a second loader pointed at a second file is
+# exactly the kind of "which .env actually wins" confusion this project
+# consolidated away from. If this module is ever imported standalone
+# (e.g. a script run directly from modules/01_document_intelligence/),
+# these env vars simply read as unset, same as any other os.environ.get()
+# with no .env loaded — no crash, no silent wrong-file behavior.
 
 
 # ---------------------------------------------------------------------------

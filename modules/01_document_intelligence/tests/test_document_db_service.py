@@ -192,8 +192,11 @@ def test_handoff_migrates_approved_event_with_resolvable_well_and_depth():
     )
     # drilling_events.source_document_id REFERENCES documents(document_id)
     # -- the real call order (orchestrator.py then review.py) always syncs
-    # the document before any event handoff can run; this fixture mirrors
-    # that order rather than skipping straight to handoff_events().
+    # the document before any event handoff can run. handoff_events()
+    # itself also now ensures the documents row exists (see its own
+    # docstring and test_handoff_events_works_standalone_without_prior_sync
+    # below), so this explicit call is no longer strictly required, but is
+    # kept to mirror the real call order exactly.
     doc_service.sync_document(result)
     out = doc_service.handoff_events(result)
     assert out["migrated"] == 1
@@ -214,6 +217,45 @@ def test_handoff_migrates_approved_event_with_resolvable_well_and_depth():
             "SELECT COUNT(*) FROM drilling_events WHERE event_id = %s", ("EVT-TESTFIXTURE2",)
         ).fetchone()[0]
     assert count == 1
+
+
+@requires_db
+def test_handoff_events_works_standalone_without_prior_sync():
+    """handoff_events() must not depend on sync_document()/sync_review()
+    having already run in the same request -- it ensures the documents
+    row itself (see its own docstring). Mirrors the real bug found live in
+    sync_review() (see test_sync_review_succeeds_even_when_sync_document_
+    was_never_called below): every current caller (review.py) does call
+    sync_review() first, but this proves handoff_events() doesn't secretly
+    depend on that ordering."""
+    result = _fake_result(
+        document_id="DOC-TESTFIXTURE-STANDALONE",
+        reviewed=True, reviewed_by="pytest", review_decision="approved",
+        all_drilling_events=[{
+            "event_id": "EVT-TESTFIXTURE-STANDALONE", "event_type": "KICK", "severity": "HIGH",
+            "depth_start_md_m": {"normalized_value": 2200.0}, "depth_end_md_m": None,
+            "formation": None, "raw_narrative": "standalone handoff test", "loss_rate_bbl_hr": None,
+            "npt_hours": 0.0, "mitigation_description": None, "outcome": None, "confidence": 0.9,
+        }],
+    )
+    # Deliberately skip sync_document()/sync_review() entirely.
+    out = doc_service.handoff_events(result)
+    assert out["migrated"] == 1
+    assert out["skipped"] == 0
+
+    with get_connection() as conn:
+        doc_row = conn.execute(
+            "SELECT document_id FROM documents WHERE document_id = %s", (result["document_id"],)
+        ).fetchone()
+        event_row = conn.execute(
+            "SELECT event_id FROM drilling_events WHERE event_id = 'EVT-TESTFIXTURE-STANDALONE'"
+        ).fetchone()
+    assert doc_row is not None
+    assert event_row is not None
+
+    with get_connection() as conn:
+        conn.execute("DELETE FROM drilling_events WHERE event_id = 'EVT-TESTFIXTURE-STANDALONE'")
+        conn.execute("DELETE FROM documents WHERE document_id = %s", (result["document_id"],))
 
 
 @requires_db
@@ -274,3 +316,155 @@ def test_handoff_skips_unresolvable_well_name():
     assert out["migrated"] == 0
     assert out["skipped"] == 1
     assert out["skip_detail"][0]["reason"] == "unresolved_well_name"
+
+
+# ---------------------------------------------------------------------------
+# Pass 5: sync-status is a closed, display-ready enum — never a raw
+# exception string. Mirrors modules/02_nwis_backend/tests/test_db_foundation.py's
+# test_healthcheck_error_field_is_class_name_not_full_message pattern:
+# monkeypatch the connection to raise a distinctive, real-looking
+# connection-failure message, assert only a safe category comes back.
+# ---------------------------------------------------------------------------
+
+_SAFE_STATUSES = {"synced", "not_configured", "unavailable", "error"}
+
+
+def test_sync_status_is_closed_enum_not_raw_exception(monkeypatch):
+    import psycopg
+
+    class _FakeConnCtx:
+        def __enter__(self):
+            raise psycopg.OperationalError(
+                "connection to server at host.internal.example port 5555 failed: "
+                "password authentication failed for user \"nwis_secret_user\""
+            )
+
+        def __exit__(self, *a):
+            return False
+
+    # doc_service binds get_connection/db_is_configured as its own
+    # module-level names at import time (`from ... import get_connection`)
+    # -- patch those bound names directly, not the source module's
+    # attributes, which doc_service's already-resolved references would
+    # not see.
+    monkeypatch.setattr(doc_service, "get_connection", lambda: _FakeConnCtx())
+    monkeypatch.setattr(doc_service, "db_is_configured", lambda: True)
+
+    result = _fake_result()
+    out = doc_service.sync_document(result)
+
+    assert out["synced"] is False
+    assert out["status"] in _SAFE_STATUSES
+    assert out["status"] == "unavailable"  # OperationalError -> connectivity, not a real bug
+    assert "reason" not in out  # the old open-ended field is gone
+    text = str(out)
+    for secret in ("host.internal.example", "5555", "nwis_secret_user", "password authentication"):
+        assert secret not in text
+
+
+def test_sync_status_distinguishes_connectivity_from_other_errors(monkeypatch):
+    """A non-OperationalError (e.g. a real constraint violation or
+    programming error) must map to "error", not "unavailable" — retrying
+    the exact same write would fail the exact same way, unlike a
+    transient connectivity problem."""
+    class _FakeConnCtx:
+        def __enter__(self):
+            raise ValueError("a real programming error, not a connectivity problem")
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(doc_service, "get_connection", lambda: _FakeConnCtx())
+    monkeypatch.setattr(doc_service, "db_is_configured", lambda: True)
+
+    out = doc_service.sync_document(_fake_result())
+    assert out["status"] == "error"
+
+
+def test_sync_document_not_configured_status(monkeypatch):
+    monkeypatch.setattr(doc_service, "db_is_configured", lambda: False)
+    out = doc_service.sync_document(_fake_result())
+    assert out == {"synced": False, "status": "not_configured"}
+
+
+@requires_db
+def test_sync_review_succeeds_even_when_sync_document_was_never_called():
+    """Regression test for a real bug found live: document_review.document_id
+    REFERENCES documents(document_id). A document opened from the review
+    queue that was never successfully synced at ingest time (old data, or
+    an earlier sync_document() call that itself failed) previously hit a
+    foreign-key violation on ANY review decision, reported as status=
+    "error" even though nothing about the review itself was wrong.
+    sync_review() must ensure the documents row exists first."""
+    result = _fake_result(
+        document_id="DOC-TESTFIXTURE-NEVERSYNCED",
+        reviewed=True, reviewed_by="pytest", review_decision="approved",
+    )
+    # Deliberately skip sync_document() -- simulates a document whose
+    # original ingest-time sync never happened.
+    out = doc_service.sync_review(result["document_id"], result)
+    assert out["synced"] is True
+    assert out["status"] == "synced"
+
+    with get_connection() as conn:
+        doc_row = conn.execute(
+            "SELECT document_id FROM documents WHERE document_id = %s", (result["document_id"],)
+        ).fetchone()
+        review_row = conn.execute(
+            "SELECT document_id, reviewed FROM document_review WHERE document_id = %s", (result["document_id"],)
+        ).fetchone()
+    assert doc_row is not None
+    assert review_row == (result["document_id"], True)
+
+    with get_connection() as conn:
+        conn.execute("DELETE FROM document_review WHERE document_id = %s", (result["document_id"],))
+        conn.execute("DELETE FROM documents WHERE document_id = %s", (result["document_id"],))
+
+
+# ---------------------------------------------------------------------------
+# _parse_report_date — regression tests for a real bug found live: the
+# project's own sample DDR (report_date "15/03/2025", DD/MM/YYYY -- the
+# standard convention in these Indian drilling reports) was passed straight
+# through, unparsed, to a Postgres DATE column. Postgres's default MDY
+# datestyle rejects "15/03/2025" outright (no month 15), so
+# sync_document/sync_review/handoff_events all failed non-fatally but
+# silently for this and any other document whose report date has a
+# day-of-month above 12 -- confirmed live by running the real sample
+# document through the real pipeline before this fix existed.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw,expected", [
+    ("15/03/2025", "2025-03-15"),   # day > 12: unambiguous DD/MM, the real bug case
+    ("01/02/2025", "2025-02-01"),   # ambiguous: DD/MM tried first, per these documents' real convention
+    ("15-03-2025", "2025-03-15"),   # dash-separated variant
+    ("2025-03-15", "2025-03-15"),   # already ISO
+    (None, None),
+    ("", None),
+    ("not a date", None),           # honestly skipped, never guessed
+])
+def test_parse_report_date(raw, expected):
+    assert doc_service._parse_report_date(raw) == expected
+
+
+@requires_db
+def test_sync_document_with_ambiguous_date_no_longer_raises():
+    """The exact regression: a report_date that would previously make the
+    Postgres INSERT raise (and the orchestrator log "Postgres write-through
+    skipped: error") must now sync cleanly, with the date correctly stored
+    as DD/MM/YYYY-interpreted ISO."""
+    result = _fake_result(
+        document_id="DOC-TESTFIXTURE-DATEBUG",
+        report_date="15/03/2025",
+    )
+    out = doc_service.sync_document(result)
+    assert out["synced"] is True
+
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT report_date FROM documents WHERE document_id = %s", (result["document_id"],)
+        ).fetchone()
+    assert row is not None
+    assert row[0].isoformat() == "2025-03-15"
+
+    with get_connection() as conn:
+        conn.execute("DELETE FROM documents WHERE document_id = %s", (result["document_id"],))

@@ -18,18 +18,21 @@ CORS is open for local dev (React frontend on port 5173).
 
 from __future__ import annotations
 import asyncio
-import os
 from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
 
 from app.modules.document_intelligence.api.routes import ingest, status, results, review
 from app.modules.document_intelligence.api.job_store import SQLiteJobStore
-from app.modules.document_intelligence.api.auth import require_api_key, rate_limit_ingest, auth_enabled
+from app.modules.document_intelligence.api.auth import (
+    require_api_key,
+    rate_limit_general,
+    rate_limit_ingest,
+    auth_enabled,
+)
 
 # ---------------------------------------------------------------------------
 # Upload Directory
@@ -105,19 +108,17 @@ app = FastAPI(
 )
 
 # ---------------------------------------------------------------------------
-# CORS
+# CORS is configured once, centrally, in Backend/app/main.py.
+#
+# This module's own `app` instance here is a standalone FastAPI app that
+# only ever runs directly (e.g. this file's own `if __name__` block, or a
+# module-level dev/test invocation) — in the real unified deployment,
+# Backend/app/integrations/_mount.py copies only this app's `.router.routes`
+# onto the gateway app, never its middleware. A CORSMiddleware registered
+# here was therefore dead code in the one place CORS actually matters (a
+# browser talking to the real served app), which risked a future
+# maintainer "fixing" this block instead of the one that's actually live.
 # ---------------------------------------------------------------------------
-# Extra origins for a deployed frontend can be added via NWIS_CORS_ORIGINS
-# (comma-separated) without touching code — e.g. the production cockpit URL.
-_default_origins = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
-_extra_origins = [o.strip() for o in os.environ.get("NWIS_CORS_ORIGINS", "").split(",") if o.strip()]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_default_origins + _extra_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 # ---------------------------------------------------------------------------
@@ -165,15 +166,15 @@ app.include_router(
 )
 app.include_router(
     status.router, prefix="/api/v1", tags=["Job Status"],
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(require_api_key), Depends(rate_limit_general)],
 )
 app.include_router(
     results.router, prefix="/api/v1", tags=["Extraction Results"],
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(require_api_key), Depends(rate_limit_general)],
 )
 app.include_router(
     review.router, prefix="/api/v1", tags=["Human Review"],
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(require_api_key), Depends(rate_limit_general)],
 )
 
 

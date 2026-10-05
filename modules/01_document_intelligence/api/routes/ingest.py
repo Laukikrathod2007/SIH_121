@@ -5,6 +5,7 @@ POST /api/v1/ingest — Upload a DDR/WCR PDF for background processing
 
 from __future__ import annotations
 import asyncio
+import re
 import uuid
 from pathlib import Path
 from datetime import datetime
@@ -24,6 +25,31 @@ UPLOAD_DIR: Path = Path("data/uploads")
 
 ALLOWED_EXTENSIONS = {".pdf"}
 MAX_FILE_SIZE_MB = 100
+
+_UNSAFE_CHARS_RE = re.compile(r"[^A-Za-z0-9._-]")
+
+
+def _sanitize_filename(raw_name: str, required_suffix: str) -> str:
+    """Reduce a client-supplied filename to a safe basename before it is
+    ever joined into a filesystem path. `raw_name` is fully attacker-
+    controlled (it's the multipart Content-Disposition filename) -- a prior
+    version of this function concatenated it into a write path unchanged
+    (despite being named "safe_name"), which let a crafted filename
+    containing '..' segments write outside UPLOAD_DIR.
+
+    Strips directory components from BOTH '/' and '\\' (Path(...).name
+    alone only understands the current OS's separator -- on a POSIX
+    deployment a Windows-style '..\\..\\x.pdf' payload would otherwise
+    pass through untouched), then allowlist-filters to a conservative
+    charset, then re-asserts the already-validated extension."""
+    name = raw_name.replace("\\", "/")
+    name = Path(name).name  # drops any directory parts, including '..'
+    name = _UNSAFE_CHARS_RE.sub("_", name).strip("._- ")
+    if not name:
+        name = "upload"
+    if not name.lower().endswith(required_suffix):
+        name = f"{name}{required_suffix}"
+    return name[:120]  # bound filesystem-unfriendly length
 
 
 @router.post("/ingest", response_model=IngestJobResponse, status_code=202)
@@ -66,8 +92,17 @@ async def ingest_document(
 
     # --- Save to upload dir ---
     job_id = f"JOB-{uuid.uuid4().hex[:10].upper()}"
-    safe_name = f"{job_id}_{file.filename}"
-    upload_path = UPLOAD_DIR / safe_name
+    safe_name = f"{job_id}_{_sanitize_filename(file.filename, suffix)}"
+    upload_path = (UPLOAD_DIR / safe_name).resolve()
+
+    upload_root = UPLOAD_DIR.resolve()
+    if upload_root != upload_path and upload_root not in upload_path.parents:
+        # Defensive — should be unreachable now that safe_name is sanitized,
+        # but never write outside the upload root even if that assumption
+        # is ever violated (mirrors the same check in results.py's
+        # get_document_file()).
+        logger.error(f"Refusing to write file outside UPLOAD_DIR: {upload_path}")
+        raise HTTPException(status_code=400, detail="Invalid filename.")
 
     with open(upload_path, "wb") as f:
         f.write(content)
@@ -151,10 +186,19 @@ async def _run_pipeline_background(job_id: str, upload_path: Path):
         logger.success(f"[{job_id}] Background processing complete")
 
     except Exception as exc:
+        # Log the real exception server-side only. The client-visible
+        # error/message fields must never contain raw exception text (class
+        # name, internal file paths, stack frames) — every other module's
+        # error path already follows this rule (Backend/app/core/errors.py,
+        # modules/02_nwis_backend/server.py's route handlers); this was the
+        # one place that didn't.
         logger.exception(f"[{job_id}] Pipeline failed: {exc}")
         JOB_STORE.update(
             job_id,
             status=IngestJobStatus.FAILED,
-            error=str(exc),
-            message=f"Processing failed: {exc}",
+            error="Document processing failed. See server logs for details.",
+            message=(
+                "Processing failed. This document could not be processed — "
+                "it may be corrupt, password-protected, or in an unsupported format."
+            ),
         )

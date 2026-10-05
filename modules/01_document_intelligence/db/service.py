@@ -22,7 +22,7 @@ environment behaves exactly as before Pass 4.
 from __future__ import annotations
 
 import re
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from loguru import logger
 
@@ -33,6 +33,29 @@ from app.modules.nwis.db.connection import (
 from app.modules.document_intelligence.db.repositories import (
     DocumentRepository, EventHandoffRepository,
 )
+
+# Pass 5: closed, display-ready sync-status categories. The raw exception
+# text (`f"{type(exc).__name__}: {exc}"`, the previous value of the
+# "reason" field below) stayed internal-log-only even before this change
+# — nothing in Pass 4 or Pass 5 ever routed it into a user-facing field —
+# but the field itself was still an open-ended string, which is the wrong
+# shape for a UI to render safely (a future caller could trivially start
+# displaying "reason" verbatim without reintroducing this same leak). This
+# enum is what a caller should surface; the full exception detail stays in
+# the server log line right next to where it's raised, never copied here.
+SyncStatus = Literal["synced", "not_configured", "unavailable", "error"]
+
+
+def _is_connectivity_error(exc: Exception) -> bool:
+    """True for "the database couldn't be reached" (connection refused,
+    timeout, pool exhaustion — psycopg.OperationalError and its
+    subclasses), False for everything else (a real constraint violation,
+    a programming error, a malformed query) — the former is
+    "unavailable" (retry later, not actionable by a human right now), the
+    latter is "error" (something is actually wrong and retrying the exact
+    same write will fail the exact same way)."""
+    import psycopg
+    return isinstance(exc, psycopg.OperationalError)
 
 # M01's EventType values that have no equivalent in the canonical
 # hazard_type table (database/schema.sql) today. Listed explicitly rather
@@ -127,6 +150,42 @@ def _unwrap(field: Any) -> Any:
     return field
 
 
+def _parse_report_date(raw: Optional[str]) -> Optional[str]:
+    """`report_date` is captured verbatim from the source document's own
+    text by a regex (tier1_native_extractor.py's RE for "DATE: dd/mm/yyyy"
+    style headers) -- genuinely ambiguous (DD/MM vs MM/DD) and NOT already
+    normalized to ISO despite the Pydantic field's own comment claiming
+    "ISO date string" (it was never actually enforced at the point of
+    extraction). Passed straight through to a Postgres DATE column
+    unchanged, this broke real documents: confirmed live with this
+    project's own sample DDR ("15/03/2025" -- day 15 has no valid
+    interpretation as a month under Postgres's default MDY datestyle, so
+    the insert raised and sync_document/sync_review/handoff_events all
+    failed non-fatally but silently for every such document).
+
+    This project's source documents are Indian drilling reports (OIL
+    India, Upper Assam) where DD/MM/YYYY is the standard convention, so
+    that's tried first; MM/DD/YYYY is tried as a fallback for the rare
+    document that genuinely uses it (distinguishable only when the first
+    number is > 12, same ambiguity any DD/MM vs MM/DD parser has to
+    accept). A date that parses under neither interpretation is honestly
+    skipped (returns None) rather than guessed at or fabricated -- the
+    rest of the document's extraction is unaffected either way, since
+    report_date is metadata, not a drilling fact."""
+    if not raw:
+        return None
+    raw = raw.strip()
+    import datetime
+    for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%d/%m/%y", "%d-%m-%y",
+                "%m/%d/%Y", "%m-%d-%Y", "%Y-%m-%d", "%Y/%m/%d"):
+        try:
+            return datetime.datetime.strptime(raw, fmt).date().isoformat()
+        except ValueError:
+            continue
+    logger.debug(f"report_date '{raw}' did not match any known format -- stored as NULL, not guessed")
+    return None
+
+
 def _document_row(result: dict[str, Any], well_id: Optional[str]) -> dict[str, Any]:
     return {
         "document_id": result["document_id"],
@@ -136,7 +195,7 @@ def _document_row(result: dict[str, Any], well_id: Optional[str]) -> dict[str, A
         "well_id": well_id,
         "well_name": result.get("well_name"),
         "operator": result.get("operator"),
-        "report_date": result.get("report_date") or None,
+        "report_date": _parse_report_date(result.get("report_date")),
         "total_pages": result.get("total_pages", 0),
         "pages_processed": result.get("pages_processed", 0),
         "scanned_pages": result.get("scanned_pages", 0),
@@ -211,12 +270,13 @@ def sync_document(result: dict[str, Any]) -> dict[str, Any]:
 
     Best-effort and NEVER raises: a database outage must not fail (or
     even log as an error) an ingestion that already succeeded and already
-    has a durable JSON copy on disk. Returns a dict describing what
-    happened (for the one caller — a benchmark/validation script — that
-    might want to assert on it; the orchestrator itself only logs).
+    has a durable JSON copy on disk. Returns a dict with a closed-enum
+    "status" (SyncStatus — safe to show a user directly) plus whatever
+    extra detail that status allows; the full exception text, when there
+    is one, goes to the server log only, never into the returned dict.
     """
     if not db_is_configured():
-        return {"synced": False, "reason": "database_not_configured"}
+        return {"synced": False, "status": "not_configured"}
 
     try:
         with get_connection() as conn:
@@ -233,10 +293,11 @@ def sync_document(result: dict[str, Any]) -> dict[str, Any]:
             if result.get("reviewed"):
                 repo.upsert_review(result["document_id"], result)
 
-        return {"synced": True, "well_id": well_id, "extractions_written": n_extractions}
+        return {"synced": True, "status": "synced", "well_id": well_id, "extractions_written": n_extractions}
     except Exception as exc:
         logger.warning(f"Postgres write-through for document {result.get('document_id')} failed (non-fatal, JSON copy is authoritative): {exc}")
-        return {"synced": False, "reason": f"{type(exc).__name__}: {exc}"}
+        status: SyncStatus = "unavailable" if _is_connectivity_error(exc) else "error"
+        return {"synced": False, "status": status}
 
 
 def sync_review(doc_id: str, result: dict[str, Any]) -> dict[str, Any]:
@@ -244,16 +305,34 @@ def sync_review(doc_id: str, result: dict[str, Any]) -> dict[str, Any]:
     update data/output/{doc_id}.json. Same best-effort/never-raises
     contract as sync_document — the JSON file (already saved by the
     caller) remains authoritative for module 01's own routes regardless of
-    whether this succeeds."""
+    whether this succeeds.
+
+    document_review.document_id REFERENCES documents(document_id), so this
+    first ensures a documents row exists (an idempotent UPSERT, same as
+    sync_document's own) before writing the review state. Found live, not
+    theoretical: a document opened from the review queue that was never
+    successfully synced at ingest time (e.g. ingested before Pass 4, or an
+    earlier sync_document() call that itself failed) has no documents row
+    yet -- without this, every review decision on such a document would
+    hit a foreign-key violation and report "error" even though nothing
+    about the review itself was wrong."""
     if not db_is_configured():
-        return {"synced": False, "reason": "database_not_configured"}
+        return {"synced": False, "status": "not_configured"}
     try:
         with get_connection() as conn:
-            DocumentRepository(conn).upsert_review(doc_id, result)
-        return {"synced": True}
+            repo = DocumentRepository(conn)
+
+            from app.modules.nwis.db.repositories import WellRepository
+            known_ids = [r["well_id"] for r in WellRepository(conn).list_all()]
+            well_id = resolve_well_id(result.get("well_name"), known_ids)
+            repo.upsert_document(_document_row(result, well_id))
+
+            repo.upsert_review(doc_id, result)
+        return {"synced": True, "status": "synced"}
     except Exception as exc:
         logger.warning(f"Postgres review write-through for {doc_id} failed (non-fatal): {exc}")
-        return {"synced": False, "reason": f"{type(exc).__name__}: {exc}"}
+        status: SyncStatus = "unavailable" if _is_connectivity_error(exc) else "error"
+        return {"synced": False, "status": status}
 
 
 def handoff_events(result: dict[str, Any]) -> dict[str, Any]:
@@ -276,12 +355,27 @@ def handoff_events(result: dict[str, Any]) -> dict[str, Any]:
     with a fabricated well_id or an invented hazard_type. Idempotent:
     event_id is module 01's own stable business key, so re-running this
     for the same document twice re-upserts the same rows, not duplicates.
+
+    drilling_events.source_document_id REFERENCES documents(document_id) —
+    this function ensures that row exists (the same idempotent UPSERT
+    sync_document/sync_review already do) before writing any event, rather
+    than relying on every call site to have called one of those first.
+    Found live as a real bug in sync_review() (see its own docstring);
+    applied here too defensively, since every current caller (review.py)
+    does call sync_review() first, but a future caller that didn't would
+    hit the identical foreign-key violation otherwise.
     """
     if not db_is_configured():
-        return {"migrated": 0, "skipped": 0, "reason": "database_not_configured"}
+        return {"migrated": 0, "skipped": 0, "status": "not_configured"}
 
     if result.get("validation_status") != "PASS" or result.get("review_decision") != "approved":
-        return {"migrated": 0, "skipped": len(result.get("all_drilling_events", [])), "reason": "not_approved"}
+        # Not a sync failure — this is handoff_events()'s own eligibility
+        # gate working as designed (see docstring). "status" here still
+        # uses the shared SyncStatus vocabulary for consistency with
+        # sync_document/sync_review, but "synced" is the right value: the
+        # call itself completed normally, it just correctly migrated
+        # nothing because the document isn't approved yet.
+        return {"migrated": 0, "skipped": len(result.get("all_drilling_events", [])), "status": "synced", "reason": "not_approved"}
 
     events = result.get("all_drilling_events", [])
     if not events:
@@ -292,6 +386,8 @@ def handoff_events(result: dict[str, Any]) -> dict[str, Any]:
             from app.modules.nwis.db.repositories import WellRepository
             known_ids = [r["well_id"] for r in WellRepository(conn).list_all()]
             well_id = resolve_well_id(result.get("well_name"), known_ids)
+
+            DocumentRepository(conn).upsert_document(_document_row(result, well_id))
 
             handoff_repo = EventHandoffRepository(conn)
             valid_hazards = handoff_repo.valid_hazard_codes()
@@ -342,7 +438,8 @@ def handoff_events(result: dict[str, Any]) -> dict[str, Any]:
                 })
                 migrated += 1
 
-        return {"migrated": migrated, "skipped": skipped, "skip_detail": skip_reasons, "well_id": well_id}
+        return {"migrated": migrated, "skipped": skipped, "skip_detail": skip_reasons, "well_id": well_id, "status": "synced"}
     except Exception as exc:
         logger.warning(f"Event handoff for document {result.get('document_id')} failed (non-fatal): {exc}")
-        return {"migrated": 0, "skipped": len(events), "reason": f"{type(exc).__name__}: {exc}"}
+        status: SyncStatus = "unavailable" if _is_connectivity_error(exc) else "error"
+        return {"migrated": 0, "skipped": len(events), "status": status}

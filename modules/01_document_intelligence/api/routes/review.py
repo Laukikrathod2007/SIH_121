@@ -33,6 +33,7 @@ from pydantic import BaseModel
 from loguru import logger
 
 from app.modules.document_intelligence.models.schemas import ValidationStatus
+from app.modules.document_intelligence.api.routes.results import _validate_doc_id
 
 router = APIRouter()
 
@@ -48,12 +49,15 @@ NEEDS_REVIEW_STATUSES = {
 
 
 def _result_path(doc_id: str) -> Path:
+    """Exact match only -- see results.py's _validate_doc_id/_load_result
+    docstring: the glob-based fuzzy fallback this used to fall back to
+    accepted glob metacharacters straight from the client (doc_id="*"
+    could match and return another document's file), so it was removed
+    rather than sanitized."""
+    _validate_doc_id(doc_id)
     path = OUTPUT_DIR / f"{doc_id}.json"
     if not path.exists():
-        matches = list(OUTPUT_DIR.glob(f"*{doc_id}*.json"))
-        if not matches:
-            raise HTTPException(404, f"Result for document '{doc_id}' not found")
-        path = matches[0]
+        raise HTTPException(404, f"Result for document '{doc_id}' not found")
     return path
 
 
@@ -150,15 +154,19 @@ async def submit_review_decision(doc_id: str, body: ReviewDecision):
 
     logger.info(f"Review decision on {doc_id}: {body.decision} by {body.reviewer}")
 
-    # Pass 4: write-through the review decision, then (only on approval)
+    # Pass 4/5: write-through the review decision, then (only on approval)
     # hand off this document's drilling events into the canonical
     # drilling_events table — see db/service.py's handoff_events docstring
     # for the exact, conservative eligibility rule. Best-effort: a database
     # outage here must not fail a review decision that's already saved.
+    # The resulting sync status (closed enum, never a raw exception — see
+    # db/service.py's SyncStatus) is persisted back onto this same file.
     handoff_result = {}
+    sync_status = data.get("postgres_sync_status", "not_configured")
     try:
         from app.modules.document_intelligence.db import service as db_sync
-        db_sync.sync_review(doc_id, data)
+        review_sync_result = db_sync.sync_review(doc_id, data)
+        sync_status = review_sync_result.get("status", sync_status)
         handoff_result = db_sync.handoff_events(data)
         if handoff_result.get("migrated") or handoff_result.get("skipped"):
             logger.info(
@@ -166,7 +174,12 @@ async def submit_review_decision(doc_id: str, body: ReviewDecision):
                 f"{handoff_result.get('skipped', 0)} skipped"
             )
     except Exception as exc:
+        sync_status = "error"
         logger.warning(f"Postgres review/handoff write-through for {doc_id} raised unexpectedly (non-fatal): {exc}")
+
+    if sync_status != "not_configured":
+        data["postgres_sync_status"] = sync_status
+        _save(doc_id, data)
 
     return {
         "document_id": doc_id,
@@ -175,6 +188,7 @@ async def submit_review_decision(doc_id: str, body: ReviewDecision):
         "validation_status": data["validation_status"],
         "events_migrated_to_knowledge_base": handoff_result.get("migrated", 0),
         "events_skipped": handoff_result.get("skipped", 0),
+        "postgres_sync_status": sync_status,
     }
 
 
@@ -204,10 +218,55 @@ async def annotate_field(doc_id: str, body: FieldAnnotation):
 
     logger.info(f"Field annotation on {doc_id} ({body.field_path}) by {body.reviewer}")
 
+    sync_status = data.get("postgres_sync_status", "not_configured")
     try:
         from app.modules.document_intelligence.db import service as db_sync
-        db_sync.sync_review(doc_id, data)
+        annotate_sync_result = db_sync.sync_review(doc_id, data)
+        sync_status = annotate_sync_result.get("status", sync_status)
     except Exception as exc:
+        sync_status = "error"
         logger.warning(f"Postgres annotation write-through for {doc_id} raised unexpectedly (non-fatal): {exc}")
 
-    return {"document_id": doc_id, "total_annotations": len(annotations)}
+    if sync_status != "not_configured":
+        data["postgres_sync_status"] = sync_status
+        _save(doc_id, data)
+
+    return {"document_id": doc_id, "total_annotations": len(annotations), "postgres_sync_status": sync_status}
+
+
+@router.post("/review/{doc_id}/resync")
+async def resync_document(doc_id: str):
+    """
+    Manually retry the Postgres write-through for one document — safe to
+    call any number of times. Re-reads the existing JSON result (already
+    on disk; the extracted work is never lost regardless of database
+    state) and re-runs the same idempotent sync_document()/handoff_events()
+    calls the original ingestion/review already made. UPSERT semantics
+    throughout (see db/service.py and the Pass 4 tests that established
+    this idempotency) mean re-syncing a document that already synced
+    successfully is a safe no-op, not a duplicate write.
+
+    Use this after a transient database outage (postgres_sync_status
+    "unavailable") to bring a document's canonical-DB copy up to date
+    without re-ingesting or re-reviewing it.
+    """
+    data = _load(doc_id)
+
+    from app.modules.document_intelligence.db import service as db_sync
+    sync_result = db_sync.sync_document(data)
+    sync_status = sync_result.get("status", "error")
+
+    handoff_result = {}
+    if data.get("reviewed"):
+        db_sync.sync_review(doc_id, data)
+        handoff_result = db_sync.handoff_events(data)
+
+    data["postgres_sync_status"] = sync_status
+    _save(doc_id, data)
+
+    return {
+        "document_id": doc_id,
+        "postgres_sync_status": sync_status,
+        "events_migrated_to_knowledge_base": handoff_result.get("migrated", 0),
+        "events_skipped": handoff_result.get("skipped", 0),
+    }

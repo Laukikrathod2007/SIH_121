@@ -451,21 +451,82 @@ def process_document(
         logger.error(f"[{job_id}] Failed to save output: {exc}")
 
     # -----------------------------------------------------------------------
-    # Pass 4: best-effort write-through into the canonical PostgreSQL schema
-    # (database/schema.sql), alongside the JSON file above, which remains
-    # authoritative for this module's own routes regardless of whether this
-    # succeeds. See db/service.py's module docstring for why this never
-    # raises and never blocks on a database outage.
+    # Pass 4/5: best-effort write-through into the canonical PostgreSQL
+    # schema (database/schema.sql), alongside the JSON file above, which
+    # remains authoritative for this module's own routes regardless of
+    # whether this succeeds. See db/service.py's module docstring for why
+    # this never raises and never blocks on a database outage.
+    #
+    # Pass 5: the resulting status (one of SyncStatus's closed values --
+    # never a raw exception string, see db/service.py) is persisted back
+    # onto the same JSON file as "postgres_sync_status", so a caller (the
+    # ingestion/review UI, the /resync route below) can tell whether this
+    # document's canonical-DB copy is current without re-deriving it.
     # -----------------------------------------------------------------------
+    sync_status = "not_configured"
     try:
         from app.modules.document_intelligence.db import service as db_sync
         sync_result = db_sync.sync_document(result_dict)
+        sync_status = sync_result.get("status", "error")
         if sync_result.get("synced"):
             logger.info(f"[{job_id}] Postgres write-through OK ({sync_result.get('extractions_written', 0)} extracted fields, well_id={sync_result.get('well_id')})")
         else:
-            logger.debug(f"[{job_id}] Postgres write-through skipped: {sync_result.get('reason')}")
+            logger.debug(f"[{job_id}] Postgres write-through skipped: {sync_status}")
     except Exception as exc:
+        sync_status = "error"
         logger.warning(f"[{job_id}] Postgres write-through raised unexpectedly (non-fatal, JSON output is unaffected): {exc}")
+
+    if sync_status != "not_configured":
+        try:
+            result_dict["postgres_sync_status"] = sync_status
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(result_dict, f, indent=2, default=str)
+        except Exception as exc:
+            logger.warning(f"[{job_id}] Failed to persist postgres_sync_status onto {output_path}: {exc}")
+
+    # -----------------------------------------------------------------------
+    # Auto-handoff into the shared knowledge base for documents that never
+    # needed a human to look at them. Without this, a clean, high-confidence
+    # upload (validation_status == PASS, the common case for a well-formed
+    # DDR/WCR) reached "Completed" in the UI with no review prompt — the
+    # page shows a green PASS badge and stops, giving no indication that the
+    # 15 extracted events sitting in this JSON/`documents` row never actually
+    # became searchable, because handoff_events() has always required BOTH
+    # validation_status == PASS AND review_decision == "approved" (its own
+    # eligibility gate, by design — see that function's docstring), and
+    # nothing ever set review_decision for a document that skipped the
+    # review queue entirely. Found live: uploaded a real 74-page document,
+    # confirmed PASS/99% confidence, confirmed 0 rows in drilling_events
+    # afterward despite postgres_sync_status already reading "synced".
+    #
+    # The fix treats a PASS result as an auto-approval — the same trust
+    # decision a human reviewer would make for a document needing no
+    # correction — and runs the exact same sync_review()/handoff_events()
+    # pair review.py's /decision route runs for a manual approval, so there
+    # is exactly one handoff code path, not two. Anything that needed a
+    # human (FLAGGED/MANUAL_REVIEW) is untouched: it still waits in the
+    # review queue, and only becomes searchable once a person approves it
+    # through /decision, preserving PS 26121's human-curation requirement
+    # for exactly the documents that need it.
+    if result_dict.get("validation_status") == "PASS":
+        try:
+            from app.modules.document_intelligence.db import service as db_sync
+            result_dict["reviewed"] = True
+            result_dict["reviewed_by"] = "system (auto-approved: no manual review required)"
+            result_dict["reviewed_at"] = datetime.utcnow().isoformat()
+            result_dict["review_decision"] = "approved"
+            review_sync_result = db_sync.sync_review(result.document_id, result_dict)
+            handoff_result = db_sync.handoff_events(result_dict)
+            result_dict["postgres_sync_status"] = review_sync_result.get("status", sync_status)
+            if handoff_result.get("migrated") or handoff_result.get("skipped"):
+                logger.info(
+                    f"[{job_id}] Auto-handoff into knowledge base: "
+                    f"{handoff_result.get('migrated', 0)} migrated, {handoff_result.get('skipped', 0)} skipped"
+                )
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(result_dict, f, indent=2, default=str)
+        except Exception as exc:
+            logger.warning(f"[{job_id}] Auto-handoff raised unexpectedly (non-fatal, JSON output is unaffected): {exc}")
 
     logger.success(
         f"[{job_id}] Pipeline complete: {result.pages_processed}/{total_pages} pages | "

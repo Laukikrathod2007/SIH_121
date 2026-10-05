@@ -12,6 +12,7 @@ GET /api/v1/documents/{doc_id}/file — Stream back the original uploaded PDF
 
 from __future__ import annotations
 import json
+import re
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
@@ -23,21 +24,34 @@ router = APIRouter()
 OUTPUT_DIR: Path = Path("data/output")
 UPLOAD_DIR: Path = Path("data/uploads")
 
+# Real document_id values are "DOC-{12 hex}" (models/schemas.py); test
+# fixtures use hyphenated forms like "DOC-RESYNC-TEST-0001". Both fit this
+# charset. Enforced BEFORE any filesystem access, in particular before the
+# old glob-based fallback below ever ran -- that fallback accepted glob
+# metacharacters (e.g. doc_id="*") verbatim from the client, so a caller
+# who didn't know another document's exact ID could still match and read
+# it via a wildcard pattern. There is no remaining use case for the fuzzy
+# match (real IDs are always known exactly by whoever created the job), so
+# the fix removes the glob fallback entirely rather than trying to sanitize
+# it.
+_DOC_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,80}$")
+
+
+def _validate_doc_id(doc_id: str) -> None:
+    if not _DOC_ID_RE.match(doc_id):
+        raise HTTPException(status_code=400, detail="Invalid document ID format.")
+
 
 def _load_result(doc_id: str) -> dict:
-    """Load extraction result JSON from disk."""
-    # Try exact match first
+    """Load extraction result JSON from disk. Exact match only."""
+    _validate_doc_id(doc_id)
     result_path = OUTPUT_DIR / f"{doc_id}.json"
     if not result_path.exists():
-        # Try finding any file with doc_id in name
-        matches = list(OUTPUT_DIR.glob(f"*{doc_id}*.json"))
-        if not matches:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Result for document '{doc_id}' not found. "
-                       "Ensure the ingestion job completed successfully."
-            )
-        result_path = matches[0]
+        raise HTTPException(
+            status_code=404,
+            detail=f"Result for document '{doc_id}' not found. "
+                   "Ensure the ingestion job completed successfully."
+        )
 
     with open(result_path, "r", encoding="utf-8") as f:
         return json.load(f)
