@@ -1,5 +1,5 @@
 {
-  "_comment": "Captured from the running unified backend BEFORE the Pass 3 import-architecture refactor (Pass 2 harvesting mechanism). The refactor must not change any of this.",
+  "_comment": "Captured from the running unified backend BEFORE the Pass 3 import-architecture refactor (Pass 2 harvesting mechanism). Pass 3's refactor itself must not change any of this -- genuine new routes added in later passes (e.g. Pass 5's POST /api/v1/review/{doc_id}/resync, Pass 6's GET /api/v3/predictive/alerts/{well_id}/history, the agentic Copilot's POST /api/v2/agent/chat) are intentionally appended here, not evidence of refactor drift.",
   "operations": [
     "DELETE /api/v3/physics/scenario",
     "GET /",
@@ -41,12 +41,15 @@
     "GET /api/v3/physics/historian",
     "GET /api/v3/physics/status",
     "GET /api/v3/predictive/alerts/{well_id}",
+    "GET /api/v3/predictive/alerts/{well_id}/history",
     "GET /api/v3/predictive/models",
     "GET /health",
     "GET /ready",
     "POST /api/v1/ingest",
     "POST /api/v1/review/{doc_id}/annotate",
     "POST /api/v1/review/{doc_id}/decision",
+    "POST /api/v1/review/{doc_id}/resync",
+    "POST /api/v2/agent/chat",
     "POST /api/v3/physics/operator-inputs",
     "POST /api/v3/physics/pause",
     "POST /api/v3/physics/reset",
@@ -109,6 +112,13 @@
     "POST /api/v1/review/{doc_id}/annotate": [
       "X-API-Key:header",
       "doc_id:path"
+    ],
+    "POST /api/v1/review/{doc_id}/resync": [
+      "X-API-Key:header",
+      "doc_id:path"
+    ],
+    "POST /api/v2/agent/chat": [
+      "X-API-Key:header"
     ],
     "GET /api/v1/health": [],
     "GET /api/v1/templates": [
@@ -256,6 +266,11 @@
     ],
     "GET /api/v3/predictive/alerts/{well_id}": [
       "X-API-Key:header",
+      "well_id:path"
+    ],
+    "GET /api/v3/predictive/alerts/{well_id}/history": [
+      "X-API-Key:header",
+      "limit:query",
       "well_id:path"
     ],
     "POST /api/v3/predictive/alerts/mitigate": [

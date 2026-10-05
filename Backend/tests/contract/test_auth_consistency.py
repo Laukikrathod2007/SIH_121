@@ -23,10 +23,16 @@ from app.core import auth
 
 pytestmark = pytest.mark.contract
 
-# Deliberately public: health/readiness/root/docs, the evidence PDF router (a plain
-# <iframe>/<img> cannot send an X-API-Key header; it serves only bundled sample
-# documents, with path-traversal protection), and the WebSocket telemetry stream
-# (the browser WebSocket API cannot set custom headers; it is push-only/read-only).
+# Deliberately public: health/readiness/root/docs, and the evidence PDF router (a
+# plain <iframe>/<img> cannot send an X-API-Key header; it serves only bundled
+# sample documents, with path-traversal protection). The WebSocket telemetry
+# stream is listed here too for the SAME structural reason -- it's an
+# APIWebSocketRoute, not an APIRoute, so it never carries a Depends() the
+# walk below could see either way -- but it is NOT actually open: the
+# browser WebSocket API can't set custom headers, so physics_stream() in
+# modules/04_physics_engine/api/server.py checks the shared key as a
+# `?api_key=` query parameter inside the handler itself, before accept().
+# See test_physics_websocket_auth.py (module 04) for that behavioural check.
 PUBLIC_PATHS = {
     "/", "/health", "/ready", "/api/v1/health", "/api/v2/health", "/api/v3/health",
     "/api/evidence", "/api/evidence/health", "/api/v3/physics/stream",
@@ -72,6 +78,9 @@ def test_public_routes_are_exactly_the_documented_set(asgi_app):
 
 @pytest.mark.parametrize("path,limiter_name", [
     ("/api/v1/ingest", "rate_limit_ingest"),
+    ("/api/v1/jobs/{job_id}", "rate_limit_general"),
+    ("/api/v1/results/{doc_id}", "rate_limit_general"),
+    ("/api/v1/review/queue", "rate_limit_general"),
     ("/api/v2/wells", "rate_limit_general"),
     ("/api/v2/offset_rank/{well_id}", "rate_limit_general"),
     ("/api/v3/physics/status", "rate_limit_physics"),

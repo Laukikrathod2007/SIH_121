@@ -112,3 +112,9 @@ def make_rate_limiter(env_prefix: str, default_max_requests: int, default_window
 rate_limit_ingest = make_rate_limiter("NWIS_RATE_LIMIT_INGEST", default_max_requests=20)
 rate_limit_general = make_rate_limiter("NWIS_RATE_LIMIT_GENERAL", default_max_requests=60)
 rate_limit_physics = make_rate_limiter("NWIS_RATE_LIMIT_PHYSICS", default_max_requests=600)
+# Agentic Knowledge Copilot: each call can involve several tool-calling
+# rounds and a local LLM generation that takes real wall-clock seconds
+# (confirmed live: ~10-20s per round on this machine's CPU) -- a much
+# lower ceiling than rate_limit_general's cheap-DB-read 60/60s default,
+# same reasoning that gave rate_limit_ingest its own lower ceiling.
+rate_limit_agent = make_rate_limiter("NWIS_RATE_LIMIT_AGENT", default_max_requests=10)
