@@ -21,9 +21,13 @@ import {
   WellTrajectory,
   RiskEvaluation,
   AlertAdvisory,
+  AlertHistoryResult,
   SimulationStatus,
   CasingRecord,
   AheadOfBitCorridor,
+  ReviewDecisionResult,
+  ResyncResult,
+  AgentChatEvent,
 } from '../types';
 
 // ============================================================================
@@ -133,8 +137,17 @@ export const api = {
   submitReviewDecision: async (
     docId: string,
     body: { reviewer: string; decision: 'approved' | 'rejected'; notes?: string },
-  ): Promise<any> => {
+  ): Promise<ReviewDecisionResult> => {
     const res = await m01.post(`/review/${docId}/decision`, body);
+    return res.data;
+  },
+
+  /** POST /api/v1/review/{doc_id}/resync — retry the Postgres write-through
+   * for one document. Safe to call any number of times (idempotent UPSERT
+   * underneath); use this after a sync failure to bring the document's
+   * canonical-DB copy up to date without re-ingesting or re-reviewing it. */
+  resyncDocument: async (docId: string): Promise<ResyncResult> => {
+    const res = await m01.post(`/review/${docId}/resync`);
     return res.data;
   },
 
@@ -487,6 +500,17 @@ export const api = {
     return res.data;
   },
 
+  /** GET /api/v3/predictive/alerts/{well_id}/history — persisted alert
+   * history (Pass 6), distinct from getAlerts above (the live in-memory
+   * session feed). Three honest states: "ok" and "not_configured" come
+   * back as normal 200s with this shape; "unavailable" (database
+   * configured but unreachable) is a real 503 that the caller must catch
+   * -- never silently rendered as an empty "ok" list. */
+  getAlertHistory: async (wellId: string, limit: number = 100): Promise<AlertHistoryResult> => {
+    const res = await m03.get(`/predictive/alerts/${wellId}/history`, { params: { limit } });
+    return res.data;
+  },
+
   mitigateAlert: async (wellId: string, alertId: string): Promise<any> => {
     const res = await m03.post('/predictive/alerts/mitigate', { well_id: wellId, alert_id: alertId });
     return res.data;
@@ -496,4 +520,86 @@ export const api = {
     const res = await m03.get('/predictive/models');
     return res.data;
   },
+
+  /**
+   * POST /api/v2/agent/chat — Server-Sent Events stream for Agentic Knowledge Copilot.
+   * Streams tool_call, tool_result, answer, mode, and error frames.
+   */
+  streamAgentChat: (
+    body: { message: string; active_well_id?: string; active_depth?: number },
+    onEvent: (event: AgentChatEvent) => void,
+    onError?: (error: any) => void,
+    onDone?: () => void
+  ): (() => void) => {
+    const controller = new AbortController();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (API_KEY) headers['X-API-Key'] = API_KEY;
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/v2/agent/chat`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+
+        if (!res.ok || !res.body) {
+          const text = await res.text().catch(() => '');
+          throw new Error(`agent/chat HTTP ${res.status}: ${text || res.statusText}`);
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const frames = buffer.split('\n\n');
+          buffer = frames.pop() ?? '';
+
+          for (const frame of frames) {
+            const lines = frame.split('\n');
+            let eventType = 'message';
+            let dataStr = '';
+
+            for (const line of lines) {
+              if (line.startsWith('event: ')) {
+                eventType = line.slice(7).trim();
+              } else if (line.startsWith('data: ')) {
+                dataStr = line.slice(6).trim();
+              }
+            }
+
+            if (!dataStr) continue;
+
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (eventType === 'mode') {
+                onEvent({ type: 'mode', mode: parsed.mode });
+              } else if (eventType === 'done') {
+                onEvent({ type: 'done' });
+              } else {
+                onEvent(parsed);
+              }
+            } catch {
+              // Ignore malformed JSON frame
+            }
+          }
+        }
+        onDone?.();
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          onError?.(err);
+        }
+      }
+    })();
+
+    return () => controller.abort();
+  },
 };
+

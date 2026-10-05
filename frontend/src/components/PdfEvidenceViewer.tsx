@@ -106,7 +106,7 @@ export const PdfEvidenceViewer: React.FC<PdfEvidenceViewerProps> = ({
       } catch (err) {
         if (cancelled) return;
         setStatus('error');
-        setErrorMessage('Failed to reach module 01 (GET /api/v1/results) to look up this source document.');
+        setErrorMessage('Could not look up this source document. Contact your system administrator if this persists.');
       }
     };
 
@@ -139,8 +139,8 @@ export const PdfEvidenceViewer: React.FC<PdfEvidenceViewerProps> = ({
         console.error('Failed to load PDF evidence', err);
         setStatus('error');
         setErrorMessage(
-          `Failed to fetch or render the source PDF for document '${resolvedDocId}' from module 01 ` +
-            '(GET /api/v1/documents/{doc_id}/file) — is the NWIS backend running (cd Backend && python run.py)?',
+          'Could not load the source document. Requires the document processing service to be running — ' +
+            'contact your system administrator if this persists.',
         );
       }
     };
@@ -207,9 +207,9 @@ export const PdfEvidenceViewer: React.FC<PdfEvidenceViewerProps> = ({
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 shrink-0">
           <div className="min-w-0">
             <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              PDF EVIDENCE VIEWER
+              SOURCE DOCUMENT
               <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded">
-                GET /api/v1/documents/{'{doc_id}'}/file
+                EVIDENCE
               </span>
             </div>
             <div className="text-xs font-mono text-slate-400 truncate">
@@ -243,18 +243,18 @@ export const PdfEvidenceViewer: React.FC<PdfEvidenceViewerProps> = ({
           )}
           {status === 'loading' && (
             <div className="text-xs font-mono text-slate-400 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" /> Fetching PDF from module 01…
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading source document…
             </div>
           )}
           {status === 'not_found' && (
             <div className="max-w-md text-center text-xs font-mono text-slate-300 space-y-2">
               <FileWarning className="w-8 h-8 text-amber-400 mx-auto" />
-              <div className="font-bold text-amber-300">Source document not found in module 01's archive</div>
+              <div className="font-bold text-amber-300">Source document not available</div>
               <div className="text-slate-400">
-                "{sourceFilename}" does not match any document currently processed by module 01
-                (GET /api/v1/results). This event's source record was generated as part of the historical
-                testbed and was never itself uploaded through the document ingestion pipeline, so no real PDF
-                is available to display — this message says so honestly rather than fabricating a viewer.
+                "{sourceFilename}" does not match any document on file in the document archive.
+                This record was generated as part of the demonstration dataset and was never itself
+                uploaded through the document ingestion workflow, so no original PDF is available to
+                display — this message says so honestly rather than fabricating a viewer.
               </div>
             </div>
           )}

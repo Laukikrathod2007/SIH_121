@@ -152,7 +152,7 @@ export const NearbyWellsMap: React.FC<NearbyWellsMapProps> = ({
   wells, activeWellId, onSelectWell, initialRadiusKm = 25, height = '640px',
 }) => {
   const [radius, setRadius] = useState(initialRadiusKm);
-  const [basemap, setBasemap] = useState<Basemap>('light');
+  const [basemap, setBasemap] = useState<Basemap>('satellite');
   const [hazardFilter, setHazardFilter] = useState<Set<string>>(new Set());
   const [showLinks, setShowLinks] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);

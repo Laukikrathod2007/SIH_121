@@ -96,6 +96,10 @@ export interface DrillingEvent {
   confidence: number;
   source_document?: string | null;
   source_page?: number | null;
+  /** Provenance category (Pass 6): "REAL" (parsed from a real source
+   * document) or "SYNTHETIC" (the project's own demonstration testbed).
+   * Optional because older cached results predate this field. */
+  source_type?: string | null;
 }
 
 export interface EventFacets {
@@ -421,6 +425,11 @@ export interface DocumentExtractionResult {
   review_decision?: string | null;
   review_notes?: string | null;
   field_annotations: any[];
+  /** Absent in dev environments where the shared database was never
+   * configured (nothing to show yet, not a failure) — present once a sync
+   * attempt has actually happened (ingestion, a review decision, or a
+   * manual resync). */
+  postgres_sync_status?: PostgresSyncStatus;
 }
 
 export interface ReviewQueueItem {
@@ -433,6 +442,31 @@ export interface ReviewQueueItem {
   physics_violations_count: number;
   cloud_fallback_pages_count: number;
   extraction_completed_at?: string | null;
+}
+
+/** POST /api/v1/review/{doc_id}/decision response shape. "synced"/
+ * "not_configured"/"unavailable"/"error" is a closed, display-ready
+ * status -- never a raw database exception (see Backend's db/service.py
+ * SyncStatus). "not_configured" means the shared database isn't set up in
+ * this environment, not that something failed. */
+export type PostgresSyncStatus = 'synced' | 'not_configured' | 'unavailable' | 'error';
+
+export interface ReviewDecisionResult {
+  document_id: string;
+  reviewed: boolean;
+  decision: 'approved' | 'rejected';
+  validation_status: ValidationStatus;
+  events_migrated_to_knowledge_base: number;
+  events_skipped: number;
+  postgres_sync_status: PostgresSyncStatus;
+}
+
+/** POST /api/v1/review/{doc_id}/resync response shape. */
+export interface ResyncResult {
+  document_id: string;
+  postgres_sync_status: PostgresSyncStatus;
+  events_migrated_to_knowledge_base: number;
+  events_skipped: number;
 }
 
 export interface HealthComponentM01 {
@@ -530,6 +564,16 @@ export interface AlertAdvisory {
   created_at: string;
 }
 
+/** GET /api/v3/predictive/alerts/{well_id}/history response shape (Pass 6).
+ * Three honestly distinct states -- "ok" (0+ real persisted rows),
+ * "not_configured" (dev mode, no database configured), or a 503 thrown by
+ * the API client for "unavailable" (database configured but unreachable,
+ * handled as a caught error by the caller, never silently empty). */
+export interface AlertHistoryResult {
+  status: 'ok' | 'not_configured';
+  alerts: AlertAdvisory[];
+}
+
 export interface RiskEvaluation {
   well_id: string;
   measured_depth_m: number;
@@ -552,3 +596,42 @@ export interface SimulationStatus {
   measured_depth_m: number;
   active_scenarios: Record<string, any>;
 }
+
+// ---------------------------------------------------------------------------
+// 4. Agentic Knowledge Copilot (/api/v2/agent/chat)
+// ---------------------------------------------------------------------------
+
+export type AgentMode = 'agentic' | 'keyword_fallback' | 'unavailable';
+
+export interface AgentToolCall {
+  tool: string;
+  arguments: Record<string, any>;
+  result?: any;
+}
+
+export interface AgentChatEvent {
+  type: 'mode' | 'tool_call' | 'tool_result' | 'answer' | 'error' | 'done';
+  mode?: AgentMode;
+  tool?: string;
+  arguments?: Record<string, any>;
+  result?: any;
+  text?: string;
+  detail?: string;
+}
+
+export interface AgentChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  mode?: AgentMode;
+  toolCalls?: AgentToolCall[];
+  error?: string;
+  citations?: {
+    well_id?: string;
+    event_id?: string;
+    source_document?: string;
+    source_page?: number;
+  }[];
+}
+

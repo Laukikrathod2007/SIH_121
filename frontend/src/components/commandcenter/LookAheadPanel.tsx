@@ -61,9 +61,9 @@ export const LookAheadPanel: React.FC<{ analysis: NWISAnalysisResponse | null; l
         <span className="text-xs font-mono font-bold text-slate-200 uppercase">Look-Ahead Intelligence</span>
         <span
           className="ml-auto text-[9px] font-mono text-slate-600 normal-case cursor-help"
-          title="Module 02's DORS/4-Pillar hazard scoring — an independent engine from the Risk & Prediction page's module 05 fusion score. Different formula, not reconciled. See AUDIT/11_RISK_ARCHITECTURE_DECISION.md."
+          title="Offset-well historical scoring — an independent calculation from the Risk & Prediction page's live sensor-fusion risk score. Different formula, not reconciled by design."
         >
-          module 02
+          offset-well scoring
         </span>
       </div>
       <div className="flex-1 overflow-y-auto p-2.5 space-y-2">

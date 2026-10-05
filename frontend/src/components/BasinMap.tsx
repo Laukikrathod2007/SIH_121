@@ -62,7 +62,12 @@ function FitToWells({ wells }: { wells: Well[] }) {
 }
 
 export const BasinMap: React.FC<BasinMapProps> = ({ wells, activeWellId, selectedWellId, onSelectWell, radiusKm }) => {
-  const [mapStyle, setMapStyle] = useState<MapStyle>('dark');
+  // Satellite by default — real imagery reads far more clearly than the
+  // dark vector basemap for an unfamiliar area (confirmed: the default
+  // active well now centers on real Assam terrain, not open ocean, but
+  // the dark vector style still shows comparatively little useful detail
+  // there versus real satellite imagery).
+  const [mapStyle, setMapStyle] = useState<MapStyle>('satellite');
   const activeWell = useMemo(() => wells.find((w) => w.well_id === activeWellId), [wells, activeWellId]);
   const center: [number, number] = activeWell
     ? [activeWell.surface_lat, activeWell.surface_lon]

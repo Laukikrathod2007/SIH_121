@@ -100,7 +100,7 @@ export const WellInspector3DModal: React.FC<WellInspector3DModalProps> = ({
 
         <div className="p-2 border-t border-slate-800 text-[10px] font-mono text-slate-500 shrink-0 flex items-center justify-between">
           <span>Drag to orbit · scroll to zoom · hover a marker for the real hazard narrative</span>
-          <span>Source: GET /api/v2/trajectory/{'{well_id}'}</span>
+          <span>Source: Well Trajectory Survey</span>
         </div>
       </div>
     </div>

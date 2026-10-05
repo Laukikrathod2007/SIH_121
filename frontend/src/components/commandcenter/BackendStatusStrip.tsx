@@ -41,10 +41,10 @@ export const BackendStatusStrip: React.FC = () => {
 
   return (
     <div className="scada-panel px-3 py-1.5 flex items-center gap-4 text-[10px] font-mono text-slate-300 overflow-x-auto">
-      <span className="text-slate-500 uppercase tracking-widest shrink-0">Backend:</span>
-      <span className="flex items-center gap-1.5"><Dot ok={m01Up} /> Module 01 · Document Intelligence (/api/v1)</span>
-      <span className="flex items-center gap-1.5"><Dot ok={m02Up} /> Module 02 · NWIS Backend (/api/v2)</span>
-      <span className="flex items-center gap-1.5"><Dot ok={m03Up} /> Module 04/05 · Physics + Predictive (/api/v3)</span>
+      <span className="text-slate-500 uppercase tracking-widest shrink-0">Data Sources:</span>
+      <span className="flex items-center gap-1.5" title="Document ingestion, OCR extraction and review service"><Dot ok={m01Up} /> Document Intelligence</span>
+      <span className="flex items-center gap-1.5" title="Well, offset-ranking, geological correlation and knowledge-search service"><Dot ok={m02Up} /> Well Intelligence</span>
+      <span className="flex items-center gap-1.5" title="Drilling physics simulation and predictive risk/alerting service"><Dot ok={m03Up} /> Simulation &amp; Risk Engine</span>
     </div>
   );
 };

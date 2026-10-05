@@ -37,12 +37,22 @@ const HISTORY_SIZE = 250; // ~10 s of trace at 25 Hz
 // Physics digital twin WebSocket stream, served by the unified backend
 // (Backend/app/main.py) at /api/v3/physics/stream -- same origin as every
 // other API call (see services/api.ts), just with ws:// instead of http://.
+//
+// The native WebSocket constructor cannot set the X-API-Key header every
+// other request uses, so the backend accepts the same shared key as a
+// `?api_key=` query parameter for this one route (see
+// modules/04_physics_engine/api/server.py's physics_stream()) -- reusing
+// VITE_API_KEY, the same value api.ts already sends as a header elsewhere,
+// not a new secret. Never log the returned URL (it would put the key in
+// plain sight in the browser console/network panel more visibly than a
+// header does).
 const telemetryWsUrl = () => {
   const override = import.meta.env.VITE_TELEMETRY_WS_URL as string | undefined;
-  if (override) return override;
   const apiBase = (import.meta.env.VITE_API_BASE as string | undefined) || 'http://localhost:8000';
-  const wsBase = apiBase.replace(/^http/, 'ws');
-  return `${wsBase}/api/v3/physics/stream`;
+  const wsBase = override || `${apiBase.replace(/^http/, 'ws')}/api/v3/physics/stream`;
+  const key = import.meta.env.VITE_API_KEY as string | undefined;
+  if (!key) return wsBase;
+  return `${wsBase}${wsBase.includes('?') ? '&' : '?'}api_key=${encodeURIComponent(key)}`;
 };
 
 const DEFAULT_TELEMETRY: TelemetryData = {
@@ -75,7 +85,16 @@ const DEFAULT_TELEMETRY: TelemetryData = {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeWellId, setActiveWellId] = useState<string>('15/9-F-12');
+  // Default to a real Upper Assam well, not the Volve North Sea well
+  // (15/9-F-12) — that well's coordinates sit over open ocean, so every
+  // map view defaulted to a dark, featureless patch of sea with no land
+  // basemap detail on first load, confirmed by a user screenshot. WELL-
+  // HGJ-012 is this project's own designated live-simulation well (its
+  // well_id is telemetry_stream.json's own `active_well_id`, with the
+  // only full 3600-record synthetic telemetry stream in the testbed), so
+  // it also means the Dashboard/Command Center/Live Drilling pages show
+  // real moving telemetry immediately instead of an empty state.
+  const [activeWellId, setActiveWellId] = useState<string>('WELL-HGJ-012');
   const [wells, setWells] = useState<Well[]>([]);
   const [activeDepth, setActiveDepth] = useState<number>(2450.0);
   const [telemetry, setTelemetry] = useState<TelemetryData>(DEFAULT_TELEMETRY);
