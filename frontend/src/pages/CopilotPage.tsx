@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
+import { MarkdownText } from '../components/MarkdownText';
 import { AgentChatMessage, AgentToolCall, AgentMode } from '../types';
 import { PdfEvidenceViewer } from '../components/PdfEvidenceViewer';
 
@@ -344,9 +345,7 @@ export const CopilotPage: React.FC = () => {
               )}
 
               {/* Formatted Content */}
-              <div className="whitespace-pre-wrap leading-relaxed font-sans text-xs">
-                {msg.content}
-              </div>
+              <MarkdownText text={msg.content} />
 
               {/* Citations and Provenance Badge */}
               {msg.citations && msg.citations.length > 0 && (
@@ -430,11 +429,7 @@ export const CopilotPage: React.FC = () => {
               )}
 
               {/* Streaming partial text */}
-              {currentStreamingText && (
-                <div className="whitespace-pre-wrap leading-relaxed font-sans text-xs">
-                  {currentStreamingText}
-                </div>
-              )}
+              {currentStreamingText && <MarkdownText text={currentStreamingText} />}
             </div>
           </div>
         )}

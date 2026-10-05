@@ -132,10 +132,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const initData = async () => {
       try {
         const wellsData = await api.getWells();
-        if (wellsData && wellsData.length > 0) {
-          setWells(wellsData);
-          setIsBackendOnline(true);
-        }
+        // The call succeeding is what proves the backend is reachable --
+        // not the row count. Gating isBackendOnline on length > 0 (as this
+        // did) left the flag stuck at false whenever the store legitimately
+        // answered with an empty list, which is a different condition from
+        // an outage and should not be reported as one.
+        setWells(wellsData ?? []);
+        setIsBackendOnline(true);
       } catch (err) {
         console.warn('Backend not responding yet; retrying in background...', err);
         setIsBackendOnline(false);

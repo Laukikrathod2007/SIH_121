@@ -34,7 +34,7 @@ const PdfEvidenceViewer = lazy(() =>
 );
 
 export const NearbyWellsPage: React.FC = () => {
-  const { activeWellId, setActiveWellId, wells, activeWell, telemetry } = useApp();
+  const { activeWellId, setActiveWellId, wells, activeWell, telemetry, isBackendOnline } = useApp();
 
   const [dorsOffsets, setDorsOffsets] = useState<OffsetWellRanking[]>([]);
   // Tracks activeWellId by default (the dossier should show the well the
@@ -104,6 +104,22 @@ export const NearbyWellsPage: React.FC = () => {
       haversineKm(activeWell.surface_lat, activeWell.surface_lon, w.surface_lat, w.surface_lon) <= radiusKm;
     return matchesField && matchesSearch && matchesRadius;
   });
+
+  // An unreachable backend leaves `wells` empty, which previously rendered
+  // as a plausible-looking but false "Total Catalog: 0 Wells" -- a data
+  // claim, when the truth is that no data was ever received. AppContext
+  // already distinguishes the two via isBackendOnline; this page just
+  // never read it.
+  if (!isBackendOnline && wells.length === 0) {
+    return (
+      <div className="p-4 h-full flex flex-col items-center justify-center gap-2 text-center font-mono text-xs">
+        <div className="text-red-400">Could not reach the backend.</div>
+        <div className="text-slate-400">
+          Well data is unavailable, so nearby-well intelligence cannot be computed.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 space-y-4 max-w-[1600px] mx-auto">
