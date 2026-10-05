@@ -27,7 +27,14 @@
 
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS timescaledb;
+-- timescaledb intentionally NOT enabled: this schema now targets Supabase's
+-- free tier for a fully-deployed, zero-cost production database, and
+-- Supabase does not offer the TimescaleDB extension. The one place that
+-- used it (telemetry_records, below) is a plain table instead -- no other
+-- code anywhere calls a Timescale-specific function (time_bucket(),
+-- continuous aggregates, retention/compression policies), confirmed by
+-- grepping the whole repo before this change, so this is a pure
+-- infrastructure swap with zero query-logic impact.
 
 -- =============================================================================
 -- PROVENANCE
@@ -416,11 +423,13 @@ CREATE TABLE casing_programs (
 
 CREATE INDEX idx_casing_programs_well ON casing_programs (well_id);
 
--- TimescaleDB hypertable. models/schemas.py (module 02) TelemetryRecord —
+-- Plain table (was a TimescaleDB hypertable before the Supabase migration --
+-- see the top-of-file note). models/schemas.py (module 02) TelemetryRecord —
 -- verbatim fields. `time` (parsed from TelemetryRecord.timestamp, an ISO8601
--- string) is the hypertable partitioning column, so it's part of the PK
--- (TimescaleDB requires any uniqueness constraint to include the
--- partitioning column).
+-- string) stays part of the composite PK below even without Timescale's
+-- partitioning requirement driving it, since (well_id, time) is still the
+-- natural uniqueness constraint for one simulation tick and
+-- migrate_seed.py's ON CONFLICT DO NOTHING depends on it unchanged.
 CREATE TABLE telemetry_records (
     time                       TIMESTAMPTZ NOT NULL,
     well_id                      TEXT NOT NULL REFERENCES wells(well_id) ON DELETE CASCADE,
@@ -445,7 +454,6 @@ CREATE TABLE telemetry_records (
     PRIMARY KEY (well_id, time)
 );
 
-SELECT create_hypertable('telemetry_records', by_range('time'), if_not_exists => TRUE);
 CREATE INDEX idx_telemetry_well_time ON telemetry_records (well_id, time DESC);
 
 -- =============================================================================
