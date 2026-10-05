@@ -1,0 +1,28 @@
+# Render Blueprint for the NWIS unified backend. Deploy by connecting this
+# repo to Render and choosing "New > Blueprint" — Render reads this file
+# and creates the service below automatically. See
+# AUDIT/16_DEPLOYMENT_GUIDE.md for the full step-by-step walkthrough,
+# including why this blueprint does NOT include a managed Postgres
+# instance (schema needs postgis + pgvector + timescaledb, none of which
+# Render's managed Postgres offers — see that guide's Database section for
+# the real options and their actual cost).
+
+services:
+  - type: web
+    name: nwis-backend
+    runtime: docker
+    dockerfilePath: ./Backend/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: NWIS_ENV
+        value: production
+      - key: NWIS_API_KEY
+        sync: false   # set manually in the Render dashboard — never commit a real key here
+      - key: NWIS_CORS_ORIGINS
+        sync: false   # set to your deployed Vercel frontend origin, e.g. https://your-app.vercel.app
+      # NWIS_DATABASE_URL: intentionally omitted — see AUDIT/16's Database
+      # section. Add it manually in the dashboard only once you have a
+      # Postgres instance (self-hosted with the three required extensions,
+      # or a paid managed option) actually reachable from this service.
+    healthCheckPath: /health
