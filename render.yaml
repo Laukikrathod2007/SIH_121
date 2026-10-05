@@ -1,11 +1,21 @@
 # Render Blueprint for the NWIS unified backend. Deploy by connecting this
 # repo to Render and choosing "New > Blueprint" — Render reads this file
 # and creates the service below automatically. See
-# AUDIT/16_DEPLOYMENT_GUIDE.md for the full step-by-step walkthrough,
-# including why this blueprint does NOT include a managed Postgres
-# instance (schema needs postgis + pgvector + timescaledb, none of which
-# Render's managed Postgres offers — see that guide's Database section for
-# the real options and their actual cost).
+# AUDIT/16_DEPLOYMENT_GUIDE.md for the full step-by-step walkthrough.
+#
+# Database: Supabase (free tier — PostGIS + pgvector), not Render's own
+# managed Postgres (which offers neither). database/schema.sql no longer
+# requires TimescaleDB either, so Supabase's plain Postgres is sufficient
+# with zero further schema changes. Set NWIS_DATABASE_URL below to the
+# Supabase connection string once the project is created.
+#
+# LLM: Gemini (gemini-flash-lite-latest, the cheapest flash tier) replaces
+# the local-Ollama design — no
+# GPU/persistent-compute budget exists on Render's free tier for a
+# self-hosted model. Three separate free-tier Google account API keys are
+# rotated on failure (see modules/02_nwis_backend/agent/orchestrator.py)
+# to multiply the effective free request quota; the Copilot still falls
+# back to deterministic keyword search if all three are exhausted/unset.
 
 services:
   - type: web
@@ -21,8 +31,12 @@ services:
         sync: false   # set manually in the Render dashboard — never commit a real key here
       - key: NWIS_CORS_ORIGINS
         sync: false   # set to your deployed Vercel frontend origin, e.g. https://your-app.vercel.app
-      # NWIS_DATABASE_URL: intentionally omitted — see AUDIT/16's Database
-      # section. Add it manually in the dashboard only once you have a
-      # Postgres instance (self-hosted with the three required extensions,
-      # or a paid managed option) actually reachable from this service.
+      - key: NWIS_DATABASE_URL
+        sync: false   # the Supabase project's connection string
+      - key: GEMINIKEY1
+        sync: false
+      - key: GEMINIKEY2
+        sync: false
+      - key: GEMINIKEY3
+        sync: false
     healthCheckPath: /health

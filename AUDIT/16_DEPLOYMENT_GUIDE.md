@@ -54,7 +54,7 @@ pass: no `.env` file is tracked).
    context isn't `Backend/` alone).
 
 ### 2.3 Set the required environment variables
-`render.yaml` deliberately leaves two variables for you to fill in by
+`render.yaml` deliberately leaves several variables for you to fill in by
 hand (never commit a real API key to a blueprint file):
 
 1. In the Render dashboard, open the `nwis-backend` service → Environment.
@@ -71,10 +71,11 @@ hand (never commit a real API key to a blueprint file):
    after that step, then redeploy). Until then the backend will reject
    browser requests from the deployed frontend with a CORS error — this
    is expected, not a bug, and the fix is exactly this one env var.
-4. Leave **`NWIS_DATABASE_URL`** unset for now unless you've already
-   decided on one of the options in §3. The app runs correctly without
-   it — see §3.4.
-5. Optional: `NWIS_REDUCTO_API_KEY` / `NWIS_EXTEND_API_KEY` if you want
+4. Set **`NWIS_DATABASE_URL`** to your Supabase project's connection
+   string — see §3.2.
+5. Set **`GEMINIKEY1`** (and, recommended, `GEMINIKEY2`/`GEMINIKEY3`) to
+   API keys from separate free-tier Google AI Studio accounts — see §5.4.
+6. Optional: `NWIS_REDUCTO_API_KEY` / `NWIS_EXTEND_API_KEY` if you want
    the Tier 2 cloud-OCR fallback live in the deployed instance. Leave
    blank otherwise — nothing breaks, `/health` just reports it as
    unconfigured.
@@ -96,91 +97,59 @@ automatically when `NWIS_PORT` is not explicitly set, so you do not need
 to configure anything extra here — confirmed by reading the fix and
 restarting the app locally to verify no regression.
 
-## 3. Database — read this before assuming "just add Postgres"
+## 3. Database — Supabase (free tier)
 
 ### 3.1 What the schema actually needs
-`database/schema.sql` requires three PostgreSQL extensions, all
-confirmed load-bearing (not optional) by reading the schema directly:
+`database/schema.sql` requires two PostgreSQL extensions, both free on
+Supabase:
 - **PostGIS** — `wells.surface_location` and every trajectory station's
   location are `geography` columns; nearby-well radius queries depend on
   this.
 - **pgvector** — `event_embeddings.embedding vector(384)` with an HNSW
-  index. **Confirmed this pass: this table has 45 seeded rows but no
-  application code currently reads from or writes to it** — live
-  semantic search (`modules/02_nwis_backend/search/knowledge_search.py`)
-  actually computes and caches embeddings in-process at runtime, not via
-  this table. So pgvector is schema-provisioned for a near-future
-  capability, not yet the live search backend. It's still a real
-  `CREATE EXTENSION` requirement either way.
-- **TimescaleDB** — `telemetry_records` is a hypertable
-  (`SELECT create_hypertable(...)`).
+  index. This table is schema-provisioned for a near-future capability —
+  live semantic search (`modules/02_nwis_backend/search/knowledge_search.py`)
+  currently computes and caches embeddings in-process at runtime, not via
+  this table — but the extension is still required for the column type.
 
-### 3.2 Render's managed Postgres does not support these
-Render's own managed PostgreSQL offering does not include PostGIS,
-pgvector, or TimescaleDB as installable extensions. This is a genuine
-platform limitation, not a configuration step you're missing.
+**TimescaleDB is no longer required.** `telemetry_records` was a
+hypertable in an earlier pass; it is now a plain table with the same
+`(well_id, time)` composite primary key and the same query-performance
+index — no application code anywhere calls a Timescale-specific function
+(`time_bucket()`, continuous aggregates, retention/compression policies),
+so this was a pure infrastructure swap with zero query-logic impact. This
+is what makes Supabase's free tier (which doesn't offer TimescaleDB)
+viable without any schema compromise.
 
-### 3.3 Your real options, honestly costed
-1. **Self-host Postgres as a second Render Docker service**, using the
-   image this repo already has
-   (`database/Dockerfile` — `timescale/timescaledb-ha:pg16-all` +
-   pgvector built from source, confirmed this pass to already bundle all
-   three extensions correctly). **The catch**: Render's free tier gives
-   services ephemeral disk only — every redeploy or restart wipes the
-   database clean. This is fine for a one-off demo where you accept
-   re-seeding, genuinely not fine for anything you want to persist
-   across sessions. A Render **paid** instance with a persistent disk
-   (starts at a few dollars/month at the time of writing — check Render's
-   current pricing) removes this limitation.
-2. **A managed provider with the right extensions**: Supabase supports
-   PostGIS and pgvector on its free tier but not TimescaleDB (you would
-   need to drop the hypertable call and accept `telemetry_records` as an
-   ordinary table — a real, if small, schema change, not just a
-   deployment setting). Neon supports pgvector but not PostGIS or
-   TimescaleDB. Both require adapting the schema, not just pointing
-   `NWIS_DATABASE_URL` at them.
-3. **Deploy in memory mode (recommended for a free, zero-friction demo)**
-   — leave `NWIS_DATABASE_URL` unset entirely. See §3.4.
+### 3.2 Set up Supabase
+1. Go to [supabase.com](https://supabase.com) → New Project (free tier).
+2. In the SQL Editor, enable both extensions once:
+   ```sql
+   create extension if not exists postgis;
+   create extension if not exists vector;
+   ```
+3. Run `database/schema.sql` against the project (SQL Editor, paste and
+   run the whole file, or `psql` with the connection string below) — this
+   creates every table/index the app needs. The app does not run
+   migrations itself by design (no Alembic, no migration framework, per
+   this project's own engineering constraints), so this is a one-time
+   manual step.
+4. Copy the project's connection string (Project Settings → Database →
+   Connection string → URI) into `NWIS_DATABASE_URL` on the Render
+   service.
+5. Optionally run `database/migrate_seed.py` once against the Supabase
+   connection string to load the synthetic + real-Volve testbed data (set
+   `NWIS_DATABASE_URL` in your local shell to the Supabase string before
+   running it, same script the local Docker setup uses).
 
-### 3.4 Memory mode is a fully supported, tested path — not a fallback hack
-This is not a workaround invented for this guide: `db_is_configured()`
-returning false is the original, first-class operating mode this entire
-codebase was built around, and the DB-backed paths were added later as
-an *additive* layer on top of it (see `AUDIT/12`/`13`/`14`'s own
-documented history). Every route this pass verified has a
-parametrized `memory` test case alongside its `postgres` case (287 tests
-total, confirmed passing this pass — see §6). Deployed with no database
-configured, you get:
-- The full synthetic + real-Volve well catalog, trajectories, formations,
-  casing, and events (all loaded from JSON fixtures at startup, no
-  database needed).
-- DORS ranking, stratigraphic correlation, risk corridors, the full
-  `/analyze` pipeline — all working, reading from the in-memory store.
-- Document ingestion and review still work; approved extractions are
-  saved to local JSON files (`data/output/`) instead of Postgres — on
-  Render's free tier this is also ephemeral storage, so uploaded
-  documents won't survive a redeploy, which is an honest, acceptable
-  demo-time tradeoff, not data loss you'd notice mid-demo.
-- Alert history and document sync-status both correctly report
-  `"not_configured"` rather than a silent empty state or a crash — this
-  tri-state honesty was specifically built and tested for exactly this
-  situation (see `AUDIT/14` §1.vi).
-
-**What you lose in memory mode**: cross-restart persistence of anything
-written at runtime (new alerts, new approved documents, simulator-
-generated alert history), and the live pgvector-backed search path once
-that's built. Nothing about the seven SIH-required workflows is disabled
-or broken.
-
-### 3.5 If you do add a database later
-Set `NWIS_DATABASE_URL` on the Render service to the connection string
-(or the discrete `NWIS_DB_HOST`/`NWIS_DB_PORT`/`NWIS_DB_NAME`/
-`NWIS_DB_USER`/`NWIS_DB_PASSWORD` fields — see `Backend/.env.example`),
-then run `database/schema.sql` against it once (the same file the local
-`docker-compose.yml` initializes with) before the app's first request
-that needs it — the app does not run migrations itself by design (no
-Alembic, no migration framework, per this project's own engineering
-constraints).
+### 3.3 Memory mode still works, if you ever want it
+`db_is_configured()` returning false (leaving `NWIS_DATABASE_URL` unset)
+remains a fully supported fallback — the original, first-class operating
+mode this codebase was built around, with every route's DB-backed path
+additively layered on top of it. Not the recommended path for "one link,
+fully working," but documented here in case Supabase is ever unreachable:
+the app still serves the full synthetic + real-Volve catalog from JSON
+fixtures, with alert history and document sync-status correctly reporting
+`"not_configured"` rather than a silent empty state or a crash.
 
 ## 4. Deploy the frontend to Vercel
 
@@ -280,27 +249,32 @@ tiny, but its dependency tree is not) that would make an already-tight
 this truthfully (`docling: not_installed`) rather than hiding it — this
 is existing, correct behavior, not something this pass needs to change.
 
-### 5.4 Agentic Knowledge Copilot & Local LLM (Ollama)
+### 5.4 Agentic Knowledge Copilot & Gemini API (3-key rotation)
 The Agentic Knowledge Copilot (`POST /api/v2/agent/chat`) uses a tool-calling
-loop backed by a local or networked Ollama instance running `qwen2.5:7b-instruct`:
+loop backed by Google's Gemini API (`gemini-flash-lite-latest`, the
+cheapest flash tier), not a self-hosted model — Render's free tier has no
+GPU/persistent-compute budget for that.
 - **Configuration**:
-  - `NWIS_OLLAMA_URL` (default: `http://localhost:11434`)
-  - `NWIS_OLLAMA_MODEL` (default: `qwen2.5:7b-instruct`)
+  - `GEMINIKEY1`, `GEMINIKEY2`, `GEMINIKEY3` — API keys from three
+    separate free-tier Google (AI Studio) accounts. Only `GEMINIKEY1` is
+    required; 2 and 3 are optional but recommended, since each account's
+    free tier has its own request quota and the orchestrator rotates to
+    the next key on a rate-limit (429), auth, or server error (see
+    `modules/02_nwis_backend/agent/orchestrator.py`'s
+    `_is_retryable_on_another_key()`), roughly multiplying the effective
+    free quota by the number of keys configured.
+  - `NWIS_GEMINI_MODEL` (default: `gemini-flash-lite-latest`)
   - `NWIS_RATE_LIMIT_AGENT_MAX_REQUESTS` (default: `10` requests/60s)
 - **Honest Fallback Behavior**:
-  Render free tier does not provide the persistent GPU or 4.7 GB RAM needed
-  to host a 7B LLM. When Ollama is unreachable at request time, the route
-  **never crashes or returns 500**. Instead, it automatically executes the
-  deterministic keyword search fallback (`mode: "keyword_fallback"`),
-  yielding real offset-well rankings and historical incident citations from
-  the database/store.
+  When all configured keys are rate-limited/unreachable, or none are
+  configured, the route **never crashes or returns 500**. Instead, it
+  automatically executes the deterministic keyword search fallback
+  (`mode: "keyword_fallback"`), yielding real offset-well rankings and
+  historical incident citations from the database/store.
 - **Frontend Transparency**:
-  The UI displays an honest mode badge (`AI-Assisted (Ollama / Qwen-2.5)` vs
+  The UI displays an honest mode badge (`AI-Assisted (Gemini 2.5 Flash)` vs
   `Keyword Search Fallback`), strictly adhering to the project's
   zero-hallucination policy.
-- **Cloud LLM Hosting**:
-  To enable the full LLM agent in production, point `NWIS_OLLAMA_URL` to a
-  dedicated host (e.g. RunPod, GPU instance, or Ollama cloud container).
 
 ## 6. Verification this guide's claims were checked against
 
