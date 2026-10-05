@@ -38,6 +38,7 @@ import asyncio
 import contextlib
 import re
 import sys
+import time
 from collections import deque
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -105,9 +106,22 @@ _last_known_position: Dict[str, Dict[str, Any]] = {}
 
 class _SimRuntime:
     is_running: bool = False
+    # Wall-clock monotonic deadline after which _sim_loop pauses itself.
+    # None whenever the sim is not running.
+    auto_pause_at: float | None = None
 
 
 runtime = _SimRuntime()
+
+# The continuously-running twin is a demo/analysis affordance, not a process
+# that needs to advance unattended forever: nothing reads the twin once the
+# operator navigates away, and on a small single-worker host an indefinitely
+# stepping background task is the one piece of work that keeps running with
+# no client left to serve it. So a run started over HTTP carries a deadline
+# and the loop pauses itself when it expires -- clicking start again simply
+# extends it. 0 disables the deadline entirely (an unattended long-run rig
+# deployment would set that, having the resources for it).
+SIM_MAX_RUN_SECONDS = float(os.environ.get("NWIS_SIM_MAX_RUN_SECONDS", "900"))
 
 LOG_DIR = MODULE_04_ROOT / "data" / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -151,15 +165,41 @@ async def _broadcast(env_dict: Dict[str, Any]) -> None:
 
 
 async def _sim_loop() -> None:
+    # Every iteration is wrapped: this task is created once, at startup, and
+    # nothing ever awaits it, so an exception escaping here would cancel the
+    # loop permanently and silently -- the twin would simply stop advancing
+    # for the life of the process, with is_running still reporting True and
+    # no traceback anywhere. Containing it per-iteration keeps one bad step
+    # (a transient engine or broadcast error) from being terminal, and makes
+    # it visible in the log instead.
     while True:
-        if runtime.is_running:
-            async with _engine_lock:
-                env_dict = _step_and_record()
-            await _broadcast(env_dict)
-            interval = engine.config.dt_s / max(0.1, engine.config.speed_multiplier)
-            interval = max(0.02, min(interval, 1.0))
-        else:
-            interval = 0.15
+        interval = 0.15
+        try:
+            if runtime.is_running:
+                if (
+                    runtime.auto_pause_at is not None
+                    and time.monotonic() >= runtime.auto_pause_at
+                ):
+                    runtime.is_running = False
+                    runtime.auto_pause_at = None
+                    logger.info(
+                        f"Simulation auto-paused after {SIM_MAX_RUN_SECONDS:.0f}s "
+                        "(NWIS_SIM_MAX_RUN_SECONDS); POST /api/v3/physics/start to resume"
+                    )
+                else:
+                    async with _engine_lock:
+                        env_dict = _step_and_record()
+                    await _broadcast(env_dict)
+                    interval = engine.config.dt_s / max(0.1, engine.config.speed_multiplier)
+                    interval = max(0.02, min(interval, 1.0))
+        except asyncio.CancelledError:
+            # Shutdown (lifespan cancels this task) -- must propagate, not
+            # be swallowed as "one bad iteration".
+            raise
+        except Exception:
+            logger.exception("Simulation step failed; pausing the twin")
+            runtime.is_running = False
+            runtime.auto_pause_at = None
         await asyncio.sleep(interval)
 
 
@@ -314,6 +354,14 @@ def _status_dict() -> Dict[str, Any]:
         # Alias -- AppContext.tsx's pollStatus() accepts either key.
         "md_m": md,
         "active_scenarios": active,
+        # Seconds left before the twin pauses itself, so a client can show
+        # the deadline rather than having the sim appear to stop on its own.
+        # None when not running, or when the deadline is disabled.
+        "auto_pause_in_s": (
+            round(max(0.0, runtime.auto_pause_at - time.monotonic()), 1)
+            if runtime.is_running and runtime.auto_pause_at is not None
+            else None
+        ),
     }
 
 
@@ -325,12 +373,19 @@ async def physics_status():
 @app.post("/api/v3/physics/start", tags=["Physics"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def physics_start():
     runtime.is_running = True
+    # Starting (or re-starting) always extends the deadline from now, so an
+    # operator actively driving the sim is never cut off mid-session -- only
+    # a run everybody has walked away from reaches it.
+    runtime.auto_pause_at = (
+        time.monotonic() + SIM_MAX_RUN_SECONDS if SIM_MAX_RUN_SECONDS > 0 else None
+    )
     return _status_dict()
 
 
 @app.post("/api/v3/physics/pause", tags=["Physics"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
 async def physics_pause():
     runtime.is_running = False
+    runtime.auto_pause_at = None
     return _status_dict()
 
 

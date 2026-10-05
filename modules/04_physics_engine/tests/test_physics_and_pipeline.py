@@ -363,3 +363,72 @@ class TestPhysicsController:
         rst = controller.reset_simulation(initial_md_m=2600.0)
         assert rst["status"] == "reset"
         assert rst["initial_md_m"] == 2600.0
+
+
+# ---------------------------------------------------------------------------
+# 13. Simulation loop safety: self-pausing deadline + per-iteration error
+#     containment. The twin's background task is created once at startup and
+#     never awaited, so without these two properties an exception would kill
+#     it silently (is_running still True, nothing advancing, no traceback),
+#     and a forgotten run would keep stepping with no client left to serve.
+# ---------------------------------------------------------------------------
+import asyncio
+import time as _time
+
+# app.modules.physics.api.server is imported INSIDE each test, never at file
+# scope: importing it binds the module's FastAPI app and its module-level
+# state, and tests/unit/test_import_architecture.py asserts that merely
+# importing the app neither starts background work nor mutates sys.path.
+# A file-scope import here runs at collection time, before those assertions,
+# and makes them fail -- a test-only artifact, not a product defect.
+
+
+def test_sim_loop_auto_pauses_at_its_deadline(monkeypatch):
+    """A run started over HTTP carries a deadline; the loop pauses itself."""
+    from app.modules.physics.api import server as _srv
+
+    monkeypatch.setattr(_srv, "SIM_MAX_RUN_SECONDS", 0.4)
+
+    async def scenario():
+        task = asyncio.create_task(_srv._sim_loop())
+        _srv.runtime.is_running = True
+        _srv.runtime.auto_pause_at = _time.monotonic() + 0.4
+        try:
+            # Still running well before the deadline.
+            await asyncio.sleep(0.15)
+            assert _srv.runtime.is_running is True
+
+            # Paused once it passes, with the deadline cleared.
+            await asyncio.sleep(0.6)
+            assert _srv.runtime.is_running is False
+            assert _srv.runtime.auto_pause_at is None
+        finally:
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+    asyncio.run(scenario())
+
+
+def test_sim_loop_survives_a_failing_step(monkeypatch):
+    """One bad step pauses the twin instead of terminating the loop task."""
+    from app.modules.physics.api import server as _srv
+
+    def boom():
+        raise RuntimeError("simulated engine failure")
+
+    async def scenario():
+        task = asyncio.create_task(_srv._sim_loop())
+        monkeypatch.setattr(_srv, "_step_and_record", boom)
+        _srv.runtime.is_running = True
+        _srv.runtime.auto_pause_at = None
+        try:
+            await asyncio.sleep(0.3)
+            assert _srv.runtime.is_running is False, "a failing step must pause the twin"
+            assert not task.done(), "the loop task must survive a failing step"
+        finally:
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+    asyncio.run(scenario())
