@@ -1,0 +1,475 @@
+/* "The Well Remembers" — film styles. Scoped under .film-root. */
+
+.film-root {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  color: #ece6da;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+  z-index: 50;
+}
+.film-root canvas {
+  display: block;
+}
+.film-hide-cursor {
+  cursor: none;
+}
+
+/* ---------- overlay layers ---------- */
+.film-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.film-black {
+  position: absolute;
+  inset: 0;
+  background: #000;
+}
+.film-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: #000;
+}
+.film-frame {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+/* ---------- cues ---------- */
+.film-cue {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  text-align: center;
+  max-width: min(78vw, 980px);
+  will-change: opacity, transform;
+}
+.film-cue-line {
+  bottom: 9%;
+  font-weight: 300;
+  font-size: clamp(16px, 1.55vw, 26px);
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  color: #efe8dc;
+  text-shadow: 0 1px 24px rgba(0, 0, 0, 0.85);
+}
+.film-cue-hud {
+  top: 9%;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(10px, 0.8vw, 13px);
+  letter-spacing: 0.32em;
+  color: rgba(214, 226, 236, 0.78);
+}
+.film-cue-title {
+  top: 50%;
+  translate: -50% -50%;
+  white-space: nowrap;
+  font-weight: 300;
+  font-size: clamp(22px, 3.2vw, 54px);
+  letter-spacing: 0.42em;
+  color: #f4efe6;
+  padding-left: 0.42em; /* balance trailing letter-spacing */
+}
+.film-cue-alert {
+  bottom: 12%;
+  text-align: left;
+  translate: -50% 0;
+  padding: 14px 20px 14px 18px;
+  border-left: 2px solid #ffa24a;
+  background: linear-gradient(90deg, rgba(20, 12, 6, 0.72), rgba(20, 12, 6, 0));
+  min-width: min(560px, 80vw);
+}
+.film-alert-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(11px, 0.95vw, 15px);
+  letter-spacing: 0.18em;
+  color: #ffc58a;
+}
+.film-alert-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffa24a;
+  box-shadow: 0 0 12px #ffa24a;
+  animation: film-pulse 1.6s ease-in-out infinite;
+}
+.film-alert-sub {
+  margin-top: 6px;
+  font-size: clamp(13px, 1.1vw, 18px);
+  font-weight: 300;
+  color: #e9dfd0;
+}
+.film-cue-decision {
+  bottom: 9%;
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(17px, 1.7vw, 28px);
+  color: #fff6ea;
+  text-shadow: 0 1px 24px rgba(0, 0, 0, 0.9);
+}
+.film-cue-quote {
+  top: 50%;
+  translate: -50% -50%;
+  font-weight: 300;
+  font-size: clamp(18px, 2vw, 32px);
+  line-height: 1.5;
+  color: #f6efe3;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.9);
+}
+.film-quote-sub {
+  margin-top: 14px;
+  font-size: clamp(11px, 0.85vw, 14px);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(230, 220, 205, 0.6);
+}
+.film-cue-brand {
+  top: 40%;
+  translate: -50% -50%;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-weight: 600;
+  font-size: clamp(30px, 4vw, 64px);
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+.film-brand-mark {
+  height: 1.1em;
+  width: auto;
+}
+.film-cue-tagline {
+  top: 51%;
+  font-weight: 300;
+  font-size: clamp(15px, 1.4vw, 24px);
+  color: #e6edf2;
+}
+.film-cue-note {
+  bottom: 4%;
+  font-size: clamp(10px, 0.75vw, 12px);
+  color: rgba(200, 210, 220, 0.6);
+  letter-spacing: 0.02em;
+}
+
+/* ---------- depth readout ---------- */
+.film-depth {
+  position: absolute;
+  right: 4%;
+  top: 8%;
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(225, 232, 238, 0.82);
+  transition: color 1.2s ease;
+}
+.film-depth-label {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  opacity: 0.7;
+}
+.film-depth-value {
+  font-size: clamp(22px, 2.2vw, 36px);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+.film-depth-value span {
+  font-size: 0.5em;
+  opacity: 0.7;
+}
+.film-depth-formation {
+  margin-top: 2px;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  opacity: 0.75;
+}
+.film-depth-near {
+  color: #ffc58a;
+}
+.film-depth-silent .film-depth-value {
+  color: #fff;
+}
+
+/* ---------- evidence document ---------- */
+.film-evidence {
+  position: absolute;
+  right: 5%;
+  top: 50%;
+  translate: 0 -50%;
+  width: min(420px, 40vw);
+  background: #f3efe6;
+  color: #1f1d1a;
+  font-size: 12.5px;
+  line-height: 1.5;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  padding: 18px 20px 14px;
+  font-family: 'Inter', sans-serif;
+}
+.film-evidence-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: #0e7490;
+  margin-bottom: 10px;
+}
+.film-evidence-head {
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 1px solid #d6cfc2;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+.film-evidence-meta {
+  font-weight: 400;
+  font-size: 11.5px;
+  color: #6b655c;
+}
+.film-evidence-label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: #6b655c;
+  margin-top: 6px;
+}
+.film-evidence-body p {
+  margin: 3px 0 6px;
+}
+.film-evidence mark {
+  background: linear-gradient(#ffd27a, #ffd27a) no-repeat;
+  background-size: 0% 100%;
+  color: inherit;
+  padding: 0 1px;
+}
+.film-evidence-foot {
+  margin-top: 8px;
+  font-size: 9.5px;
+  color: #8a8478;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ---------- gate ---------- */
+.film-gate,
+.film-still {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 50% 60%, #0b1016 0%, #000 70%);
+}
+.film-gate-inner,
+.film-still-inner {
+  text-align: center;
+  max-width: 640px;
+  padding: 24px;
+}
+.film-gate-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.4em;
+  color: rgba(200, 214, 226, 0.6);
+}
+.film-gate-title {
+  margin: 18px 0 14px;
+  font-weight: 300;
+  font-size: clamp(26px, 4vw, 52px);
+  letter-spacing: 0.32em;
+  padding-left: 0.32em;
+  color: #f4efe6;
+}
+.film-gate-line {
+  color: rgba(230, 222, 210, 0.7);
+  font-weight: 300;
+}
+.film-gate-play {
+  margin-top: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 34px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #fff;
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.4s, border-color 0.4s;
+}
+.film-gate-play:hover,
+.film-gate-play:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #fff;
+  outline: none;
+}
+.film-play-icon {
+  width: 0;
+  height: 0;
+  border-left: 10px solid #fff;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+.film-gate-options {
+  margin-top: 28px;
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  font-size: 12px;
+  color: rgba(220, 220, 220, 0.55);
+}
+.film-gate-options label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  cursor: pointer;
+}
+.film-gate-options a {
+  color: rgba(220, 220, 220, 0.55);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.film-still p {
+  color: rgba(236, 230, 218, 0.82);
+  font-weight: 300;
+  line-height: 1.7;
+  margin: 12px 0;
+}
+.film-still-tagline {
+  font-weight: 400 !important;
+  color: #fff !important;
+  margin: 22px 0 26px !important;
+}
+.film-still-note {
+  font-size: 12px;
+  opacity: 0.55;
+  margin-top: 30px !important;
+}
+
+/* ---------- controls ---------- */
+.film-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  transition: opacity 0.8s ease;
+  z-index: 3;
+}
+.film-controls-hidden {
+  opacity: 0;
+}
+.film-controls button {
+  background: none;
+  border: none;
+  color: rgba(240, 240, 240, 0.85);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+.film-controls button:hover,
+.film-controls button:focus-visible {
+  color: #fff;
+  outline: none;
+}
+.film-progress {
+  width: min(260px, 30vw);
+  height: 1px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.film-progress div {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.75);
+}
+.film-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.4em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ---------- end card ---------- */
+.film-end {
+  position: absolute;
+  left: 50%;
+  top: 64%;
+  translate: -50% 0;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  transition: opacity 0.6s;
+  z-index: 3;
+}
+.film-end-primary {
+  padding: 12px 26px;
+  background: #f4efe6;
+  color: #0b0d10;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-block;
+}
+.film-end-primary:hover {
+  background: #fff;
+}
+.film-end-secondary {
+  background: none;
+  border: none;
+  color: rgba(240, 240, 240, 0.75);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.film-end-secondary:hover {
+  color: #fff;
+}
+
+@keyframes film-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (max-width: 720px) {
+  .film-evidence {
+    right: 50%;
+    translate: 50% -50%;
+    width: 86vw;
+    font-size: 11.5px;
+  }
+  .film-depth {
+    top: 5%;
+  }
+  .film-end {
+    flex-direction: column;
+    top: 60%;
+  }
+}

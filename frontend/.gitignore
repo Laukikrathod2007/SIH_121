@@ -29,3 +29,6 @@ dist-ssr
 *.sw?
 .vercel
 .env*
+
+# film frame-capture output (scripts/film-frames.mjs)
+film-frames

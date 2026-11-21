@@ -27,6 +27,13 @@ const GlobeMapPage = lazy(() =>
   import('./pages/GlobeMapPage').then((m) => ({ default: m.GlobeMapPage }))
 );
 
+// The cinematic ("The Well Remembers"). Full-screen, outside the app
+// shell, and lazy so none of its code is loaded by the dashboard.
+const FilmPage = lazy(() => import('./film/FilmPage'));
+
+// The phased product story (calm, ~66 s): the landing-page candidate.
+const StoryPage = lazy(() => import('./story/StoryPage'));
+
 // "/" itself is intercepted before it ever reaches React (see vite.config.ts's
 // landingPageAtRoot plugin, which serves the static marketing page for that
 // exact path). Everything the app actually does lives under /app, so a
@@ -105,11 +112,37 @@ const MainAppLayout: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AppProvider>
-      <BrowserRouter>
-        <MainAppLayout />
-      </BrowserRouter>
-    </AppProvider>
+    <BrowserRouter>
+      <Routes>
+        {/* The film runs without the app shell (no sidebar, header, or the
+            AppProvider's telemetry WebSocket and polling). */}
+        <Route
+          path="/film"
+          element={
+            <Suspense fallback={<div className="fixed inset-0 bg-black" />}>
+              <FilmPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/story"
+          element={
+            <Suspense fallback={<div className="fixed inset-0" style={{ background: '#0a0e13' }} />}>
+              <StoryPage />
+            </Suspense>
+          }
+        />
+        {/* Everything else: the app and the docs, inside the AppProvider. */}
+        <Route
+          path="*"
+          element={
+            <AppProvider>
+              <MainAppLayout />
+            </AppProvider>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   );
 };
 
