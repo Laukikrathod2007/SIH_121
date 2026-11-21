@@ -34,11 +34,8 @@ const FilmPage = lazy(() => import('./film/FilmPage'));
 // The phased product story (calm, ~66 s): the landing-page candidate.
 const StoryPage = lazy(() => import('./story/StoryPage'));
 
-// "/" itself is intercepted before it ever reaches React (see vite.config.ts's
-// landingPageAtRoot plugin, which serves the static marketing page for that
-// exact path). Everything the app actually does lives under /app, so a
-// direct visit to "/" only ever happens via the static page's own CTAs
-// navigating to /app -- this router never needs to render a "/" route.
+// "/" is the product story (see App below). Everything the app itself does
+// lives under /app.
 const RoutedContent: React.FC = () => {
   const location = useLocation();
   return (
@@ -121,6 +118,15 @@ export const App: React.FC = () => {
           element={
             <Suspense fallback={<div className="fixed inset-0 bg-black" />}>
               <FilmPage />
+            </Suspense>
+          }
+        />
+        {/* The product story is the landing page ("/"); /story stays as an alias. */}
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={<div className="fixed inset-0" style={{ background: '#0a0e13' }} />}>
+              <StoryPage />
             </Suspense>
           }
         />

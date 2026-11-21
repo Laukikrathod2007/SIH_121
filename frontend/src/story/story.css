@@ -880,6 +880,14 @@
   color: #67e8f9;
   animation: intro-pulse 1.4s ease-in-out infinite;
 }
+/* Shown only if the browser refused to autoplay the opening. */
+.intro-tap {
+  position: absolute;
+  left: 50%;
+  bottom: 48px;
+  translate: -50% 0;
+  margin: 0;
+}
 @keyframes intro-pulse {
   50% {
     opacity: 0.35;

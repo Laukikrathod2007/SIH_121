@@ -13,7 +13,9 @@ const ROUTES = [
   ['/app/command-center', 'Expand sidebar'],
   ['/film', 'THE WELL REMEMBERS'],
   // First 10 s of /story are the loading animation (its Skip button).
-  ['/story', 'Skip intro'],
+  ['/', 'DrillWise opening animation'],
+  ['/story', 'DrillWise opening animation'],
+  ['/docs', 'Docs'],
 ];
 
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'routecheck-'));

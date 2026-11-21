@@ -32,7 +32,7 @@ const send = (method, params = {}) => new Promise((r) => { const i = ++id; pend.
 const ev = async (expr) => (await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true })).result?.result?.value;
 await send('Runtime.enable');
 await send('Page.enable');
-await send('Page.navigate', { url: (process.env.APP_URL || 'http://localhost:5173') + '/story' });
+await send('Page.navigate', { url: (process.env.APP_URL || 'http://localhost:5173') + (process.env.STORY_PATH || '/') });
 // The page shares the CPU with software WebGL loading the basin, so give
 // the video a moment to decode its first frames.
 for (let i = 0; i < 20; i++) {
@@ -45,14 +45,18 @@ const step = (name, ok, extra = '') => console.log(`${ok ? 'ok  ' : 'FAIL'} ${na
 const v = await ev(`(() => { const v = document.querySelector('.intro-video'); return v ? { t: +v.currentTime.toFixed(2), paused: v.paused, dur: v.duration, ready: v.readyState, w: v.videoWidth } : null })()`);
 step('loading video shown', !!v, JSON.stringify(v));
 step('video playing', !!v && !v.paused && v.t > 0);
-await ev(`document.querySelector('.intro-skip')?.click()`);
-// Poll: under software WebGL the page's timers can run seconds late.
+step('no skip button (the opening plays in full)', !(await ev(`!!document.querySelector('.intro-skip')`)));
+// The choice screen appears only once the video has ended. Track the
+// furthest point the video reached before it was replaced.
 let choice = '';
-for (let i = 0; i < 40 && !choice.includes('BEFORE THE BIT'); i++) {
+let furthest = 0;
+for (let i = 0; i < 90 && !choice.includes('BEFORE THE BIT'); i++) {
   await sleep(500);
+  const t = await ev(`document.querySelector('.intro-video')?.currentTime ?? -1`);
+  if (t > furthest) furthest = t;
   choice = await ev(`document.querySelector('.intro-title')?.textContent || ''`);
 }
-step('choice screen after skip', choice.includes('BEFORE THE BIT'), JSON.stringify(choice));
+step('choice screen after the video ends', choice.includes('BEFORE THE BIT') && furthest > 9, `video reached ${furthest.toFixed(2)} s of ${v?.dur?.toFixed(2)} s`);
 // wait for the 3D world to be ready (buttons enable)
 let enabled = false;
 for (let i = 0; i < 80 && !enabled; i++) {

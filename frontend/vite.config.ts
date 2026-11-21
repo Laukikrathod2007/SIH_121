@@ -28,8 +28,10 @@ const BACKEND_ORIGIN = process.env.VITE_API_BASE || 'http://localhost:8000';
 // Vite only has one built-in HTML entry, so without this these paths would
 // always show the React shell instead of the static pages. Only intercepts
 // these exact requests; the React Router app itself is untouched.
+// "/" is now the React app's /story (the product story is the landing
+// page); the old static marketing page is no longer served. /benchmarks
+// stays a static page (linked from the docs).
 const STATIC_PAGES: Record<string, string> = {
-  '/': 'index.html',
   '/benchmarks': 'benchmarks.html',
 };
 
@@ -76,30 +78,29 @@ function landingPageAtRoot(): Plugin {
 // dist/index.html is exactly what we want, and /app* rewrites to app.html.
 // Asset URLs in the built shell are absolute (/assets/...), so serving it
 // from a different filename changes nothing about how it loads.
-function landingPageAtRootForBuild(): Plugin {
+//
+// 2026-11: the product story (/story, React) replaced the static page as
+// the landing page, so dist/index.html stays the React shell (React Router
+// renders the story at "/"). The shell is also written to dist/app.html,
+// so the existing /app, /docs, /film and /story rewrites keep working.
+// The old static landing page (public/landing/index.html) was removed;
+// public/landing/ still holds benchmarks.html and shared assets (including
+// the BHA model the story's borehole loads).
+function appShellAsIndex(): Plugin {
   return {
-    name: 'landing-page-at-root-build',
+    name: 'app-shell-as-index',
     apply: 'build',
     closeBundle() {
       const dist = path.resolve(__dirname, 'dist');
       const spaShell = path.join(dist, 'index.html');
-      const landing = path.join(dist, 'landing', 'index.html');
-      if (!fs.existsSync(spaShell) || !fs.existsSync(landing)) return;
-
-      fs.renameSync(spaShell, path.join(dist, 'app.html'));
-      // Copied verbatim: public/landing/index.html already carries its own
-      // <base href="/landing/">, which is what makes its relative asset
-      // URLs (href="assets/...") resolve correctly while it's served from
-      // the root. No injection needed here (unlike the dev middleware
-      // above, which reads the file straight off disk before that base tag
-      // was added to the source).
-      fs.copyFileSync(landing, spaShell);
+      if (!fs.existsSync(spaShell)) return;
+      fs.copyFileSync(spaShell, path.join(dist, 'app.html'));
     },
   };
 }
 
 export default defineConfig({
-  plugins: [react(), landingPageAtRoot(), landingPageAtRootForBuild()],
+  plugins: [react(), landingPageAtRoot(), appShellAsIndex()],
   server: {
     port: 5173,
     strictPort: true,

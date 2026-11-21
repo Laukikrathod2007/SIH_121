@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 // Opening of /story, in two steps:
 //   1. The DrillWise loading animation (public/story/loading_animation.mp4,
-//      10 s, 1280x720) plays full-screen, muted (browsers block autoplay
-//      with sound). Skippable. While it plays, the 3D world loads behind it.
+//      10 s, 1280x720) plays muted (browsers block autoplay with sound),
+//      from start to end. While it plays, the 3D world loads behind it.
 //   2. A choice screen in the project's terms (PS 26121): what the next
 //      67 seconds show, and how to watch: with sound, without, or straight
 //      to the evidence below.
@@ -24,10 +24,33 @@ export function Intro({ onStart, ready }: { onStart: (withSound: boolean) => voi
     }, 650);
   }, []);
 
+  // The opening plays from start to end. It is muted, which browsers allow
+  // to autoplay; if a browser still refuses, retry on the first click or
+  // key press instead of skipping it. A stalled network still can't hold
+  // the page forever: after the video's length plus a margin, go on.
+  const [needTap, setNeedTap] = useState(false);
   useEffect(() => {
     const v = video.current;
     if (!v) return;
-    v.play().catch(() => toChoice()); // autoplay blocked: go straight to the choice
+    const tryPlay = () =>
+      v.play().then(
+        () => setNeedTap(false),
+        () => setNeedTap(true),
+      );
+    tryPlay();
+    const retry = () => {
+      if (v.paused) tryPlay();
+    };
+    window.addEventListener('pointerdown', retry);
+    window.addEventListener('keydown', retry);
+    const guard = window.setTimeout(() => {
+      if (v.paused || v.readyState < 2) toChoice();
+    }, 25000);
+    return () => {
+      window.removeEventListener('pointerdown', retry);
+      window.removeEventListener('keydown', retry);
+      window.clearTimeout(guard);
+    };
   }, [toChoice]);
 
   const start = useCallback(
@@ -40,17 +63,6 @@ export function Intro({ onStart, ready }: { onStart: (withSound: boolean) => voi
     },
     [onStart],
   );
-
-  useEffect(() => {
-    const on = (e: KeyboardEvent) => {
-      if (step === 'video' && (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ')) {
-        e.preventDefault();
-        toChoice();
-      }
-    };
-    window.addEventListener('keydown', on);
-    return () => window.removeEventListener('keydown', on);
-  }, [step, toChoice]);
 
   if (step === 'done') return null;
 
@@ -66,11 +78,10 @@ export function Intro({ onStart, ready }: { onStart: (withSound: boolean) => voi
             playsInline
             preload="auto"
             onEnded={toChoice}
+            onError={toChoice}
             aria-label="DrillWise opening animation"
           />
-          <button className="intro-skip" onClick={toChoice}>
-            Skip intro <span aria-hidden>→</span>
-          </button>
+          {needTap && <div className="intro-loading intro-tap">Click anywhere to play</div>}
         </>
       )}
 
