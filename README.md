@@ -63,7 +63,7 @@ Oil India's eRTMAC shows what is happening on the active well right now. What it
 
 ## The product story (`/story`)
 
-A 67-second, eight-phase walkthrough that runs as the product's landing story: **problem** (the well, the buried history), **solution** (extract, map, rank, correlate, look ahead) and **outcome** (the alert the engineer acts on). It is rendered live in the browser with three.js over real data:
+A 74-second, eight-phase walkthrough that runs as the product's landing story: **problem** (the well, the buried history), **solution** (extract, map, rank, correlate, look ahead) and **outcome** (the alert the engineer acts on). It is rendered live in the browser with three.js over real data:
 
 - **Terrain:** SRTM-based elevation and Sentinel-2 imagery of the Upper Assam basin, with the Himalaya and the Naga-Patkai ranges around it.
 - **Wells and numbers:** the wells, formation tops, ranking and risk scores come from the NWIS backend's output for the demo scenario (well NHK-002 at 2,850 m).
@@ -155,7 +155,7 @@ We keep this explicit so that every claim can be checked:
 - Satellite imagery: [Sentinel-2 cloudless](https://s2maps.eu) by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2016 and 2017), CC BY 4.0
 - Elevation: AWS Terrain Tiles (Mapzen; sources include SRTM, NASA/USGS)
 - Rig equipment models: 3dassets.dev, CC0. Rock textures: Poly Haven, CC0.
-- Music in `/story`: "Lightless Dawn", Kevin MacLeod ([incompetech.com](https://incompetech.com)), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), edited for length
+- Music in `/story`: 'Aphelion' by Scott Buckley ([www.scottbuckley.com.au](https://www.scottbuckley.com.au)), released under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), edited for length
 - Validation data: Equinor Volve field data set
 
 ---

@@ -39,7 +39,8 @@ export const PHASES: Phase[] = [
       { label: 'Formation at bit', value: 'Kopili' },
       { label: 'Offset wells', value: '11' },
     ],
-    duration: 9,
+    // Includes the Earth opening (globe → basin → rig), see scene/state.ts.
+    duration: 13,
   },
   {
     id: 'buried',
@@ -143,7 +144,9 @@ export const PHASES: Phase[] = [
       { label: 'Audit', value: 'Grounded in source reports' },
     ],
     where: 'Command Center',
-    duration: 8,
+    // Long enough for its own shot (rig, alert rings, crane out) and for
+    // both panels to be read before the story ends.
+    duration: 10,
   },
 ];
 

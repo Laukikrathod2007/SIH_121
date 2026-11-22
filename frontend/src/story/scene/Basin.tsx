@@ -154,6 +154,42 @@ export function Terrain({ state }: { state: React.MutableRefObject<StoryState> }
 }
 
 // ---------------------------------------------------------------------------
+// Decide: the alert, made visible on the ground. Three thin amber rings
+// expand slowly from the rig and fade, like a sonar sweep: a calm, clear
+// "this well, now" signal (not a flashing light).
+// ---------------------------------------------------------------------------
+function AlertRings({ x, y, z, state }: { x: number; y: number; z: number; state: React.MutableRefObject<StoryState> }) {
+  const group = useRef<THREE.Group>(null);
+  const rings = useMemo(
+    () =>
+      [0, 1, 2].map(() => {
+        const m = new THREE.MeshBasicMaterial({ color: AMBER, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, side: THREE.DoubleSide });
+        return { m, geo: new THREE.RingGeometry(0.96, 1, 96) };
+      }),
+    [],
+  );
+  useFrame(() => {
+    const s = state.current;
+    if (!group.current) return;
+    group.current.visible = s.alert > 0.01;
+    if (!group.current.visible) return;
+    group.current.children.forEach((c, i) => {
+      const ph = (s.time * 0.28 + i / 3) % 1;
+      // 40 m -> 1.4 km radius, fading as it grows
+      c.scale.setScalar(0.04 + ph * 1.36);
+      rings[i].m.opacity = s.alert * (1 - ph) * (1 - ph) * 0.85;
+    });
+  });
+  return (
+    <group ref={group} position={[x, y, z]} rotation-x={-Math.PI / 2}>
+      {rings.map((r, i) => (
+        <mesh key={i} geometry={r.geo} material={r.m} renderOrder={3} />
+      ))}
+    </group>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Offset-well wellhead: the CC0 christmas-tree model (public/story/rig).
 // ---------------------------------------------------------------------------
 const WELLHEAD_URL = '/story/rig/wellhead.glb';
@@ -246,6 +282,7 @@ export function Wells({ state }: { state: React.MutableRefObject<StoryState> }) 
       <group position={[active.x, surfaceY(active.x, active.z), active.z]} scale={0.001} rotation-y={0.5}>
         <LandRig state={state} />
       </group>
+      <AlertRings x={active.x} y={surfaceY(active.x, active.z) + 0.002} z={active.z} state={state} />
       <mesh ref={beamMesh} position={[active.x, surfaceY(active.x, active.z) + 1.5, active.z]}>
         <cylinderGeometry args={[0.035, 0.14, 3, 10, 1, true]} />
         <meshBasicMaterial ref={beam} color={AMBER} transparent opacity={0} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} toneMapped={false} />

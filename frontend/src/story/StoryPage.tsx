@@ -7,7 +7,7 @@ import type { WorldClock } from './scene/World';
 import { POINTER } from './pointer';
 import './story.css';
 
-// DrillWise product story: 8 phases, ~67 s, over one continuous real-time
+// DrillWise product story: 8 phases, ~74 s, over one continuous real-time
 // 3D world of the Upper Assam basin (scene/). Layout follows a product
 // keynote: nav, status strip, full-bleed scene, message on the left,
 // product UI on the right, transport bar with a phase rail. Every number
@@ -79,6 +79,22 @@ export const StoryPage: React.FC = () => {
   const devFrame = import.meta.env.DEV && new URLSearchParams(window.location.search).has('t');
   const [introDone, setIntroDone] = useState(devFrame);
   const [worldReady, setWorldReady] = useState(false);
+  // Start building the 3D world only once the opening video is playing
+  // (or after 1.5 s), so its downloads and shader compiles never stall the
+  // video's first frames. The world still has the rest of the 10 s video
+  // to load, hidden behind it.
+  const [worldGo, setWorldGo] = useState(devFrame);
+  useEffect(() => {
+    if (worldGo) return;
+    const go = () => setWorldGo(true);
+    const t = window.setTimeout(go, 1500);
+    const v = document.querySelector<HTMLVideoElement>('.intro-video');
+    v?.addEventListener('playing', go, { once: true });
+    return () => {
+      window.clearTimeout(t);
+      v?.removeEventListener('playing', go);
+    };
+  }, [worldGo]);
   useEffect(() => {
     // The 3D world flags the document once it has drawn; poll for it.
     const id = window.setInterval(() => {
@@ -284,7 +300,7 @@ export const StoryPage: React.FC = () => {
       </div>
 
       <section className="story-stage-area" ref={stageRef}>
-        {canRender ? (
+        {canRender && worldGo ? (
           <Suspense fallback={<div className="story-canvas story-canvas-loading" />}>
             <World clock={worldClock} lowPower={lowPower} />
           </Suspense>
@@ -427,14 +443,14 @@ function Evidence() {
         </a>{' '}
         by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2016 &amp; 2017), CC BY 4.0. Elevation: AWS Terrain Tiles (Mapzen; sources incl.
         SRTM, NASA/USGS). Rig equipment: “Offshore Oil Rig and Platform” and related packs, 3dassets.dev, CC0. Rock textures: Poly Haven, CC0. Music:{' '}
-        <a href="https://incompetech.com" target="_blank" rel="noreferrer">
-          “Lightless Dawn”, Kevin MacLeod (incompetech.com)
-        </a>
-        , licensed under{' '}
+        <a href="https://www.scottbuckley.com.au" target="_blank" rel="noreferrer">
+          ‘Aphelion’ by Scott Buckley
+        </a>{' '}
+        (www.scottbuckley.com.au), released under{' '}
         <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">
-          Creative Commons: By Attribution 4.0
+          CC BY 4.0
         </a>
-        ; edited for length.
+        ; edited for length. Earth day and night maps: the project’s globe textures (public/earth).
       </p>
     </div>
   );

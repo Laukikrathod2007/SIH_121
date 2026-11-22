@@ -10,7 +10,9 @@ function getInitialTheme(): Theme {
   } catch {
     /* localStorage unavailable (private mode, etc.) -- fall through to default */
   }
-  return 'light';
+  // Dark by default, matching the landing page (the story); users can still
+  // switch, and their choice is remembered.
+  return 'dark';
 }
 
 // App-wide light/dark toggle. Applies via a `data-theme` attribute on

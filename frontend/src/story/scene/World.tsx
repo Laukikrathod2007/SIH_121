@@ -7,6 +7,9 @@ import { Events, Fence, Subsurface, Terrain, Wells } from './Basin';
 import { Borehole } from './Borehole';
 import { Reports } from './Reports';
 import { Surround, SurroundGate } from './Surround';
+import { Globe } from './Globe';
+
+const SPACE = new THREE.Color('#010204');
 import { createState, updateState, type StoryState } from './state';
 import { POINTER } from '../pointer';
 
@@ -64,7 +67,7 @@ function DuskSky({ state }: { state: React.MutableRefObject<StoryState> }) {
         side: THREE.BackSide,
         depthWrite: false,
         fog: false,
-        uniforms: { uHaze: { value: HAZE }, uHorizon: { value: 0 } },
+        uniforms: { uHaze: { value: HAZE }, uHorizon: { value: 0 }, uUnder: { value: 0 } },
         vertexShader: /* glsl */ `
           varying vec3 vDir;
           void main() {
@@ -75,6 +78,7 @@ function DuskSky({ state }: { state: React.MutableRefObject<StoryState> }) {
         fragmentShader: /* glsl */ `
           uniform vec3 uHaze;
           uniform float uHorizon;
+          uniform float uUnder;
           varying vec3 vDir;
           void main() {
             float h = vDir.y - uHorizon;
@@ -85,6 +89,8 @@ function DuskSky({ state }: { state: React.MutableRefObject<StoryState> }) {
             col = mix(uHaze, col, smoothstep(-0.005, 0.11, h));
             // below the horizon line, stay in haze (land covers it anyway)
             if (h < 0.0) col = uHaze;
+            // Crossfade to the near-black of the subsurface view (no pop).
+            col = mix(col, vec3(0.03, 0.035, 0.04), uUnder);
             gl_FragColor = vec4(col, 1.0);
             #include <colorspace_fragment>
           }`,
@@ -96,7 +102,9 @@ function DuskSky({ state }: { state: React.MutableRefObject<StoryState> }) {
     mesh.current.position.copy(camera.position);
     // From altitude the horizon dips (Earth's curvature), so lower the band.
     mat.uniforms.uHorizon.value = -Math.min(0.06, Math.max(0, camera.position.y) * 0.0025);
-    mesh.current.visible = state.current.cutaway < 0.5;
+    const cut = state.current.cutaway;
+    mat.uniforms.uUnder.value = Math.min(1, Math.max(0, (cut - 0.1) / 0.6));
+    mesh.current.visible = true;
   });
   return (
     <mesh ref={mesh} material={mat} renderOrder={-1} frustumCulled={false}>
@@ -117,6 +125,8 @@ function Lights({ state }: { state: React.MutableRefObject<StoryState> }) {
   }, [scene]);
   useFrame(() => {
     const s = state.current;
+    // During the Earth opening, space has no fog or sky (Worlds sets it).
+    if (s.globe > 0) return;
     const n = s.night;
     if (sun.current) {
       sun.current.intensity = 2.6;
@@ -139,7 +149,9 @@ function Lights({ state }: { state: React.MutableRefObject<StoryState> }) {
     // In the correlation phase the land becomes a veil over the subsurface;
     // haze there would just wash it out.
     fog.density *= 1 - 0.85 * s.cutaway;
-    scene.background = s.cutaway > 0.05 ? bgUnder.setRGB(0.03, 0.035, 0.04) : null;
+    // The sky dome itself crossfades to the dark background (see DuskSky).
+    void bgUnder;
+    scene.background = null;
   });
   return (
     <>
@@ -173,6 +185,11 @@ function CameraDriver({ state }: { state: React.MutableRefObject<StoryState> }) 
   const first = useRef(true);
   useFrame((_, dt) => {
     const s = state.current;
+    // The globe opening drives the camera itself (see Globe).
+    if (s.globe > 0) {
+      first.current = true;
+      return;
+    }
     const pc0 = camera as THREE.PerspectiveCamera;
     // Surface camera range (the hole sets its own near/far).
     if (pc0.far !== 3000) {
@@ -264,13 +281,26 @@ const POST_FRAG = /* glsl */ `
       }
     }
     col += b / 24.0 * 1.2;
-    // Clean, photographic grade (aerial/IMAX look): a gentle S-curve,
-    // slightly cool, a light vignette, and only a trace of grain.
+    // Darker, filmic grade (large-format, Nolan-like): exposure pulled
+    // down, a filmic S-curve (deep but not crushed blacks, rolled-off
+    // highlights), greens desaturated toward olive, shadows cooled toward
+    // teal and highlights warmed, a stronger vignette, and fine grain.
+    col *= 0.86;
     float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
-    col = mix(vec3(l), col, 1.05);
-    col *= mix(1.0, 0.8, smoothstep(0.12, 0.7, r2 * 1.3));
+    // green -> olive: pull saturation down mostly where green dominates
+    float greenish = smoothstep(0.0, 0.12, col.g - max(col.r, col.b));
+    col = mix(vec3(l), col, mix(0.92, 0.7, greenish));
+    // split tone
+    vec3 shadowTint = vec3(0.92, 1.0, 1.06);
+    vec3 highTint = vec3(1.05, 1.0, 0.93);
+    col *= mix(shadowTint, highTint, smoothstep(0.05, 0.6, l));
+    // filmic contrast around mid-grey
+    col = (col - 0.18) * 1.12 + 0.18;
+    col = max(col, 0.0);
+    col = col / (1.0 + col * 0.12);
+    col *= mix(1.0, 0.62, smoothstep(0.1, 0.65, r2 * 1.35));
     float g = hash(uv * uRes + fract(uTime * 11.3) * 113.0) - 0.5;
-    col += g * 0.006;
+    col += g * 0.012;
     gl_FragColor = vec4(max(col, 0.0), 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -322,11 +352,24 @@ function Worlds({ state, clock }: { state: React.MutableRefObject<StoryState>; c
   const surface = useRef<THREE.Group>(null);
   const hole = useRef<THREE.Group>(null);
   const { scene } = useThree();
+  const globeGroup = useRef<THREE.Group>(null);
   useFrame(() => {
-    const w = state.current.world;
+    const s = state.current;
+    const w = s.world;
     if (w !== world) setWorld(w);
-    if (surface.current) surface.current.visible = w === 'surface';
+    const onGlobe = s.globe > 0;
+    // Exactly one world drawn at a time: the Earth, the basin, or the hole.
+    if (surface.current) surface.current.visible = w === 'surface' && !onGlobe;
     if (hole.current) hole.current.visible = w === 'hole';
+    if (globeGroup.current) globeGroup.current.visible = onGlobe;
+    // Space is black; the basin brings its own sky and haze.
+    if (onGlobe) {
+      scene.fog = null;
+      scene.background = SPACE;
+    } else if (scene.background === SPACE) {
+      scene.background = null;
+      scene.fog = new THREE.FogExp2('#b8c4cf', 0.012);
+    }
   });
   useEffect(() => {
     // The hole has its own fog/background; the surface has the sky's.
@@ -364,6 +407,9 @@ function Worlds({ state, clock }: { state: React.MutableRefObject<StoryState>; c
             fog or lights of the surface world. Its textures stay cached. */}
         {world === 'hole' && <Borehole state={state} />}
       </group>
+      <group ref={globeGroup}>
+        <Globe state={state} />
+      </group>
       <Rendered />
     </>
   );
@@ -375,7 +421,16 @@ function Dip({ state }: { state: React.MutableRefObject<StoryState> }) {
   const { camera } = useThree();
   const mesh = useRef<THREE.Mesh>(null);
   useFrame(() => {
-    mat.opacity = state.current.dip;
+    const s = state.current;
+    // Black dips between worlds; a white-haze flash (the sky's own haze
+    // colour) for the fall through the atmosphere, globe -> basin.
+    if (s.flash > s.dip) {
+      mat.color.copy(HAZE);
+      mat.opacity = s.flash;
+    } else {
+      mat.color.setRGB(0, 0, 0);
+      mat.opacity = s.dip;
+    }
     if (mesh.current) {
       mesh.current.position.copy(camera.position);
       mesh.current.quaternion.copy(camera.quaternion);
@@ -392,7 +447,10 @@ function Dip({ state }: { state: React.MutableRefObject<StoryState> }) {
 
 export function World({ clock, lowPower }: { clock: React.MutableRefObject<WorldClock>; lowPower: boolean }) {
   const state = useRef<StoryState>(createState());
-  const [dpr, setDpr] = useState(lowPower ? 1 : 1.5);
+  // Sharper on high-DPI screens (up to 2x); PerformanceMonitor steps it
+  // down on slower machines, so it never lags.
+  const maxDpr = lowPower ? 1 : Math.min(2, Math.max(1.25, window.devicePixelRatio || 1));
+  const [dpr, setDpr] = useState(lowPower ? 1 : Math.min(1.5, maxDpr));
   return (
     <Canvas
       className="story-canvas"
@@ -408,7 +466,7 @@ export function World({ clock, lowPower }: { clock: React.MutableRefObject<World
     >
       {/* Keep it smooth: drop resolution if frames run slow, raise it back
           when there's headroom (between 0.75x and the starting ratio). */}
-      <PerformanceMonitor onDecline={() => setDpr((d) => Math.max(0.75, d - 0.25))} onIncline={() => setDpr((d) => Math.min(lowPower ? 1 : 1.5, d + 0.25))} />
+      <PerformanceMonitor onDecline={() => setDpr((d) => Math.max(0.75, d - 0.25))} onIncline={() => setDpr((d) => Math.min(maxDpr, d + 0.25))} />
       <Suspense fallback={null}>
         <BasinGate>
           <Worlds state={state} clock={clock} />

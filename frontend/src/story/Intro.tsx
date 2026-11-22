@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 //      10 s, 1280x720) plays muted (browsers block autoplay with sound),
 //      from start to end. While it plays, the 3D world loads behind it.
 //   2. A choice screen in the project's terms (PS 26121): what the next
-//      67 seconds show, and how to watch: with sound, without, or straight
+//      74 seconds show, and how to watch: with sound, without, or straight
 //      to the evidence below.
 // onStart(sound) hands control to the story.
 
@@ -92,7 +92,7 @@ export function Intro({ onStart, ready }: { onStart: (withSound: boolean) => voi
             BEFORE THE BIT GETS THERE
           </h1>
           <p className="intro-lead">
-            Sixty-seven seconds. One active well in Upper Assam, eleven offset wells around it, and one kick in the Kopili that was already in the
+            Seventy-four seconds. One active well in Upper Assam, eleven offset wells around it, and one kick in the Kopili that was already in the
             reports. How DrillWise reads the history, finds the wells that matter, and warns the driller ahead of the bit.
           </p>
           <ul className="intro-chapters" aria-label="What you will see">

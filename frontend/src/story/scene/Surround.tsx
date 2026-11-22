@@ -11,7 +11,9 @@ import type { StoryState } from './state';
 // mesh, so the basin has no edges: past it, the land simply continues to
 // the real mountains. Its edges fade into the sky.
 
-const SEG = 256;
+// 320 x 320 cells over 445 x 398 km (~1.3 km per cell, finer than the
+// 512-px height map's useful detail once smoothed). ~103k vertices.
+const SEG = 320;
 
 async function loadWideHeight(url: string) {
   const img = new Image();
@@ -23,9 +25,25 @@ async function loadWideHeight(url: string) {
   const g = c.getContext('2d', { willReadFrequently: true })!;
   g.drawImage(img, 0, 0);
   const px = g.getImageData(0, 0, c.width, c.height).data;
-  const out = new Float32Array(c.width * c.height);
-  for (let i = 0; i < out.length; i++) out[i] = (px[i * 4] * 256 + px[i * 4 + 1]) / 65535;
-  return { data: out, w: c.width, h: c.height };
+  const W = c.width;
+  const H = c.height;
+  const raw = new Float32Array(W * H);
+  for (let i = 0; i < raw.length; i++) raw[i] = (px[i * 4] * 256 + px[i * 4 + 1]) / 65535;
+  // Light separable [1 2 1] blur, once: removes single-pixel spikes so the
+  // ranges don't break up into steps, without flattening the ridgelines.
+  const tmp = new Float32Array(W * H);
+  const out = new Float32Array(W * H);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      tmp[i] = (raw[y * W + Math.max(0, x - 1)] + 2 * raw[i] + raw[y * W + Math.min(W - 1, x + 1)]) / 4;
+    }
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      out[i] = (tmp[Math.max(0, y - 1) * W + x] + 2 * tmp[i] + tmp[Math.min(H - 1, y + 1) * W + x]) / 4;
+    }
+  return { data: out, w: W, h: H };
 }
 
 let wide: { data: Float32Array; w: number; h: number } | null = null;
@@ -60,16 +78,33 @@ export function Surround({ state }: { state: React.MutableRefObject<StoryState> 
     const bz0 = b.z0;
     const bx1 = b.x0 + b.meta.width_km;
     const bz1 = b.z0 + b.meta.height_km;
+    // Height: bilinear over a once-smoothed grid (h is blurred in
+    // loadWideHeight). Nearest-pixel sampling at this mesh spacing made the
+    // ranges stair-stepped and spiky ("breaking" up close); this keeps the
+    // real ridgelines but removes the aliasing, at one sample per vertex.
+    const sample = (u: number, v: number) => {
+      const fx = Math.min(h.w - 1.001, Math.max(0, u * (h.w - 1)));
+      const fy = Math.min(h.h - 1.001, Math.max(0, v * (h.h - 1)));
+      const ix = Math.floor(fx);
+      const iy = Math.floor(fy);
+      const tx = fx - ix;
+      const ty = fy - iy;
+      const d = h.data;
+      const i0 = iy * h.w + ix;
+      return (d[i0] * (1 - tx) + d[i0 + 1] * tx) * (1 - ty) + (d[i0 + h.w] * (1 - tx) + d[i0 + h.w + 1] * tx) * ty;
+    };
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
       const z = pos.getZ(i);
       const u = (x - x0) / m.width_km;
       const v = (z - z0) / m.height_km;
-      const ix = Math.min(h.w - 1, Math.max(0, Math.round(u * (h.w - 1))));
-      const iy = Math.min(h.h - 1, Math.max(0, Math.round(v * (h.h - 1))));
-      let y = ((h.data[iy * h.w + ix] * m.elev_max_m) / 1000) * VZ_T;
+      let y = ((sample(u, v) * m.elev_max_m) / 1000) * VZ_T;
       const inside = Math.min(x - bx0, bx1 - x, z - bz0, bz1 - z);
-      if (inside > 0) y -= Math.min(1, inside / 4) * 0.25;
+      // Inside the detailed basin, sink well below it (no z-fighting). The
+      // old 0.25-unit drop was too shallow over the 3x-exaggerated foothills
+      // at the basin's south-east edge, which is where the two surfaces
+      // crossed and flickered.
+      if (inside > 0) y -= Math.min(1, inside / 3) * 0.9;
       pos.setY(i, y);
     }
     g.computeVertexNormals();

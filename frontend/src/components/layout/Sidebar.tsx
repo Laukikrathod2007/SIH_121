@@ -87,8 +87,10 @@ export const Sidebar: React.FC = () => {
         {expanded ? (
           <div className="p-4 flex items-start gap-2">
             <div className="flex-1 min-w-0">
+              {/* Dark theme: the variant with a light wordmark, so "DRILL" doesn't
+                  vanish into the dark sidebar. */}
               <img
-                src="/brand/drillwise-logo-horizontal.png"
+                src={theme === 'dark' ? '/brand/drillwise-logo-horizontal-dark.png' : '/brand/drillwise-logo-horizontal.png'}
                 alt="DrillWise — Powered by eWIS"
                 className="w-full h-auto max-h-9 object-contain object-left"
               />

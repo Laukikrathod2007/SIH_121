@@ -81,13 +81,14 @@ function Pad() {
     const c = document.createElement('canvas');
     c.width = c.height = 256;
     const g = c.getContext('2d')!;
-    g.fillStyle = '#6d6a62';
+    g.fillStyle = '#6e6656';
     g.fillRect(0, 0, 256, 256);
     let s = 7;
     const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
     for (let i = 0; i < 9000; i++) {
-      const v = 70 + rnd() * 70;
-      g.fillStyle = `rgb(${v},${v - 4},${v - 10})`;
+      const v = 70 + rnd() * 60;
+      // warm earth-grey gravel, matched to the soil in the imagery
+      g.fillStyle = `rgb(${v},${v - 6},${v - 18})`;
       g.fillRect(rnd() * 256, rnd() * 256, 1 + rnd() * 2, 1 + rnd() * 2);
     }
     // tyre tracks
@@ -105,11 +106,47 @@ function Pad() {
     t.colorSpace = THREE.SRGBColorSpace;
     return t;
   }, []);
+  // The pad blends into the satellite ground around it: earth-toned
+  // (matched to the imagery at the site), a soft-edged alpha falloff
+  // instead of a hard rectangle, and a wider disturbed-soil apron so the
+  // gravel meets the fields gradually, the way a real lease looks from the air.
+  const feather = useMemo(() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 256;
+    const g = c.getContext('2d')!;
+    const grd = g.createRadialGradient(128, 128, 60, 128, 128, 128);
+    grd.addColorStop(0, 'rgba(255,255,255,1)');
+    grd.addColorStop(0.72, 'rgba(255,255,255,0.85)');
+    grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(c);
+  }, []);
+  // Road: solid at the pad, fading to nothing 160 m out (UV v runs along it).
+  const roadFade = useMemo(() => {
+    const c = document.createElement('canvas');
+    c.width = 4;
+    c.height = 256;
+    const g = c.getContext('2d')!;
+    const grd = g.createLinearGradient(0, 0, 0, 256);
+    grd.addColorStop(0, 'rgba(255,255,255,0)');
+    grd.addColorStop(0.6, 'rgba(255,255,255,0.8)');
+    grd.addColorStop(1, 'rgba(255,255,255,1)');
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 4, 256);
+    return new THREE.CanvasTexture(c);
+  }, []);
   return (
     <group>
-      <mesh rotation-x={-Math.PI / 2} position={[2, 0.05, 6]} receiveShadow>
-        <planeGeometry args={[130, 104]} />
-        <meshStandardMaterial map={tex} roughness={0.98} color="#9a958a" />
+      {/* Disturbed-soil apron: faint, wide, fully feathered */}
+      <mesh rotation-x={-Math.PI / 2} position={[2, 0.03, 6]} receiveShadow renderOrder={1}>
+        <planeGeometry args={[230, 190]} />
+        <meshStandardMaterial color="#6f6a58" roughness={1} transparent opacity={0.45} alphaMap={feather} depthWrite={false} />
+      </mesh>
+      {/* Gravel pad, feathered at its edge */}
+      <mesh rotation-x={-Math.PI / 2} position={[2, 0.05, 6]} receiveShadow renderOrder={2}>
+        <planeGeometry args={[150, 120]} />
+        <meshStandardMaterial map={tex} roughness={0.98} color="#8c8572" transparent alphaMap={feather} depthWrite={false} />
       </mesh>
       {/* Lined mud / reserve pit: dark water in an HDPE-lined pit */}
       <mesh rotation-x={-Math.PI / 2} position={[40, 0.07, -18]} receiveShadow>
@@ -120,10 +157,10 @@ function Pad() {
         <planeGeometry args={[29, 21]} />
         <meshStandardMaterial color="#2a2e2f" roughness={0.6} />
       </mesh>
-      {/* Access road off the pad */}
-      <mesh rotation-x={-Math.PI / 2} position={[-6, 0.04, 110]} receiveShadow>
-        <planeGeometry args={[8, 120]} />
-        <meshStandardMaterial map={tex} color="#8f8a80" roughness={1} />
+      {/* Access road off the pad: a dirt track that fades out into the fields */}
+      <mesh rotation-x={-Math.PI / 2} position={[-6, 0.04, 130]} receiveShadow renderOrder={2}>
+        <planeGeometry args={[8, 160]} />
+        <meshStandardMaterial map={tex} color="#857d68" roughness={1} transparent alphaMap={roadFade} depthWrite={false} />
       </mesh>
     </group>
   );

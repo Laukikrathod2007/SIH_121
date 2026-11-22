@@ -1,31 +1,34 @@
-// The story's score: a recorded orchestral piece, cut to the story's 67 s
+// The story's score: a recorded cinematic piece, cut to the story's 74 s
 // and kept in sync with the story clock.
 //
-//   public/story/score.mp3 - "Lightless Dawn", Kevin MacLeod
-//   (incompetech.com), licensed under Creative Commons: By Attribution 4.0
+//   public/story/score.mp3 - 'Aphelion' by Scott Buckley
+//   (www.scottbuckley.com.au), released under CC BY 4.0
 //   (https://creativecommons.org/licenses/by/4.0/). Edited for length:
-//   its quiet opening, its build and its climax, crossfaded to 67 s
-//   (scripts/build-score.ps1). Credited on the page.
+//   its quiet, suspended opening, its slow build and its full orchestral
+//   climax, crossfaded to 74 s (scripts/build-score.ps1). Credited on the page.
 //
-// Behaviour: soft fades on every start/stop (never a hard cut), quiet
-// overall (a bed under the story, not over it), follows pause/seek, and
-// is silenced whenever the page isn't being watched (tab hidden, window
-// blurred, or the story scrolled out of view) - see StoryPage.
+// Behaviour: soft fades on every start/stop (never a hard cut), follows
+// pause/seek, and is silenced whenever the page isn't being watched (tab
+// hidden, window blurred, or the story scrolled out of view) - see
+// StoryPage. Per phase, a low-pass filter and level shape it: distant and
+// held back while the problem is told, opening to full as the solution
+// arrives.
 
 /**
- * Per phase [low-pass Hz, level]: well, buried (problem: distant, held
- * back), extract, nearby, relevant, correlate (solution: opening up),
- * ahead (the descent: full), decide (resolution: full, a touch softer).
+ * Per phase [low-pass Hz, level]: well (the Earth, then the rig: distant,
+ * suspended), buried (the problem: darkest), extract, nearby, relevant,
+ * correlate (the solution: opening up), ahead (the descent: full), decide
+ * (resolution: full).
  */
 const PHASE_TONE: [number, number][] = [
-  [1800, 0.8],
-  [1400, 0.72],
-  [4200, 0.88],
-  [7000, 0.95],
-  [9000, 1],
-  [9000, 1],
-  [16000, 1],
-  [16000, 0.92],
+  [2600, 0.9],
+  [1600, 0.78],
+  [5200, 0.9],
+  [8000, 0.95],
+  [11000, 1],
+  [12000, 1],
+  [18000, 1],
+  [18000, 1],
 ];
 
 export class StorySound {
@@ -48,11 +51,6 @@ export class StorySound {
     this.audio.crossOrigin = 'anonymous';
     this.audio.addEventListener('canplaythrough', () => (this.ready = true), { once: true });
     const src = this.ctx.createMediaElementSource(this.audio);
-    // A gentle low-shelf trim keeps the low strings warm but not boomy.
-    const shelf = this.ctx.createBiquadFilter();
-    shelf.type = 'lowshelf';
-    shelf.frequency.value = 120;
-    shelf.gain.value = -2;
     // Follows the story (setPhase): muffled and distant while the problem
     // is told, opening to the full orchestra as the solution arrives.
     this.tone = this.ctx.createBiquadFilter();
@@ -63,16 +61,15 @@ export class StorySound {
     this.mood.gain.value = PHASE_TONE[0][1];
     this.gain = this.ctx.createGain();
     this.gain.gain.value = 0;
-    src.connect(shelf);
-    shelf.connect(this.tone);
+    src.connect(this.tone);
     this.tone.connect(this.mood);
     this.mood.connect(this.gain);
     this.gain.connect(this.ctx.destination);
   }
 
-  /** Target volume: soft, under the story. */
+  /** Target volume: present, but under the story. */
   private level() {
-    return this.enabled && this.playing && this.visible ? 0.55 : 0;
+    return this.enabled && this.playing && this.visible ? 0.7 : 0;
   }
 
   private apply(fade = 0.8) {
