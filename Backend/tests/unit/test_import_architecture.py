@@ -214,6 +214,7 @@ LAUNCHER_ALLOWLIST = {
     "modules/02_nwis_backend/run_server.py",
     "modules/02_nwis_backend/ml/train_hazard_models.py",
     "modules/04_physics_engine/run_server.py",
+    "modules/05_predictive_analytics/predictive/train_predictive_models.py",
 }
 
 

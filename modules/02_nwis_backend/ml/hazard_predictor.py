@@ -57,6 +57,9 @@ HIGH_RISK_FORMATIONS = {
     HazardType.STUCK_PIPE: {"Girujan Clay", "Barail Coal-Shale"},
     HazardType.KICK: {"Barail Sandstone", "Sylhet Limestone"},
     HazardType.WELLBORE_INSTABILITY: {"Girujan Clay", "Barail Coal-Shale"},
+    HazardType.TORQUE_SPIKE: {"Barail Coal-Shale", "Girujan Clay"},
+    HazardType.CEMENTING_FAILURE: {"Girujan Clay", "Kopili"},
+    HazardType.OVERPRESSURE_ZONE: {"Kopili", "Barail Coal-Shale"},
 }
 
 

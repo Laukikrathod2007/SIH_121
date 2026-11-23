@@ -18,6 +18,16 @@ interface AppContextType {
   isWsConnected: boolean;
   telemetryRateHz: number;
   telemetryLatencyMs: number | null;
+  // User Persona / Role (Field vs Office)
+  userRole: 'field' | 'office';
+  setUserRole: (role: 'field' | 'office') => void;
+  // eRTMAC WITSML Stream Integration
+  ertmacStatus: any;
+  ertmacSources: Array<{ id: string; name: string; well_id: string; stations: number; description: string }>;
+  selectedErtmacSource: string;
+  setErtmacSource: (source: string, wellId?: string) => Promise<void>;
+  ertmacLeadTime: any;
+  refreshErtmacStatus: () => Promise<void>;
   // Control actions
   startSim: () => Promise<void>;
   pauseSim: () => Promise<void>;
@@ -113,6 +123,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [telemetryRateHz, setTelemetryRateHz] = useState<number>(0);
   const [telemetryLatencyMs, setTelemetryLatencyMs] = useState<number | null>(null);
 
+  // User Role (Field vs Office)
+  const [userRole, setUserRoleState] = useState<'field' | 'office'>(() => {
+    try {
+      return (localStorage.getItem('nwis.user_role') as 'field' | 'office') || 'field';
+    } catch {
+      return 'field';
+    }
+  });
+
+  const setUserRole = (role: 'field' | 'office') => {
+    setUserRoleState(role);
+    try {
+      localStorage.setItem('nwis.user_role', role);
+    } catch {}
+  };
+
+  // eRTMAC Stream State
+  const [ertmacStatus, setErtmacStatus] = useState<any>(null);
+  const [ertmacSources, setErtmacSources] = useState<Array<{ id: string; name: string; well_id: string; stations: number; description: string }>>([
+    { id: 'physics_twin', name: 'Physics Digital Twin (HGJ-012)', well_id: 'WELL-HGJ-012', stations: 3600, description: 'Coupled hydraulic-mechanical drilling simulation' },
+    { id: 'volve_witsml_f12', name: 'Equinor Volve 15/9-F-12 (Real WITSML Feed)', well_id: 'NO-15/9-F-12', stations: 438, description: 'Real Equinor North Sea production well WITSML log replay' },
+    { id: 'volve_witsml_f1', name: 'Equinor Volve 15/9-F-1 (Real WITSML Feed)', well_id: 'NO-15/9-F-1', stations: 110, description: 'Real Equinor North Sea exploration well WITSML trajectory replay' },
+  ]);
+  const [selectedErtmacSource, setSelectedErtmacSource] = useState<string>('physics_twin');
+  const [ertmacLeadTime, setErtmacLeadTime] = useState<any>(null);
+
   const wsRef = useRef<WebSocket | null>(null);
   const frameCountRef = useRef(0);
   const lastLatencyRef = useRef<number | null>(null);
@@ -142,6 +178,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (err) {
         console.warn('Backend not responding yet; retrying in background...', err);
         setIsBackendOnline(false);
+      }
+
+      // Load eRTMAC sources and initial status
+      try {
+        const srcRes = await api.getErtmacSources();
+        if (srcRes?.sources) {
+          setErtmacSources(srcRes.sources);
+          setSelectedErtmacSource(srcRes.active_source || 'physics_twin');
+        }
+        const statusRes = await api.getErtmacStatus();
+        if (statusRes) {
+          setErtmacStatus(statusRes);
+        }
+      } catch (e) {
+        // eRTMAC optional on initial boot
       }
     };
     initData();
@@ -401,6 +452,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (status) setSimStatus(status);
   };
 
+  const refreshErtmacStatus = useCallback(async () => {
+    try {
+      const [status, leadTime] = await Promise.all([
+        api.getErtmacStatus(),
+        api.getErtmacLeadTime(),
+      ]);
+      if (status) {
+        setErtmacStatus(status);
+        if (status.source) setSelectedErtmacSource(status.source);
+      }
+      if (leadTime) setErtmacLeadTime(leadTime);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  const setErtmacSource = async (source: string, wellId?: string) => {
+    try {
+      await api.selectErtmacSource(source, wellId);
+      setSelectedErtmacSource(source);
+      await refreshErtmacStatus();
+      await refreshAlerts();
+    } catch (e) {
+      console.error('Failed to switch eRTMAC source', e);
+    }
+  };
+
   const mitigateAlert = async (alertId: string) => {
     await api.mitigateAlert(activeWellId, alertId);
     await refreshAlerts();
@@ -426,6 +504,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isWsConnected,
         telemetryRateHz,
         telemetryLatencyMs,
+        userRole,
+        setUserRole,
+        ertmacStatus,
+        ertmacSources,
+        selectedErtmacSource,
+        setErtmacSource,
+        ertmacLeadTime,
+        refreshErtmacStatus,
         startSim,
         pauseSim,
         stepSim,

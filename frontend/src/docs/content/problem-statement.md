@@ -104,7 +104,7 @@ flowchart LR
 * **The Challenge:** Warnings must be provided with sufficient operational lead time to allow the drilling crew to adjust mud properties, circulate hole, or alter drilling parameters before the bit strikes the hazard zone.
 * **Intended Capability:** Proactive decision support:
   * Ahead-of-Bit Risk Corridor Engine forward-projecting 15 to 50 meters ahead of the active drill bit.
-  * Operational lead time of **35 to 45 minutes** at typical drilling penetration rates (25–35 m/hr).
+  * Dynamic operational lead time $T_{\text{lead}} = \frac{\Delta \text{Depth}}{\text{ROP}} \times 60$ (typically **15 to 45 minutes** at typical drilling penetration rates of 20–35 m/hr).
   * Standardized mitigation playbooks aligned with SPE (Society of Petroleum Engineers) and IADC (International Association of Drilling Contractors) best practices.
   * Operator acknowledgment, mitigation execution logging, and audit trail generation.
 

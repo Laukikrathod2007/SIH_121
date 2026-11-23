@@ -64,6 +64,7 @@ MODULE_04_ROOT = Path(__file__).resolve().parent.parent
 
 from app.modules.physics.simulation.engine import DrillingPhysicsEngine
 from app.modules.physics.simulation.faults import ScenarioType
+from app.modules.physics.simulation.ertmac_adapter import ERTMACAdapter, ERTMACFeedSource
 from app.modules.physics.api.auth import require_api_key, rate_limit, auth_enabled, RATE_LIMIT_ENABLED, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
 # API_KEY is intentionally NOT imported as a bare name here: `from ... import
 # API_KEY` binds the value at import time, so a test (or anything else)
@@ -89,6 +90,7 @@ from app.modules.predictive_analytics.predictive.realtime_inference import RealT
 # ---------------------------------------------------------------------------
 engine = DrillingPhysicsEngine(well_id="WELL-NHK-001")
 risk_service = RealTimeRiskInferenceService()
+ertmac_adapter = ERTMACAdapter()
 
 _engine_lock = asyncio.Lock()
 # RealTimeRiskInferenceService.process_telemetry_point() appends to a rolling
@@ -151,9 +153,20 @@ logger.add(
 # physics equations (engine.step() is always called with the fixed dt_s).
 # ---------------------------------------------------------------------------
 def _step_and_record() -> Dict[str, Any]:
-    _, envelope = engine.step()
-    env_dict = envelope.model_dump()
+    if ertmac_adapter.active_source != ERTMACFeedSource.DIGITAL_TWIN:
+        env_dict = ertmac_adapter.step_witsml()
+    else:
+        _, envelope = engine.step()
+        env_dict = envelope.model_dump()
+        curr_rop = env_dict.get("channels", {}).get("rop_m_hr", 8.0)
+        curr_md = env_dict.get("depth", {}).get("md_m", engine.state.md_m)
+        env_dict["dynamic_lead_time"] = ertmac_adapter.compute_dynamic_lead_time(
+            current_md_m=curr_md,
+            current_rop_m_hr=curr_rop,
+        )
     _historian.append(env_dict)
+    with _risk_lock:
+        risk_service.process_telemetry_point(env_dict)
     return env_dict
 
 
@@ -263,10 +276,15 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 # convention for that second path.
 # ---------------------------------------------------------------------------
 def _health_payload() -> Dict[str, Any]:
+    engine_ok = engine is not None and getattr(engine, "state", None) is not None
+    anom_ok = bool(getattr(risk_service.anomaly_detector, "_is_fitted", False))
+    xgb_ok = bool(getattr(risk_service.xgboost_classifier, "_is_fitted", False))
+    is_healthy = engine_ok and anom_ok and xgb_ok
+
     return {
         "service": "NWIS Physics Digital Twin & Predictive Risk API",
         "version": "1.0.0",
-        "status": "healthy",
+        "status": "healthy" if is_healthy else "degraded",
         "engine": {
             "well_id": engine.well_id,
             "is_running": runtime.is_running,
@@ -275,10 +293,11 @@ def _health_payload() -> Dict[str, Any]:
             "active_scenarios": len(engine.faults.active_scenarios),
             "historian_size": len(_historian),
             "ws_clients": len(_ws_clients),
+            "ertmac": ertmac_adapter.get_status(),
         },
         "predictive": {
-            "anomaly_detector_fitted": bool(getattr(risk_service.anomaly_detector, "_is_fitted", False)),
-            "xgboost_fitted": bool(getattr(risk_service.xgboost_classifier, "_is_fitted", False)),
+            "anomaly_detector_fitted": anom_ok,
+            "xgboost_fitted": xgb_ok,
         },
         "auth": {
             "status": "enabled" if auth_enabled() else "disabled",
@@ -685,3 +704,77 @@ async def predictive_models():
             ),
         },
     ]
+
+
+# ---------------------------------------------------------------------------
+# eRTMAC (Real-Time Monitoring and Analysis Center) & WITSML Feed Endpoints
+# ---------------------------------------------------------------------------
+
+class ERTMACSelectRequest(BaseModel):
+    source: str
+    well_id: Optional[str] = None
+
+
+@app.get("/api/v3/ertmac/status", tags=["eRTMAC"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+async def ertmac_status():
+    """Returns the live status, active well, and replay stats for the eRTMAC WITSML adapter."""
+    return ertmac_adapter.get_status()
+
+
+@app.get("/api/v3/ertmac/sources", tags=["eRTMAC"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+async def ertmac_sources():
+    """Lists available eRTMAC real-time feed sources (Digital Twin, Volve real WITSML, external feed)."""
+    return [
+        {
+            "id": ERTMACFeedSource.DIGITAL_TWIN.value,
+            "name": "Drilling Physics Digital Twin (Simulated Rig)",
+            "type": "SIMULATED",
+            "description": "High-fidelity mathematical digital twin with hydraulics, mechanics, and fault scenarios.",
+        },
+        {
+            "id": ERTMACFeedSource.VOLVE_15_9_F12.value,
+            "name": "Equinor Volve 15/9-F-12 (Real WITSML Stream)",
+            "type": "REAL_WITSML",
+            "description": "Real WITSML 1.4.1.1 depth trajectory and log stream from Equinor Volve Field well 15/9-F-12.",
+        },
+        {
+            "id": ERTMACFeedSource.VOLVE_15_9_F1.value,
+            "name": "Equinor Volve 15/9-F-1 (Real WITSML Stream)",
+            "type": "REAL_WITSML",
+            "description": "Real WITSML 1.4.1.1 trajectory and drilling log stream from Equinor Volve Field well 15/9-F-1.",
+        },
+        {
+            "id": ERTMACFeedSource.EXTERNAL_WITSML.value,
+            "name": "Live Rig WITSML / ETP Stream",
+            "type": "EXTERNAL",
+            "description": "Live production rig connectivity via WITSML 1.4.1.1 or Energistics Transfer Protocol (ETP).",
+        },
+    ]
+
+
+@app.post("/api/v3/ertmac/select", tags=["eRTMAC"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+async def ertmac_select_source(req: ERTMACSelectRequest):
+    """Switches the active eRTMAC real-time feed source between digital twin and real Volve WITSML streams."""
+    try:
+        source_enum = ERTMACFeedSource(req.source)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid source '{req.source}'. Available: {[s.value for s in ERTMACFeedSource]}",
+        )
+    return ertmac_adapter.select_source(source_enum, req.well_id)
+
+
+@app.get("/api/v3/ertmac/lead-time", tags=["eRTMAC"], dependencies=[Depends(require_api_key), Depends(rate_limit)])
+async def ertmac_dynamic_lead_time(
+    depth_m: float = Query(..., description="Current bit measured depth (m)"),
+    rop_m_hr: float = Query(..., description="Current drilling penetration rate (m/hr)"),
+    hazard_depth_m: Optional[float] = Query(None, description="Target hazard depth (m)"),
+):
+    """Calculates real-time dynamic lead time to nearest risk corridor: Delta_t = (MD_hazard - MD_bit) / ROP."""
+    return ertmac_adapter.compute_dynamic_lead_time(
+        current_md_m=depth_m,
+        current_rop_m_hr=rop_m_hr,
+        hazard_depth_m=hazard_depth_m,
+    )
+

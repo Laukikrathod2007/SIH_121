@@ -23,14 +23,13 @@ import { BasinMap } from '../components/BasinMap';
 // identical before removing the local copy.
 import { haversineKm } from '../lib/globeGeometry';
 
+import { PdfEvidenceViewer } from '../components/PdfEvidenceViewer';
+
 // Lazy-loaded: pulls in three.js + @react-three/fiber (~800kB), only needed
 // when the user actually opens the 3D trajectory view, not on initial load
 // of every page in the app.
 const WellInspector3DModal = lazy(() =>
   import('../components/WellInspector3DModal').then((m) => ({ default: m.WellInspector3DModal }))
-);
-const PdfEvidenceViewer = lazy(() =>
-  import('../components/PdfEvidenceViewer').then((m) => ({ default: m.PdfEvidenceViewer }))
 );
 
 export const NearbyWellsPage: React.FC = () => {

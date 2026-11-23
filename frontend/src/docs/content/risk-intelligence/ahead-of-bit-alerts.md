@@ -77,7 +77,7 @@ At fast ROP = 45 m/hr:
   ΔD_lead = 25 m ===> Lead Time = (25 / 45) * 60 = 33.3 minutes
 ```
 
-This guaranteed window of **35 to 45 minutes** provides the drilling superintendent, toolpusher, and mud engineer the indispensable operational lead time required to condition drilling fluids or stage downhole tools.
+This dynamic operational window (typically **15 to 45 minutes**, computed in real time from live eRTMAC WITSML telemetry) provides the drilling superintendent, toolpusher, and mud engineer the indispensable operational lead time required to condition drilling fluids or stage downhole tools.
 
 ---
 

@@ -21,12 +21,15 @@ import {
   PanelLeftOpen,
   PanelLeftClose,
   BookMarked,
+  Activity,
+  HardHat,
+  Briefcase,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../hooks/useTheme';
 
 export const Sidebar: React.FC = () => {
-  const { alerts, simStatus, isWsConnected } = useApp();
+  const { alerts, simStatus, isWsConnected, userRole } = useApp();
   const { theme, setTheme } = useTheme();
 
   // Collapsed (icon-only) by default, giving the dashboards the full width
@@ -53,27 +56,22 @@ export const Sidebar: React.FC = () => {
   const activeAlertsCount = alerts.filter(a => a.severity === 'CRITICAL' || a.severity === 'WARNING').length;
 
   const navItems = [
-    { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/app/command-center', label: 'Command Center', icon: Radar, badge: 'NEW' },
-    { to: '/app/drilling', label: 'Live Drilling', icon: Gauge, badge: isWsConnected ? 'LIVE' : undefined },
-    { to: '/app/wells', label: 'Nearby Wells', icon: Compass },
-    { to: '/app/offset-map', label: 'Offset Map', icon: MapPin, badge: 'NEW' },
-    { to: '/app/globe', label: '3D Offset Globe', icon: Globe2, badge: 'NEW' },
-    { to: '/app/correlation', label: 'Geological Correlation', icon: Layers },
-    { to: '/app/risk', label: 'Risk & Prediction', icon: ShieldAlert },
-    { to: '/app/alerts', label: 'Alerts & Advisory', icon: BellRing, alertCount: activeAlertsCount },
-    { to: '/app/knowledge', label: 'Historical Search', icon: BookOpen },
-    { to: '/app/copilot', label: 'Knowledge Copilot', icon: Bot },
-    { to: '/app/documents', label: 'Document Ingestion', icon: FileUp },
-    { to: '/app/simulator', label: 'Scenario Simulator', icon: Cpu, isSimActive: simStatus?.is_running },
-    { to: '/app/reports', label: 'Reports & Analytics', icon: FileSpreadsheet },
-    { to: '/docs', label: 'Documentation', icon: BookMarked, badge: '24 SPECS' },
-    // System Architecture (/app/status) is deliberately absent from this
-    // list: it reports dependency versions, which engines are loaded, auth
-    // and rate-limit settings and which ML artifacts are missing -- internal
-    // diagnostics an operator has no use for and shouldn't be shown. The
-    // route itself is left mounted in App.tsx, so it stays reachable by
-    // direct URL for debugging a live deploy.
+    { to: '/app', label: 'Dashboard', icon: LayoutDashboard, role: 'all' },
+    { to: '/app/command-center', label: 'Command Center', icon: Radar, badge: 'LIVE 3D', role: 'field' },
+    { to: '/app/drilling', label: 'Live Drilling', icon: Gauge, badge: isWsConnected ? 'LIVE' : undefined, role: 'field' },
+    { to: '/app/wells', label: 'Nearby Wells', icon: Compass, role: 'office' },
+    { to: '/app/offset-map', label: 'Offset Map', icon: MapPin, role: 'office' },
+    { to: '/app/globe', label: '3D Offset Globe', icon: Globe2, role: 'office' },
+    { to: '/app/correlation', label: 'Geological Correlation', icon: Layers, badge: 'CASING', role: 'office' },
+    { to: '/app/risk', label: 'Risk & Prediction', icon: ShieldAlert, badge: '7 MODELS', role: 'all' },
+    { to: '/app/alerts', label: 'Alerts & Advisory', icon: BellRing, alertCount: activeAlertsCount, role: 'field' },
+    { to: '/app/knowledge', label: 'Historical Search', icon: BookOpen, role: 'office' },
+    { to: '/app/copilot', label: 'Knowledge Copilot', icon: Bot, badge: 'AGENT', role: 'office' },
+    { to: '/app/documents', label: 'Document Ingestion', icon: FileUp, role: 'office' },
+    { to: '/app/simulator', label: 'Scenario Simulator', icon: Cpu, isSimActive: simStatus?.is_running, role: 'field' },
+    { to: '/app/reports', label: 'Reports & Analytics', icon: FileSpreadsheet, role: 'office' },
+    { to: '/app/status', label: 'System & Model Cards', icon: Activity, badge: 'AI CARDS', role: 'all' },
+    { to: '/docs', label: 'Documentation', icon: BookMarked, badge: '24 SPECS', role: 'all' },
   ];
 
   return (
@@ -95,6 +93,16 @@ export const Sidebar: React.FC = () => {
                 className="w-full h-auto max-h-9 object-contain object-left"
               />
               <div className="text-[11px] text-slate-400 font-mono tracking-tight mt-1.5">OIL INDIA LIMITED</div>
+              <div className="flex items-center gap-1.5 mt-2">
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border flex items-center gap-1 font-semibold ${
+                  userRole === 'field'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                }`}>
+                  {userRole === 'field' ? <HardHat className="w-3 h-3" /> : <Briefcase className="w-3 h-3" />}
+                  {userRole === 'field' ? 'RIG SITE VIEW' : 'ASSET TEAM VIEW'}
+                </span>
+              </div>
             </div>
             <button
               onClick={() => setExpanded(false)}

@@ -521,6 +521,61 @@ export const api = {
     return res.data;
   },
 
+  // ==========================================================================
+  // eRTMAC / WITSML 1.4.1.1 Streaming Adapter Endpoints
+  // ==========================================================================
+  getErtmacStatus: async (): Promise<{
+    active: boolean;
+    source: string;
+    well_id: string;
+    station_index: number;
+    total_stations: number;
+    depth_m: number;
+    anomaly_type: string;
+    anomaly_active: boolean;
+  }> => {
+    const res = await m03.get('/ertmac/status');
+    return res.data;
+  },
+
+  getErtmacSources: async (): Promise<{
+    sources: Array<{ id: string; name: string; well_id: string; stations: number; description: string }>;
+    active_source: string;
+  }> => {
+    const res = await m03.get('/ertmac/sources');
+    return res.data;
+  },
+
+  selectErtmacSource: async (source: string, wellId?: string): Promise<{
+    status: string;
+    source: string;
+    well_id: string;
+    total_stations: number;
+    message: string;
+  }> => {
+    const res = await m03.post('/ertmac/select', { source, well_id: wellId });
+    return res.data;
+  },
+
+  getErtmacLeadTime: async (hazardDepthM?: number): Promise<{
+    status: string;
+    source: string;
+    well_id: string;
+    current_depth_m: number;
+    hazard_depth_m: number;
+    delta_depth_m: number;
+    current_rop_m_hr: number;
+    lead_time_min: number;
+    lead_time_sec: number;
+    operational_window: string;
+    formula: string;
+  }> => {
+    const res = await m03.get('/ertmac/lead-time', {
+      params: hazardDepthM != null ? { hazard_depth_m: hazardDepthM } : {},
+    });
+    return res.data;
+  },
+
   /**
    * POST /api/v2/agent/chat — Server-Sent Events stream for Agentic Knowledge Copilot.
    * Streams tool_call, tool_result, answer, mode, and error frames.

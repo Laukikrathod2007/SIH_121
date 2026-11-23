@@ -88,6 +88,9 @@ def train_all_models() -> dict:
     report = {"trained": {}, "skipped": {}}
 
     for hazard in HazardType:
+        if hazard == HazardType.FISHING_OPERATION:
+            report["skipped"][hazard.value] = "operational remediation record (not a predictive hazard target)"
+            continue
         X_list, y_list, well_ids = build_training_dataset(
             hazard_type=hazard,
             all_wells=store.all_wells,

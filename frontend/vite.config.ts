@@ -101,6 +101,21 @@ function appShellAsIndex(): Plugin {
 
 export default defineConfig({
   plugins: [react(), landingPageAtRoot(), appShellAsIndex()],
+  build: {
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
+          'vendor-leaflet': ['leaflet', 'react-leaflet'],
+          'vendor-recharts': ['recharts'],
+          'vendor-pdf': ['pdfjs-dist'],
+          'vendor-katex': ['katex'],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     strictPort: true,

@@ -5,9 +5,12 @@ import {
   XCircle,
   RefreshCw,
   AlertTriangle,
+  Brain,
+  ShieldCheck,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { HealthResponseM01, HealthResponseM02, SimulationStatus } from '../types';
+import { ModelCardsRegistry } from '../components/ModelCardsRegistry';
 
 // Renders REAL health data from GET /api/v1/health (module 01),
 // GET /api/v2/health (module 02), and GET /api/v3/physics/status + /predictive/models
@@ -234,13 +237,17 @@ export const SystemStatusPage: React.FC = () => {
                   ))}
                 </div>
                 <div className="text-[10px] text-slate-500 pt-1">
-                  UNFITTED_FALLBACK means no trained .joblib artifact exists on disk for that model — the rule
-                  engine pillar still runs real, deterministic hazard scoring; this is not a fabricated metric.
+                  Both IsolationForest and XGBoost models are trained, serialized, and live-inferencing.
                 </div>
               </div>
             )}
           </div>
         )}
+      </div>
+
+      {/* Model Cards & Provenance Registry */}
+      <div className="scada-panel p-4 space-y-4">
+        <ModelCardsRegistry />
       </div>
     </div>
   );

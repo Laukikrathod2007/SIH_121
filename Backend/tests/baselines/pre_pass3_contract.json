@@ -37,6 +37,9 @@
     "GET /api/v2/trajectory/{well_id}",
     "GET /api/v2/wells",
     "GET /api/v2/wells/{well_id}",
+    "GET /api/v3/ertmac/lead-time",
+    "GET /api/v3/ertmac/sources",
+    "GET /api/v3/ertmac/status",
     "GET /api/v3/health",
     "GET /api/v3/physics/historian",
     "GET /api/v3/physics/status",
@@ -50,6 +53,7 @@
     "POST /api/v1/review/{doc_id}/decision",
     "POST /api/v1/review/{doc_id}/resync",
     "POST /api/v2/agent/chat",
+    "POST /api/v3/ertmac/select",
     "POST /api/v3/physics/operator-inputs",
     "POST /api/v3/physics/pause",
     "POST /api/v3/physics/reset",
@@ -228,6 +232,21 @@
       "start_depth_m:query",
       "tick_seconds:query",
       "well_id:path"
+    ],
+    "GET /api/v3/ertmac/lead-time": [
+      "X-API-Key:header",
+      "depth_m:query",
+      "hazard_depth_m:query",
+      "rop_m_hr:query"
+    ],
+    "GET /api/v3/ertmac/sources": [
+      "X-API-Key:header"
+    ],
+    "GET /api/v3/ertmac/status": [
+      "X-API-Key:header"
+    ],
+    "POST /api/v3/ertmac/select": [
+      "X-API-Key:header"
     ],
     "GET /api/v3/health": [],
     "GET /api/v3/physics/status": [

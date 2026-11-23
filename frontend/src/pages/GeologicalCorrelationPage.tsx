@@ -5,10 +5,12 @@ import {
   CheckCircle,
   Loader2,
   Pin,
+  Shield,
+  Disc,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
-import { HorizonAlignmentEntry, FormationTop, RiskCorridor, DrillingEvent, OffsetWellRanking } from '../types';
+import { HorizonAlignmentEntry, FormationTop, RiskCorridor, DrillingEvent, OffsetWellRanking, CasingRecord } from '../types';
 
 // This page uses ONLY real modules/02_nwis_backend endpoints:
 //   GET /api/v2/offset_rank/{well_id}                (DORS 5-factor ranking -> top-3 most
@@ -46,6 +48,7 @@ import { HorizonAlignmentEntry, FormationTop, RiskCorridor, DrillingEvent, Offse
 interface OffsetDetail {
   formations: FormationTop[];
   events: DrillingEvent[];
+  casing: CasingRecord[];
 }
 
 export const GeologicalCorrelationPage: React.FC = () => {
@@ -55,6 +58,7 @@ export const GeologicalCorrelationPage: React.FC = () => {
   const [pinnedOffsetId, setPinnedOffsetId] = useState<string>('');
   const [alignment, setAlignment] = useState<Record<string, HorizonAlignmentEntry>>({});
   const [activeFormations, setActiveFormations] = useState<FormationTop[]>([]);
+  const [activeCasing, setActiveCasing] = useState<CasingRecord[]>([]);
   const [offsetRankings, setOffsetRankings] = useState<OffsetWellRanking[]>([]);
   const [offsetDetails, setOffsetDetails] = useState<Record<string, OffsetDetail>>({});
   const [corridors, setCorridors] = useState<RiskCorridor[]>([]);
@@ -73,17 +77,19 @@ export const GeologicalCorrelationPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const [rankRes, alignRes, activeForms, corridorRes] = await Promise.all([
+        const [rankRes, alignRes, activeForms, corridorRes, activeCasingRes] = await Promise.all([
           api.getOffsetRank(activeWellId, depth, 25.0, 10),
           api.getStratigraphicDepthTrack(activeWellId, depth, 10),
           api.getFormations(activeWellId),
           api.getRiskCorridors(activeWellId, depth),
+          api.getCasing(activeWellId),
         ]);
         if (cancelled) return;
         setOffsetRankings(rankRes.rankings || []);
         setAlignment(alignRes.alignment || {});
         setActiveFormations(activeForms);
         setCorridors(corridorRes.corridors || []);
+        setActiveCasing(activeCasingRes || []);
       } catch (err) {
         if (!cancelled) setError('Could not load stratigraphic correlation data. Contact your system administrator if this persists.');
         console.error(err);
@@ -125,14 +131,15 @@ export const GeologicalCorrelationPage: React.FC = () => {
       const entries = await Promise.all(
         columnIds.map(async (id) => {
           try {
-            const [forms, evts] = await Promise.all([
+            const [forms, evts, casing] = await Promise.all([
               api.getFormations(id),
               api.getWellEvents(id),
+              api.getCasing(id),
             ]);
-            return [id, { formations: forms, events: evts }] as const;
+            return [id, { formations: forms, events: evts, casing: casing || [] }] as const;
           } catch (err) {
             console.error('Failed to load offset well detail', id, err);
-            return [id, { formations: [], events: [] }] as const;
+            return [id, { formations: [], events: [], casing: [] }] as const;
           }
         }),
       );
@@ -270,6 +277,36 @@ export const GeologicalCorrelationPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Casing & Cementing Programme */}
+            <div className="space-y-1 font-mono text-xs pt-2 border-t border-slate-800">
+              <div className="flex items-center justify-between text-[10px] text-slate-400">
+                <span className="flex items-center gap-1 font-bold text-slate-300">
+                  <Shield className="w-3 h-3 text-cyan-400" />
+                  CASING &amp; CEMENT PROGRAMME
+                </span>
+                <span className="text-cyan-400 font-bold">{activeCasing.length} strings</span>
+              </div>
+              <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                {activeCasing.length > 0 ? (
+                  activeCasing.map((c, i) => (
+                    <div key={i} className="flex items-center justify-between p-1.5 bg-slate-950/70 border border-slate-800/80 rounded text-[10px]">
+                      <span className="font-bold text-slate-200">
+                        {c.casing_size_inches ? `${c.casing_size_inches}"` : 'Casing'}
+                      </span>
+                      <span className="text-slate-400">
+                        Shoe: <strong className="text-cyan-400">{c.shoe_depth_md_m}m</strong>
+                      </span>
+                      <span className="text-slate-500">
+                        TOC: <strong className="text-amber-400">{c.top_of_cement_md_m != null ? `${c.top_of_cement_md_m}m` : 'Surface'}</strong>
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-[10px] text-slate-500 italic p-1">No casing strings logged.</div>
+                )}
+              </div>
+            </div>
+
             <div className="mt-auto pt-2 border-t border-slate-800 text-[10px] font-mono text-slate-500">
               TRAJECTORY TRAP ELIMINATED: raw MD comparisons between wells of different trajectories would
               misrepresent true stratigraphic position. d_strat_m anchors every well below to the same geological bed.
@@ -338,6 +375,30 @@ export const GeologicalCorrelationPage: React.FC = () => {
                     <span className="text-amber-400 font-bold">
                       {align?.tvdss_m != null ? align.tvdss_m.toFixed(1) : '—'} m TVDSS
                     </span>
+                  </div>
+                </div>
+
+                {/* Offset Casing Strings */}
+                <div className="space-y-1 font-mono text-xs pt-1 border-t border-slate-800">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400">
+                    <span className="flex items-center gap-1 font-bold text-slate-300">
+                      <Shield className="w-3 h-3 text-amber-400" />
+                      CASING &amp; CEMENT STRINGS
+                    </span>
+                    <span className="text-amber-400 font-bold">{detail?.casing?.length ?? 0}</span>
+                  </div>
+                  <div className="space-y-1 max-h-24 overflow-y-auto pr-1">
+                    {detail?.casing && detail.casing.length > 0 ? (
+                      detail.casing.map((c, i) => (
+                        <div key={i} className="flex items-center justify-between p-1 bg-slate-950/70 border border-slate-800/80 rounded text-[9px]">
+                          <span className="font-bold text-slate-200">{c.casing_size_inches ? `${c.casing_size_inches}"` : 'Csg'}</span>
+                          <span className="text-slate-400">Shoe: <strong className="text-amber-300">{c.shoe_depth_md_m}m</strong></span>
+                          <span className="text-slate-500">TOC: <strong className="text-slate-300">{c.top_of_cement_md_m != null ? `${c.top_of_cement_md_m}m` : '0m'}</strong></span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-[9px] text-slate-500 italic p-0.5">No casing strings logged.</div>
+                    )}
                   </div>
                 </div>
 

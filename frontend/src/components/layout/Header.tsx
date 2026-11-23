@@ -11,6 +11,10 @@ import {
   AlertTriangle,
   Sun,
   Moon,
+  Radio,
+  Clock,
+  HardHat,
+  Briefcase,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../hooks/useTheme';
@@ -27,6 +31,13 @@ export const Header: React.FC = () => {
     simStatus,
     isBackendOnline,
     isWsConnected,
+    userRole,
+    setUserRole,
+    ertmacStatus,
+    ertmacSources,
+    selectedErtmacSource,
+    setErtmacSource,
+    ertmacLeadTime,
     startSim,
     pauseSim,
     resetSim,
@@ -75,6 +86,37 @@ export const Header: React.FC = () => {
           <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
         </div>
 
+        {/* eRTMAC / WITSML Telemetry Stream Source Selector */}
+        <div className="relative hidden xl:block">
+          <div className="flex items-center gap-1.5">
+            <div className="relative">
+              <select
+                value={selectedErtmacSource}
+                onChange={(e) => setErtmacSource(e.target.value)}
+                className={`appearance-none bg-slate-900 border text-xs font-mono font-medium py-1.5 pl-7 pr-7 rounded focus:outline-none cursor-pointer ${
+                  selectedErtmacSource.startsWith('volve')
+                    ? 'border-emerald-500/60 text-emerald-300 ring-1 ring-emerald-500/30'
+                    : 'border-slate-700 text-slate-300 hover:border-cyan-500/50'
+                }`}
+                title="Select live telemetry stream source (Physics Twin vs. Equinor Volve WITSML 1.4.1.1 logs)"
+              >
+                {ertmacSources.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.stations} stn)
+                  </option>
+                ))}
+              </select>
+              <Radio className={`w-3.5 h-3.5 absolute left-2 top-2.5 ${selectedErtmacSource.startsWith('volve') ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
+            </div>
+            {selectedErtmacSource.startsWith('volve') && (
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0 font-bold tracking-wider">
+                REAL WITSML
+              </span>
+            )}
+          </div>
+        </div>
+
         {/* Real-time Depth Readout -- when `telemetry` is null (WS not yet
             connected / dropped), these render a static placeholder instead
             of a live-looking number: dimmed, no bold/color emphasis, and an
@@ -115,6 +157,51 @@ export const Header: React.FC = () => {
 
       {/* Right: Simulator Quick Actions & Connection Status */}
       <div className="flex items-center space-x-3">
+        {/* Dynamic Operational Lead Time Pill */}
+        {telemetry && (
+          <div
+            className="hidden xl:flex items-center gap-1.5 px-2 py-1 bg-cyan-950/50 border border-cyan-500/40 rounded text-cyan-300 font-mono text-[11px]"
+            title={ertmacLeadTime?.formula || 'Lead Time = ΔDepth / ROP (dynamic calculation based on penetration rate)'}
+          >
+            <Clock className="w-3 h-3 text-cyan-400" />
+            <span className="text-slate-400">LEAD:</span>
+            <span className="font-bold text-cyan-300">
+              {ertmacLeadTime?.lead_time_min != null
+                ? `${ertmacLeadTime.lead_time_min.toFixed(1)}m`
+                : `${(Math.max(10, 20 / Math.max(5, telemetry.rop_m_hr || 25)) * 60).toFixed(0)}m`}
+            </span>
+            <span className="text-[10px] text-slate-500">(@{telemetry.rop_m_hr?.toFixed(1) || '25'}m/h)</span>
+          </div>
+        )}
+
+        {/* User Role Persona Toggle: Field (Rig Site) vs Office (Asset Team) */}
+        <div className="hidden sm:flex items-center bg-slate-900 border border-slate-700 rounded p-0.5 font-mono text-[11px]">
+          <button
+            onClick={() => setUserRole('field')}
+            className={`flex items-center gap-1 px-2 py-1 rounded transition ${
+              userRole === 'field'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="Rig-site field operator view (focus on live drilling, alarms, physics twin)"
+          >
+            <HardHat className="w-3 h-3" />
+            FIELD
+          </button>
+          <button
+            onClick={() => setUserRole('office')}
+            className={`flex items-center gap-1 px-2 py-1 rounded transition ${
+              userRole === 'office'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="Subsurface asset team engineering view (focus on correlation, offset wells, copilot, ingestion)"
+          >
+            <Briefcase className="w-3 h-3" />
+            OFFICE
+          </button>
+        </div>
+
         {/* Overall Fused Risk Indicator */}
         <div className={`px-2.5 py-1 rounded border text-xs font-mono flex items-center gap-1.5 ${riskColorClass}`}>
           <AlertTriangle className="w-3.5 h-3.5" />

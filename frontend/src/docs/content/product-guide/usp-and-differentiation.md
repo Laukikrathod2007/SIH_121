@@ -19,7 +19,7 @@ graph TB
         P2["2. Stratigraphic Alignment<br/>(Dimensionless Coordinate ξ vs. Raw MD)"]
         P3["3. Physics-Validated Extraction<br/>(Layer 5 Auto-Repair vs. Hallucinated OCR)"]
         P4["4. Grounded Provenance RAG<br/>(Exact PDF Page Citations vs. Black-Box LLM)"]
-        P5["5. Ahead-of-Bit Lookahead<br/>(35-45 Min Lead Time vs. Reactive Alarms)"]
+        P5["5. Ahead-of-Bit Lookahead<br/>(Dynamic Lead Time Δt = ΔD/ROP vs. Reactive Alarms)"]
     end
 
     subgraph VALUE["OPERATIONAL PAYOFF FOR OIL INDIA LIMITED"]
@@ -43,7 +43,7 @@ graph TB
 | **Geological Horizon Normalization** | None; assumes flat geology across the entire basin. | None; text search has no concept of subsurface dip. | **Dimensionless coordinate ($\xi$)** normalizing for formation dip, thinning, and fault throw. |
 | **Document Intelligence & OCR** | Manual human data entry from physical paper logs. | Generic OCR; fails on complex multi-column casing tables. | **6-Tier vision pipeline (Docling ViT)** with Layer-5 petroleum physics auto-repair. |
 | **Evidence Attribution & Provenance** | None; no connection to historical reports. | Uncited or hallucinated text summaries. | **Strict page-level PDF citations** with interactive PDF.js viewer and REAL/SYNTHETIC badges. |
-| **Real-Time Operational Lead Time** | **Reactive (0 minutes):** Alarms trigger *after* losses or sticking occur. | **Offline (Hours/Days):** Requires manual ad-hoc prompting. | **Proactive (35–45 minutes):** Projects forward 15–50m ahead of the active drill bit. |
+| **Real-Time Operational Lead Time** | **Reactive (0 minutes):** Alarms trigger *after* losses or sticking occur. | **Offline (Hours/Days):** Requires manual ad-hoc prompting. | **Proactive (Dynamic 15–45 minutes):** Computed in real-time as $\Delta t = \Delta D / \text{ROP}$ (15–50m lookahead corridor). |
 | **Industrial Safety Boundaries** | Connected directly to rig PLCs; cybersecurity risk. | Unregulated cloud API; violates data sovereignty. | **Unidirectional read-only DMZ isolation** complying with IEC 61508 safety standards. |
 
 ---
