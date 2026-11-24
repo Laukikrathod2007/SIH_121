@@ -361,7 +361,7 @@ All third-party assets are also credited on the page where they are used.
 
 <div align="center">
 
-## Team
+## Team Midnight Ciphers
 
 <img src="frontend/public/brand/drillwise-icon-mark.png" alt="" width="72" />
 
