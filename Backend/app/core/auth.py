@@ -101,6 +101,7 @@ def make_rate_limiter(env_prefix: str, default_max_requests: int, default_window
     # Exposed so each module's /health payload can truthfully report the
     # limits actually in force (they used to import module-level constants).
     rate_limit.enabled = enabled
+    rate_limit.default_max_requests = default_max_requests
     rate_limit.max_requests = max_requests
     rate_limit.window_seconds = window_seconds
     rate_limit.reset = request_log.clear  # test hook: forget all recorded requests

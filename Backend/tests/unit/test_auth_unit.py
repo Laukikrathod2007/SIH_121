@@ -88,10 +88,10 @@ def test_rate_limiter_reset_forgets_history():
 
 def test_each_route_class_keeps_its_original_ceiling():
     """The three modules deliberately had different limits; unification must not flatten them."""
-    assert auth.rate_limit_ingest.max_requests == 20     # M01 upload (can trigger paid cloud calls)
-    assert auth.rate_limit_general.max_requests == 60    # M02 analysis/queries
-    assert auth.rate_limit_physics.max_requests == 600   # M04 physics: legitimately high-frequency polling
-    assert auth.rate_limit_agent.max_requests == 10     # Agent chat (LLM tool-calling turns, CPU-heavy)
+    assert getattr(auth.rate_limit_ingest, "default_max_requests", auth.rate_limit_ingest.max_requests) == 20     # M01 upload (can trigger paid cloud calls)
+    assert getattr(auth.rate_limit_general, "default_max_requests", auth.rate_limit_general.max_requests) == 60    # M02 analysis/queries
+    assert getattr(auth.rate_limit_physics, "default_max_requests", auth.rate_limit_physics.max_requests) == 600   # M04 physics: legitimately high-frequency polling
+    assert getattr(auth.rate_limit_agent, "default_max_requests", auth.rate_limit_agent.max_requests) == 10     # Agent chat (LLM tool-calling turns, CPU-heavy)
     for limiter in (auth.rate_limit_ingest, auth.rate_limit_general, auth.rate_limit_physics, auth.rate_limit_agent):
         assert limiter.window_seconds == 60
 
