@@ -119,7 +119,8 @@ INSERT INTO hazard_type (code, description) VALUES
     -- zones" explicitly) and data/synthetic/drilling_events.json actively
     -- uses it (real schema drift caught by migrate_seed.py's FK violation
     -- on a real seed run against real synthetic data, not a hypothetical gap).
-    ('OVERPRESSURE_ZONE',    'Abnormally high pore pressure zone relative to the planned mud weight');
+    ('OVERPRESSURE_ZONE',    'Abnormally high pore pressure zone relative to the planned mud weight'),
+    ('FISHING_OPERATION',    'Operations to recover lost tools, drill pipe, or debris from the borehole');
 
 CREATE TABLE wells (
     -- Business key used verbatim by both modules' JSON/API payloads
