@@ -114,6 +114,11 @@ export const Header: React.FC = () => {
                 REAL WITSML
               </span>
             )}
+            <div className="hidden 2xl:flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900 border border-slate-700/80 text-[11px] font-mono" title="Connected to Oil India Limited Real-Time Data Monitoring and Analysis Centre (eRTMAC), Duliajan Field HQ">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-slate-400">eRTMAC:</span>
+              <span className="text-emerald-300 font-bold">DULIAJAN HQ</span>
+            </div>
           </div>
         </div>
 

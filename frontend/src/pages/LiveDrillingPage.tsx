@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, lazy, Suspense } from 'react';
-import { Gauge, Play, Pause, RotateCcw, StepForward, Box } from 'lucide-react';
+import { Gauge, Play, Pause, RotateCcw, StepForward, Box, Radar, Clock, AlertTriangle, Layers, ChevronRight, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { api } from '../services/api';
 import { StripChart, StripSeries } from '../components/StripChart';
@@ -90,6 +90,25 @@ export const LiveDrillingPage: React.FC = () => {
     ? Object.keys(simStatus.active_scenarios)[0] || 'NORMAL'
     : 'NORMAL';
 
+  const currentDepth = telemetry?.measured_depth_m || 2450.0;
+  const currentRop = telemetry?.rop_m_hr || 25.0;
+
+  // Ahead-of-bit stratigraphic projection (50m - 150m ahead of bit)
+  const sortedFormations = useMemo(() => {
+    return [...formations3D].sort((a, b) => a.top_tvd_m - b.top_tvd_m);
+  }, [formations3D]);
+
+  const activeFormation = sortedFormations.find(
+    (f) => currentDepth >= f.top_tvd_m && currentDepth <= (f.top_tvd_m + f.thickness_m)
+  ) || sortedFormations[0];
+
+  const nextFormation = sortedFormations.find(
+    (f) => f.top_tvd_m > currentDepth
+  );
+
+  const distToNextM = nextFormation ? nextFormation.top_tvd_m - currentDepth : null;
+  const leadTimeMin = distToNextM != null ? (distToNextM / Math.max(currentRop, 1)) * 60 : null;
+
   return (
     <div className="p-4 space-y-4 max-w-[1600px] mx-auto">
       {/* 1. Cockpit Header & Simulator Real-Time Controls */}
@@ -176,6 +195,63 @@ export const LiveDrillingPage: React.FC = () => {
         telemetry={telemetry}
         activeRisk={activeRisk}
       />
+
+      {/* 1.55. Outcome vi: Proactive Ahead-of-Bit Lookahead Radar (50m - 150m Corridor) */}
+      <div className="scada-panel p-3 border-l-4 border-l-cyan-500 bg-slate-900/90 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded text-cyan-400">
+            <Radar className="w-5 h-5 animate-spin" style={{ animationDuration: '6s' }} />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-slate-100 flex items-center gap-2">
+              <span>AHEAD-OF-BIT GEOLOGICAL RADAR (50m–150m LOOKAHEAD)</span>
+              <span className="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-1.5 py-0.2 rounded">
+                OUTCOME VI PROACTIVE
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+              <span>Active Horizon: <strong className="text-amber-300">{activeFormation?.formation_name || 'Alluvium'}</strong></span>
+              <ChevronRight className="w-3 h-3 text-slate-600" />
+              <span>
+                Next Boundary:{' '}
+                {nextFormation ? (
+                  <strong className="text-cyan-300">{nextFormation.formation_name} (@ {nextFormation.top_tvd_m.toFixed(0)}m TVD)</strong>
+                ) : (
+                  <span className="text-slate-500">Terminal Depth Reached</span>
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {distToNextM != null && (
+            <div className="bg-slate-950 border border-slate-800 px-3 py-1.5 rounded flex items-center gap-2">
+              <span className="text-slate-400 text-[10px]">DISTANCE TO TRANSITION:</span>
+              <span className="font-bold text-cyan-400 text-sm">{distToNextM.toFixed(1)} m</span>
+            </div>
+          )}
+          {leadTimeMin != null && (
+            <div className="bg-slate-950 border border-slate-800 px-3 py-1.5 rounded flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-slate-400 text-[10px]">DYNAMIC LEAD TIME (ΔD/ROP):</span>
+              <span className="font-bold text-amber-300 text-sm">{leadTimeMin.toFixed(0)} min</span>
+              <span className="text-[10px] text-slate-500">(@ {currentRop.toFixed(1)} m/h)</span>
+            </div>
+          )}
+          <div className="bg-slate-950 border border-slate-800 px-3 py-1.5 rounded flex items-center gap-1.5">
+            <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+            <span className="text-slate-400 text-[10px]">OFFSET ADVISORY:</span>
+            <span className="text-rose-300 font-semibold text-[11px]">
+              {nextFormation?.formation_name.includes('Barail')
+                ? 'Narrow MW Window (10.4-11.2 ppg)'
+                : nextFormation?.formation_name.includes('Kopili')
+                ? 'High Sloughing Shale Pack-Off Risk'
+                : 'Maintain Baseline ECD & Flow Monitoring'}
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* 1.6. Live 3D Rig View -- real trajectory, real formations, real
           live bit position (moves with the actual telemetry WebSocket

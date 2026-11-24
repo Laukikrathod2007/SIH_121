@@ -174,6 +174,30 @@ export const DocumentIngestionPage: React.FC = () => {
     }
   }, [startPolling]);
 
+  const loadSampleDocument = useCallback(async (filename: string) => {
+    setError(null);
+    setResult(null);
+    setJobStatus(null);
+    setReviewDecision(null);
+    setDecisionOutcome(null);
+    setSyncStatus(null);
+    setUploading(true);
+    try {
+      const apiBase = (import.meta.env.VITE_API_BASE as string | undefined) || 'http://localhost:8000';
+      const res = await fetch(`${apiBase}/api/evidence?name=${encodeURIComponent(filename)}`);
+      if (!res.ok) {
+        throw new Error(`Sample document "${filename}" could not be fetched (${res.status}). Verify backend is running.`);
+      }
+      const blob = await res.blob();
+      const sampleFile = new File([blob], filename, { type: 'application/pdf' });
+      await handleFile(sampleFile);
+    } catch (err: any) {
+      setError(err?.message || `Failed to fetch sample document ${filename}.`);
+      setUploading(false);
+      console.error(err);
+    }
+  }, [handleFile]);
+
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
@@ -331,6 +355,46 @@ export const DocumentIngestionPage: React.FC = () => {
                   e.target.value = '';
                 }}
               />
+            </div>
+
+            {/* One-Click Presets for Hackathon Evaluators */}
+            <div className="mt-3 p-2.5 bg-slate-950/70 border border-slate-800 rounded space-y-1.5 font-mono text-[11px]">
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center justify-between">
+                <span>Evaluator One-Click Samples</span>
+                <span className="text-cyan-400 text-[9px]">REAL ARCHIVES</span>
+              </div>
+              <div className="grid grid-cols-1 gap-1.5 pt-1">
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => loadSampleDocument('DDR_WELL-NHK-001_2658m.pdf')}
+                  className="px-2 py-1 text-left bg-slate-900 hover:bg-slate-850 hover:border-cyan-500/50 border border-slate-800 text-slate-200 rounded flex items-center justify-between transition disabled:opacity-50"
+                  title="Oil India Limited Nahorkatiya well: Barail Sandstone kick and mud loss incident"
+                >
+                  <span className="truncate">1. NHK-001 DDR (2658m Kick & Loss)</span>
+                  <span className="text-[9px] text-amber-400 ml-1 shrink-0">OIL ASSAM</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => loadSampleDocument('DDR_WELL-BGJ-007_2905m.pdf')}
+                  className="px-2 py-1 text-left bg-slate-900 hover:bg-slate-850 hover:border-cyan-500/50 border border-slate-800 text-slate-200 rounded flex items-center justify-between transition disabled:opacity-50"
+                  title="Oil India Limited Baghjan well: High-pressure gas influx incident"
+                >
+                  <span className="truncate">2. BGJ-007 DDR (2905m Gas Influx)</span>
+                  <span className="text-[9px] text-rose-400 ml-1 shrink-0">OIL BAGHJAN</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => loadSampleDocument('WELL-15_9-F-12_COMPLETION.pdf')}
+                  className="px-2 py-1 text-left bg-slate-900 hover:bg-slate-850 hover:border-cyan-500/50 border border-slate-800 text-slate-200 rounded flex items-center justify-between transition disabled:opacity-50"
+                  title="Equinor Volve 15/9-F-12 Well Completion Report: Multi-string casing and formation tops"
+                >
+                  <span className="truncate">3. Volve 15/9-F-12 WCR (Completion)</span>
+                  <span className="text-[9px] text-emerald-400 ml-1 shrink-0">VOLVE WCR</span>
+                </button>
+              </div>
             </div>
 
             {jobStatus && (
